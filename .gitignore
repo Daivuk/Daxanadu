@@ -1,0 +1,11 @@
+# Don't commit ROMs
+*.nes
+
+# Build folder for cmake
+build/
+
+# Temporary files
+temp/
+
+# ImGui config files
+imgui.ini
