@@ -30,7 +30,16 @@ endif()
 
 # Project files
 file(GLOB srcfiles ./src/*.*)
-list(APPEND includes PUBLIC ./src/)
+file(GLOB hardwarefiles ./src/Hardware/*.*)
+file(GLOB inputsfiles ./src/Inputs/*.*)
+list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.c)
+list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.h)
+list(APPEND includes PUBLIC
+    ./src/
+    ./src/Hardware/
+    ./src/Inputs
+    ../thirdparty/MCS6502/
+)
 
 # Onut
 list(APPEND libs PUBLIC libonut)
@@ -39,9 +48,11 @@ list(APPEND includes PUBLIC ../thirdparty/onut/include/)
 # Source groups for Visual Studio
 source_group("thirdparty" FILES ${srcthirdparty})
 source_group("src" FILES ${srcfiles})
+source_group("Hardware" FILES ${hardwarefiles})
+source_group("Inputs" FILES ${inputsfiles})
 
 # .exe, use WinMain on Windows
-add_executable(${PROJECT_NAME} WIN32 ${srcfiles} ${srcthirdparty})
+add_executable(${PROJECT_NAME} WIN32 ${srcfiles} ${srcthirdparty} ${hardwarefiles} ${inputsfiles})
 
 # Work dir
 set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/")

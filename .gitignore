@@ -1,5 +1,6 @@
 # Don't commit ROMs
 *.nes
+*.nsf
 
 # Build folder for cmake
 build/
@@ -9,3 +10,9 @@ temp/
 
 # ImGui config files
 imgui.ini
+
+# Saves
+game/save_states/*.sav
+
+# Release staging folder
+release/

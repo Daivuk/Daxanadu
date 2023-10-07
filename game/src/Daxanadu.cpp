@@ -1,0 +1,389 @@
+#include "Daxanadu.h"
+#include "APU.h"
+#include "Cart.h"
+#include "Controller.h"
+#include "Emulator.h"
+#include "ExternalInterface.h"
+#include "GameplayInputContext.h"
+#include "MenuInputContext.h"
+#include "MenuManager.h"
+#include "NewGameInputContext.h"
+#include "Patcher.h"
+#include "PPU.h"
+#include "RoomWatcher.h"
+#include "SoundRenderer.h"
+#include "TileDrawer.h"
+
+#include <onut/Files.h>
+#include <onut/Input.h>
+#include <onut/Log.h>
+#include <onut/Sound.h>
+#include <onut/Settings.h>
+
+#include <vector>
+
+
+static const int32_t STATE_VERSION = 3;
+static const int32_t MIN_STATE_VERSION = 1;
+
+
+Daxanadu::Daxanadu()
+{
+    init();
+}
+
+
+Daxanadu::~Daxanadu()
+{
+    cleanup();
+}
+
+
+void Daxanadu::init()
+{
+    m_loading_continue_state = false;
+    m_gameplay_input_context = new GameplayInputContext();
+    m_menu_input_context = new MenuInputContext(m_gameplay_input_context);
+    m_new_game_input_context = new NewGameInputContext();
+    m_emulator = new Emulator();
+    m_emulator->get_controller()->set_input_context(nullptr);
+
+    // Create sounds
+    auto sound_renderer = new SoundRenderer(m_emulator->get_cart()->get_prg_rom(), m_emulator->get_cart()->get_prg_rom_size());
+    for (int i = 0; i < 28; ++i)
+    {
+        m_sounds[i] = sound_renderer->render_sound(i + 16);
+    }
+    delete sound_renderer;
+
+    m_patcher = new Patcher(m_emulator->get_cart()->get_prg_rom());
+    m_tile_drawer = new TileDrawer(m_emulator->get_cart()->get_prg_rom(), m_emulator->get_ppu());
+
+    menu_manager_info_t menu_manager_info;
+    menu_manager_info.tile_drawer = m_tile_drawer;
+    menu_manager_info.patcher = m_patcher;
+    menu_manager_info.gameplay_input_context = m_gameplay_input_context;
+    menu_manager_info.menu_input_context = m_menu_input_context;
+    menu_manager_info.action_sfx = m_sounds[0x18 - 1];
+    menu_manager_info.choice_sfx = m_sounds[0x08 - 1];
+    menu_manager_info.nav_sfx = m_sounds[0x0B - 1];
+    m_menu_manager = new MenuManager(menu_manager_info);
+
+    m_room_watcher = new RoomWatcher(m_tile_drawer, m_emulator->get_cpu_bus());
+
+    update_volumes();
+
+
+    //--- Delegates
+    m_menu_manager->new_game_delegate = [this]()
+    {
+        // Change mapping to a new game context mapping that will always return "start" pressed
+        m_emulator->get_controller()->set_input_context(m_new_game_input_context);
+    };
+
+    m_menu_manager->continue_game_delegate = [this]()
+    {
+        // Is there a state to load?
+        auto filename = "save_states/state_0.sav";
+        if (onut::fileExists(filename))
+        {
+            m_menu_manager->hide();
+            load_state(0);
+        }
+        else
+        {
+            // Do nothing, play error sound
+        }
+    };
+
+    m_menu_manager->save_delegate = [this]()
+    {
+        save_state(0);
+    };
+
+    m_menu_manager->dismissed_pause_menu_delegate = [this]()
+    {
+        m_menu_manager->hide();
+        m_emulator->get_controller()->set_input_context(m_new_game_input_context); // New game context just shoots "starts" continuously so it will resume the game
+    };
+
+    //--- C++ callbacks
+
+    // Save game (Meditate)
+    m_emulator->get_external_interface()->register_callback(0x01, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        if (m_loading_continue_state)
+        {
+            m_loading_continue_state = false;
+            return 0;
+        }
+
+        save_state(0);
+        m_patcher->apply_progress_saved();
+        return 0;
+    }, 0);
+
+    // Continue game
+    m_emulator->get_external_interface()->register_callback(0x02, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        load_state(0);
+        return 0;
+    }, 0);
+
+    // Scroll mist
+    m_emulator->get_external_interface()->register_callback(0x03, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        auto cart = m_emulator->get_cart();
+        auto ppu = m_emulator->get_ppu();
+
+        // To make sure we're not in a mist tower, check the palette.
+        // Kind of hacky, but oh well... Just check byte 4 to 7
+        static uint8_t MIST_TOWERS_DESIRED_PAL[4] = { 0x0F, 0x09, 0x1B, 0x27 };
+        uint8_t mist_towers_pal[4];
+        ppu->ppu_read(0x3F04, &mist_towers_pal[0]);
+        ppu->ppu_read(0x3F05, &mist_towers_pal[1]);
+        ppu->ppu_read(0x3F06, &mist_towers_pal[2]);
+        ppu->ppu_read(0x3F07, &mist_towers_pal[3]);
+        if (memcmp(mist_towers_pal, MIST_TOWERS_DESIRED_PAL, 4) == 0) return 0;
+
+        static const int mist_tile_addrs[11] = { 0x1970, 0x1890, 0x1800, 0x1810, 0x1820, 0x1830, 0x1840, 0x1850, 0x1860, 0x1870, 0x1880 };
+        static const int mist_speeds[11] = { 20, 20, 16, 12, 7, 6, 6, 6, 5, 5, 5 };
+        static int phase = 0;
+
+        phase++;
+
+        uint8_t line;
+        for (int i = 0; i < 11; ++i)
+        {
+            if (phase % mist_speeds[i]) continue;
+            int addr = mist_tile_addrs[i];
+            for (int y = 0; y < 16; ++y)
+            {
+                cart->ppu_read(addr + y, &line);
+                int bit = line & 0b1;
+                line >>= 1;
+                line = (line & 0b01111111) | (bit << 7);
+                cart->ppu_write(addr + y, line);
+            }
+        }
+
+        return 0;
+    }, 0);
+
+    // Get if king give us 1500 yet, and change the flag if he didn't give the money yet.
+    m_emulator->get_external_interface()->register_callback(0x04, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        uint8_t ret = m_king_gave_money;
+        m_king_gave_money = 1;
+        return ret;
+    }, 0);
+
+    // New game
+    m_emulator->get_external_interface()->register_callback(0x05, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        m_menu_manager->hide();
+        m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
+        return 0;
+    }, 0);
+
+    // Game pausing
+    m_emulator->get_external_interface()->register_callback(0x06, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        m_menu_manager->show_in_game_menu();
+        m_emulator->get_controller()->set_input_context(nullptr);
+        return 0;
+    }, 0);
+
+    // Game resuming
+    m_emulator->get_external_interface()->register_callback(0x07, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        m_menu_manager->hide();
+        m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
+        return 0;
+    }, 0);
+
+    // Show inventory
+    m_emulator->get_external_interface()->register_callback(0x08, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        m_emulator->get_controller()->set_input_context(m_menu_input_context);
+        return 0;
+    }, 0);
+
+    // Hide inventory
+    m_emulator->get_external_interface()->register_callback(0x09, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
+        return 0;
+    }, 0);
+
+    // Play sound
+    m_emulator->get_external_interface()->register_callback(0x0A, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+    {
+        a--;
+        if (a < 28)
+            m_sounds[a]->play(m_sfx_volume);
+        return 0;
+    }, 1);
+
+    m_emulator->reset();
+}
+
+
+void Daxanadu::cleanup()
+{
+    delete m_gameplay_input_context;
+    delete m_menu_input_context;
+    delete m_new_game_input_context;
+    delete m_room_watcher;
+    delete m_menu_manager;
+    delete m_tile_drawer;
+    delete m_patcher;
+    delete m_emulator;
+}
+
+
+void Daxanadu::update_volumes()
+{
+    int sfx_volume_setting = 5;
+    int music_volume_setting = 5;
+
+    try
+    {
+        sfx_volume_setting = std::stoi(oSettings->getUserSetting("sound_volume"));
+    } catch (...) {}
+    try
+    {
+        music_volume_setting = std::stoi(oSettings->getUserSetting("music_volume"));
+    } catch (...) {}
+
+    m_sfx_volume = (float)sfx_volume_setting / 8.0f;
+    m_music_volume = (float)music_volume_setting / 8.0f;
+
+    m_emulator->get_apu()->set_volume(m_music_volume);
+}
+
+
+void Daxanadu::serialize(FILE* f, int version) const
+{
+    fwrite(&m_king_gave_money, 1, 1, f);
+}
+
+
+void Daxanadu::deserialize(FILE* f, int version)
+{
+    if (version < 3) return;
+    fread(&m_king_gave_money, 1, 1, f);
+}
+
+
+void Daxanadu::save_state(int slot)
+{
+    auto filename = "save_states/state_" + std::to_string(slot) + ".sav";
+
+    FILE* f = fopen(filename.c_str(), "wb");
+    if (!f)
+    {
+        onut::showMessageBox("Error", "Failed to open file: " + filename);
+        return;
+    }
+
+    fwrite(&STATE_VERSION, sizeof(STATE_VERSION), 1, f);
+    m_emulator->serialize(f, STATE_VERSION);
+    serialize(f, STATE_VERSION);
+    fclose(f);
+    
+    OLog("State " + std::to_string(slot) + " saved");
+}
+
+
+void Daxanadu::load_state(int slot)
+{
+    auto filename = "save_states/state_" + std::to_string(slot) + ".sav";
+    load_state(slot, filename);
+}
+
+
+void Daxanadu::load_state(int slot, const std::string& filename)
+{
+    FILE* f = fopen(filename.c_str(), "rb");
+    if (!f)
+    {
+        // Silently failed, maybe the state doesn't exist yet
+        return;
+    }
+
+    int32_t version;
+    fread(&version, sizeof(version), 1, f);
+
+    if (version < MIN_STATE_VERSION)
+    {
+        fclose(f);
+        onut::showMessageBox("Error", "Failed to open file: " + filename + "\nWrong version. File version: " + std::to_string(version) + ", expected: " + std::to_string(STATE_VERSION));
+        return;
+    }
+
+    m_emulator->deserialize(f, version);
+    deserialize(f, version);
+    fclose(f);
+
+    if (slot == 0)
+    {
+        m_loading_continue_state = true;
+        m_patcher->apply_welcome_back();
+    }
+
+    OLog("State " + std::to_string(slot) + " loaded");
+    m_menu_manager->hide();
+    m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
+}
+
+
+void Daxanadu::update(float dt)
+{
+    for (int i = 1; i <= 9; ++i)
+    {
+        if (OInputJustPressed((onut::Input::State)((int)OKey1 - 1 + i)))
+        {
+            if (OInputPressed(OKeyLeftControl))
+            {
+                save_state(i);
+            }
+            else if (OInputPressed(OKeyLeftAlt))
+            {
+                auto filename = "dev_states/state_" + std::to_string(i) + ".sav";
+                load_state(i, filename);
+            }
+            else
+            {
+                load_state(i);
+            }
+        }
+    }
+
+    // This is the continue state
+    if (OInputJustPressed(OKey0))
+    {
+        load_state(0);
+    }
+
+    // Reset everything
+    if (OInputJustPressed(OKeyF5))
+    {
+        cleanup();
+        init();
+    }
+
+    m_emulator->update(dt);
+    m_menu_manager->update(dt);
+    m_room_watcher->update(dt);
+
+    update_volumes();
+}
+
+
+void Daxanadu::render()
+{
+    m_emulator->render();
+    m_menu_manager->render();
+    m_room_watcher->render();
+}

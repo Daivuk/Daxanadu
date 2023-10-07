@@ -34,6 +34,6 @@ public:
     }
 
 private:
-    std::vector<state_t> m_history;
+    std::vector<T> m_history;
     int m_history_point = 0;
 };

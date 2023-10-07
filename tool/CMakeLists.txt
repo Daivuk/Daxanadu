@@ -30,7 +30,10 @@ endif()
 
 # Project files
 file(GLOB srcfiles ./src/*.*)
+list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.c)
+list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.h)
 list(APPEND includes PUBLIC ./src/)
+list(APPEND includes PUBLIC ../thirdparty/MCS6502/)
 
 # Onut
 list(APPEND libs PUBLIC libonut)
