@@ -15,7 +15,7 @@ Here is the list of improvements, options and features that Daxanadu brings to F
 - "Continue" game loads save state instead of asking for password.
 - Rebindable inputs.
 - Separated adjustable volume for music and sfx.
-- Various gameplay options, [see the Options category for more detail](##Options).
+- Various gameplay options, [see the Options category for more detail](#Options).
 
 ## Options
 ### Gameplay options
