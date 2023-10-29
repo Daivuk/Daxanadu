@@ -72,6 +72,7 @@ void Daxanadu::init()
     menu_manager_info.action_sfx = m_sounds[0x18 - 1];
     menu_manager_info.choice_sfx = m_sounds[0x08 - 1];
     menu_manager_info.nav_sfx = m_sounds[0x0B - 1];
+    menu_manager_info.error_sfx = m_sounds[0x0D - 1];
     m_menu_manager = new MenuManager(menu_manager_info);
 
     m_room_watcher = new RoomWatcher(m_tile_drawer, m_emulator->get_cpu_bus());
@@ -114,7 +115,22 @@ void Daxanadu::init()
 
     m_menu_manager->play_ap_delegate = [this]()
     {
-        m_ap = new AP();
+        ap_info_t ap_info;
+        ap_info.address = oSettings->getUserSetting("ap_address");
+        ap_info.slot_name = oSettings->getUserSetting("ap_slot");
+        ap_info.password = oSettings->getUserSetting("ap_password");
+        m_ap = new AP(ap_info);
+        m_ap->connection_success_delegate = [this]()
+        {
+            m_menu_manager->hide();
+            // Change mapping to a new game context mapping that will always return "start" pressed
+            m_emulator->get_controller()->set_input_context(m_new_game_input_context);
+        };
+        m_ap->connection_failed_delegate = [this]()
+        {
+            m_menu_manager->on_ap_connect_failed();
+        };
+        m_ap->connect();
     };
 
     //--- C++ callbacks
@@ -351,7 +367,15 @@ void Daxanadu::load_state(int slot, const std::string& filename)
 
 void Daxanadu::update(float dt)
 {
-    if (m_ap) m_ap->update(dt);
+    if (m_ap)
+    {
+        m_ap->update(dt);
+        if (m_ap->get_state() == AP::state_t::idle)
+        {
+            delete m_ap;
+            m_ap = nullptr;
+        }
+    }
 
     for (int i = 1; i <= 9; ++i)
     {

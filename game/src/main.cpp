@@ -15,11 +15,11 @@ void initSettings()
     printf("%s\n", DAX_VERSION_FULL_TEXT);
 
     oSettings->setGameName("Daxanadu");
-    oSettings->setResolution({1600, 900});
+    oSettings->setResolution({1200, 900});
     oSettings->setIsFixedStep(false);
     oSettings->setShowFPS(true);
     oSettings->setIsResizableWindow(true);
-    oSettings->setStartMaximized(true);
+    oSettings->setStartMaximized(false);
 
     oSettings->setUserSettingDefault("dialog_speed", "0");
     oSettings->setUserSettingDefault("music_volume", "5");

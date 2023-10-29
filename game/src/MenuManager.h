@@ -27,6 +27,7 @@ struct menu_manager_info_t
     OSoundRef action_sfx;
     OSoundRef choice_sfx;
     OSoundRef nav_sfx;
+    OSoundRef error_sfx;
 };
 
 
@@ -39,6 +40,7 @@ public:
     bool can_emulate() const { return true;/*m_menu_stack.empty();*/ }
     void hide();
     void show_in_game_menu();
+    void on_ap_connect_failed();
 
     void update(float dt);
     void render();
@@ -58,6 +60,7 @@ private:
         slider,
         key_bind,
         skip,
+        hide_cursor,
         key_binding
     };
 
@@ -108,6 +111,8 @@ private:
         key_bind_popup,
         new_game_options,
         ap_connect_menu,
+        ap_connecting_menu,
+        ap_failed_menu,
 
         COUNT
     };
@@ -129,6 +134,7 @@ private:
     void load_ap_slot(menu_option_t* option);
     void load_ap_password(menu_option_t* option);
     void on_ap_connect(menu_option_t* option);
+    void on_generic_ok(menu_option_t* option);
 
     void on_gameplay(menu_option_t* option);
     void on_audio(menu_option_t* option);
@@ -191,4 +197,5 @@ private:
     OSoundInstanceRef m_action_sfx;
     OSoundInstanceRef m_choice_sfx;
     OSoundInstanceRef m_nav_sfx;
+    OSoundInstanceRef m_error_sfx;
 };

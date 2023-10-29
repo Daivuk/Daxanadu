@@ -41,9 +41,11 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
     m_action_sfx = m_info.action_sfx->createInstance();
     m_choice_sfx = m_info.choice_sfx->createInstance();
     m_nav_sfx = m_info.nav_sfx->createInstance();
+    m_error_sfx = m_info.error_sfx->createInstance();
     m_action_sfx->setVolume(m_sfx_volume);
     m_choice_sfx->setVolume(m_sfx_volume);
     m_nav_sfx->setVolume(m_sfx_volume);
+    m_error_sfx->setVolume(m_sfx_volume);
 
 #define BIND(fn) std::bind(&MenuManager::fn, this, std::placeholders::_1)
 
@@ -221,6 +223,21 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
     };
     m_menus[(int)state_t::key_bind_popup].x = 4;
     m_menus[(int)state_t::key_bind_popup].y = 8;
+
+    m_menus[(int)state_t::ap_connecting_menu].options = {
+        { "CONNECTING...", {}, option_t::action },
+    };
+    m_menus[(int)state_t::ap_connecting_menu].x = 8;
+    m_menus[(int)state_t::ap_connecting_menu].y = 12;
+
+    m_menus[(int)state_t::ap_failed_menu].options = {
+        { "FAILED TO CONNECT", {}, option_t::skip },
+        { " TO ARCHIPELAGO", {}, option_t::skip },
+        { "", {}, option_t::skip },
+        { "       OK", {}, option_t::action, nullptr, BIND(on_generic_ok) },
+    };
+    m_menus[(int)state_t::ap_failed_menu].x = 5;
+    m_menus[(int)state_t::ap_failed_menu].y = 8;
 
     push_menu(state_t::main_menu);
 }
@@ -428,7 +445,9 @@ void MenuManager::update(float dt)
             break;
     }
 
-    if (nav_back && m_menu_stack.back() != state_t::main_menu)
+    if (nav_back &&
+        m_menu_stack.back() != state_t::main_menu &&
+        m_menu_stack.back() != state_t::ap_connecting_menu)
     {
         auto state = m_menu_stack.back();
         m_menu_stack.pop_back();
@@ -610,7 +629,7 @@ void MenuManager::render()
         int y = 6;
         for (auto menu : m_menu_stack)
         {
-            draw_menu(x, y, menu, menu == m_menu_stack.back());
+            draw_menu(x, y, menu, menu == m_menu_stack.back() && m_menus[(int)menu].options[0].type != option_t::hide_cursor);
             x += 2;
             y += 2;
         }
@@ -742,6 +761,16 @@ void MenuManager::on_ap_connect(menu_option_t* option)
     {
         play_ap_delegate();
     }
+    m_action_sfx->stop(); m_action_sfx->play();
+    push_menu(state_t::ap_connecting_menu);
+}
+
+
+void MenuManager::on_ap_connect_failed()
+{
+    m_menu_stack.pop_back();
+    m_error_sfx->stop(); m_error_sfx->play();
+    push_menu(state_t::ap_failed_menu);
 }
 
 
@@ -813,6 +842,12 @@ void MenuManager::on_reset_defaults(menu_option_t* option)
 }
 
 
+void MenuManager::on_generic_ok(menu_option_t* option)
+{
+    m_menu_stack.pop_back();
+}
+
+
 void MenuManager::on_reset_ok(menu_option_t* option)
 {
     m_menu_stack.pop_back();
@@ -850,6 +885,7 @@ void MenuManager::on_sound_volume(menu_option_t* option)
     m_action_sfx->setVolume(m_sfx_volume);
     m_choice_sfx->setVolume(m_sfx_volume);
     m_nav_sfx->setVolume(m_sfx_volume);
+    m_error_sfx->setVolume(m_sfx_volume);
 }
 
 
