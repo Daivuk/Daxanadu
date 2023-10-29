@@ -107,6 +107,7 @@ private:
         gameplay_input_menu,
         key_bind_popup,
         new_game_options,
+        ap_connect_menu,
 
         COUNT
     };
@@ -120,6 +121,14 @@ private:
     void on_options(menu_option_t* option);
     void on_quit(menu_option_t* option);
     void on_save_and_quit(menu_option_t* option);
+
+    void on_ap_address(menu_option_t* option);
+    void on_ap_slot(menu_option_t* option);
+    void on_ap_password(menu_option_t* option);
+    void load_ap_address(menu_option_t* option);
+    void load_ap_slot(menu_option_t* option);
+    void load_ap_password(menu_option_t* option);
+    void on_ap_connect(menu_option_t* option);
 
     void on_gameplay(menu_option_t* option);
     void on_audio(menu_option_t* option);

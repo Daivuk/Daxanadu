@@ -41,6 +41,9 @@ void initSettings()
     oSettings->setUserSettingDefault("xp_wingboots", "0");
     oSettings->setUserSettingDefault("xp_speed", "0");
     oSettings->setUserSettingDefault("pendant", "0");
+    oSettings->setUserSettingDefault("ap_address", "archipelago.gg:38281");
+    oSettings->setUserSettingDefault("ap_slot", "John Doe");
+    oSettings->setUserSettingDefault("ap_password", "");
 }
 
 

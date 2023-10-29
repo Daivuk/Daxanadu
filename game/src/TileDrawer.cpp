@@ -201,6 +201,18 @@ void TileDrawer::draw_text(int x, int y, const char* text)
             else if (c == '3') color = Color::White;
             continue;
         }
+        else if (c == '.')
+        {
+            // Just draw a rectangle. No '.' in Menu font
+            oSpriteBatch->drawRect(nullptr, { (float)(x++ * 8 + 2), (float)(y * 8 + 5), 2, 2 }, color);
+            continue;
+        }
+        else if (c == '*')
+        {
+            // Just draw a rectangle. No '.' in Menu font
+            oSpriteBatch->drawRect(nullptr, { (float)(x++ * 8 + 1), (float)(y * 8 + 3), 4, 4 }, color);
+            continue;
+        }
 
         draw_tile(tile_id, x++, y, color);
     }

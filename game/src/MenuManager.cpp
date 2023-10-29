@@ -5,6 +5,7 @@
 #include "PPU.h"
 #include "TileDrawer.h"
 
+#include <onut/Dialogs.h>
 #include <onut/GamePad.h>
 #include <onut/Input.h>
 #include <onut/onut.h>
@@ -12,6 +13,9 @@
 #include <onut/Settings.h>
 #include <onut/Sound.h>
 #include <onut/SpriteBatch.h>
+#include <onut/Strings.h>
+
+#include "../src/tinyfiledialogs/tinyfiledialogs.h"
 
 
 static int get_user_setting(const std::string& setting_name, int default_value)
@@ -57,6 +61,19 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
     m_menus[(int)state_t::main_menu].spaced = false;
     m_menus[(int)state_t::main_menu].framed = false;
     m_menus[(int)state_t::main_menu].columns = 2;
+
+    m_menus[(int)state_t::ap_connect_menu].options = {
+        { "ADDRESS:", {}, option_t::action, nullptr, BIND(on_ap_address) },
+        { "", {}, option_t::skip, BIND(load_ap_address), nullptr },
+        { "SLOT:", {}, option_t::action, nullptr, BIND(on_ap_slot) },
+        { "", {}, option_t::skip, BIND(load_ap_slot), nullptr },
+        { "PASSWORD:", {}, option_t::action, nullptr, BIND(on_ap_password) },
+        { "", {}, option_t::skip, BIND(load_ap_password), nullptr },
+        { "CONNECT", {}, option_t::action, nullptr, BIND(on_ap_connect) },
+    };
+    m_menus[(int)state_t::ap_connect_menu].x = 1;
+    m_menus[(int)state_t::ap_connect_menu].y = 5;
+    m_menus[(int)state_t::ap_connect_menu].w = 30;
 
     m_menus[(int)state_t::pause_menu].options = {
         { "CONTROLS", {}, option_t::action, nullptr, BIND(on_input_mappings) },
@@ -648,10 +665,8 @@ void MenuManager::on_continue(menu_option_t* option)
 
 void MenuManager::on_archipelago(menu_option_t* option)
 {
-    if (play_ap_delegate)
-    {
-        play_ap_delegate();
-    }
+    m_action_sfx->stop(); m_action_sfx->play();
+    push_menu(state_t::ap_connect_menu);
 }
 
 
@@ -665,6 +680,68 @@ void MenuManager::on_options(menu_option_t* option)
 void MenuManager::on_quit(menu_option_t* option)
 {
     OQuit();
+}
+
+
+void MenuManager::on_ap_address(menu_option_t* option)
+{
+    auto address = oSettings->getUserSetting("ap_address");
+    auto new_address = tinyfd_inputBox("Archipelago Address", "Enter the Archipelago address. Followed by a colon then the port. i.e.: archipelago.gg:38281", address.c_str());
+    if (!new_address) return; // Canceled
+    oSettings->setUserSetting("ap_address", new_address);
+    load_ap_address(&m_menus[(int)state_t::ap_connect_menu].options[1]);
+}
+
+
+void MenuManager::on_ap_slot(menu_option_t* option)
+{
+    auto slot = oSettings->getUserSetting("ap_slot");
+    auto new_slot = tinyfd_inputBox("Archipelago Address", "Enter the Archipelago slot name. This correspond to the player name.", slot.c_str());
+    if (!new_slot) return; // Canceled
+    oSettings->setUserSetting("ap_slot", new_slot);
+    load_ap_slot(&m_menus[(int)state_t::ap_connect_menu].options[3]);
+}
+
+
+void MenuManager::on_ap_password(menu_option_t* option)
+{
+    auto password = oSettings->getUserSetting("ap_password");
+    auto new_password = tinyfd_inputBox("Archipelago Address", "Enter the password.", nullptr);
+    if (!new_password) return; // Canceled
+    oSettings->setUserSetting("ap_password", new_password);
+    load_ap_password(&m_menus[(int)state_t::ap_connect_menu].options[5]);
+}
+
+
+void MenuManager::load_ap_address(menu_option_t* option)
+{
+    option->name = "  " + onut::toUpper(oSettings->getUserSetting("ap_address"));
+    if (option->name.size() > 26) option->name.resize(26);
+}
+
+
+void MenuManager::load_ap_slot(menu_option_t* option)
+{
+    option->name = "  " + onut::toUpper(oSettings->getUserSetting("ap_slot"));
+    if (option->name.size() > 26) option->name.resize(26);
+}
+
+
+void MenuManager::load_ap_password(menu_option_t* option)
+{
+    auto password = oSettings->getUserSetting("ap_password");
+    for (auto& c : password) c = '*';
+    option->name = "  " + password;
+    if (option->name.size() > 26) option->name.resize(26);
+}
+
+
+void MenuManager::on_ap_connect(menu_option_t* option)
+{
+    if (play_ap_delegate)
+    {
+        play_ap_delegate();
+    }
 }
 
 
