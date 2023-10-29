@@ -30,14 +30,16 @@ endif()
 
 # Project files
 file(GLOB srcfiles ./src/*.*)
+file(GLOB apfiles ./src/Archipelago/*.*)
 file(GLOB hardwarefiles ./src/Hardware/*.*)
 file(GLOB inputsfiles ./src/Inputs/*.*)
 list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.c)
 list(APPEND srcfiles ../thirdparty/MCS6502/MCS6502.h)
 list(APPEND includes PUBLIC
     ./src/
+    ./src/Archipelago/
     ./src/Hardware/
-    ./src/Inputs
+    ./src/Inputs/
     ../thirdparty/MCS6502/
 )
 
@@ -45,14 +47,21 @@ list(APPEND includes PUBLIC
 list(APPEND libs PUBLIC libonut)
 list(APPEND includes PUBLIC ../thirdparty/onut/include/)
 
+# APCpp
+option(USE_ZLIB "" FALSE)
+add_subdirectory(../thirdparty/APCpp APCpp)
+list(APPEND libs PUBLIC APCpp)
+list(APPEND includes PUBLIC ../thirdparty/APCpp/)
+
 # Source groups for Visual Studio
 source_group("thirdparty" FILES ${srcthirdparty})
 source_group("src" FILES ${srcfiles})
+source_group("Archipelago" FILES ${apfiles})
 source_group("Hardware" FILES ${hardwarefiles})
 source_group("Inputs" FILES ${inputsfiles})
 
-# .exe, use WinMain on Windows
-add_executable(${PROJECT_NAME} WIN32 ${srcfiles} ${srcthirdparty} ${hardwarefiles} ${inputsfiles})
+# .exe
+add_executable(${PROJECT_NAME} ${srcfiles} ${srcthirdparty} ${apfiles} ${hardwarefiles} ${inputsfiles})
 
 # Work dir
 set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/")

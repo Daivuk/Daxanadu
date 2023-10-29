@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.level": "json",
+        "*.meta": "json",
+        "vector": "cpp"
+    }
+}

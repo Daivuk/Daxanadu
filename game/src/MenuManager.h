@@ -48,6 +48,7 @@ public:
     std::function<void()> continue_game_delegate;
     std::function<void()> save_delegate;
     std::function<void()> dismissed_pause_menu_delegate;
+    std::function<void()> play_ap_delegate;
 
 private:
     enum class option_t

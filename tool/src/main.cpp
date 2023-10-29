@@ -883,7 +883,8 @@ static void draw_entities()
                     ImGui::CollapsingHeader("ENTITY", ImGuiTreeNodeFlags_DefaultOpen);
                     auto name = get_entity_name(entity.type);
                     ImGui::Text("%s", name ? name : "UNKNOWN");
-                    ImGui::Text("Type: %i", entity.type);
+                    ImGui::Text("Addr: 0x%08X", entity.addr);
+                    ImGui::Text("Type: 0x%02X", entity.type);
                     ImGui::TextColored(entity.dialog_id == -1 ? ImVec4(1, 1, 1, .35f) : ImVec4(1, 1, 1, 1), "Dialog Id: 0x%02X", entity.dialog_id);
                     if (entity.dialog_id != -1)
                     {
@@ -977,6 +978,7 @@ static void draw_dialog(const std::vector<cart_dialog_command_t>& commands)
     ImGui::Indent();
     for (const auto& cmd : commands)
     {
+        ImGui::Text("0x%08X", cmd.addr); ImGui::SameLine();
         switch (cmd.command)
         {
             case cart_dialog_commands_t::SHOW_DIALOG_1:
@@ -1018,7 +1020,7 @@ static void draw_dialog(const std::vector<cart_dialog_command_t>& commands)
                 ImGui::Text("Take %s", get_item_name(cmd.item));
                 break;
             case cart_dialog_commands_t::GIVE_ITEM:
-                ImGui::Text("Give %s", get_item_name(cmd.item));
+                ImGui::Text("Give %s 0x%02X", get_item_name(cmd.item), (int)cmd.item);
                 break;
             case cart_dialog_commands_t::GIVE_MONEY:
                 ImGui::Text("Give %i", cmd.golds);
@@ -1040,7 +1042,7 @@ static void draw_dialog(const std::vector<cart_dialog_command_t>& commands)
                 ImGui::Text("Buy:");
                 ImGui::Indent();
                 for (const auto& shop_item : cmd.shop_items)
-                    ImGui::Text("%s   %i", get_item_name(shop_item.item), shop_item.price);
+                    ImGui::Text("0x%08X %s (0x%02X)   %i", shop_item.addr, get_item_name(shop_item.item), shop_item.item, shop_item.price);
                 ImGui::Unindent();
                 break;
             case cart_dialog_commands_t::SHOW_SELL:

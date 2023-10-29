@@ -1414,6 +1414,7 @@ static void load_entities(FILE* f)
                     uint8_t x : 4;
                     uint8_t y : 4;
                 } pos = {0xFF, 0xFF};
+                int addr;
             };
 
             std::vector<raw_entity_t> raw_entities;
@@ -1422,6 +1423,7 @@ static void load_entities(FILE* f)
             while (true)
             {
                 raw_entity_t raw_entity;
+                raw_entity.addr = (int)ftell(f) - 0x10;
                 fread(&raw_entity.entity_id, 1, 1, f);
                 if (raw_entity.entity_id == 0xFF) break;
                 fread(&raw_entity.pos, 1, 1, f);
@@ -1441,6 +1443,7 @@ static void load_entities(FILE* f)
                 entity.type = raw_entities[i].entity_id;
                 entity.x = raw_entities[i].pos.x;
                 entity.y = raw_entities[i].pos.y;
+                entity.addr = raw_entities[i].addr;
                 if (i < (int)raw_entity_dialogs.size())
                     entity.dialog_id = raw_entity_dialogs[i];
                 chunk.screens[screen_id].entities.push_back(entity);
@@ -1673,7 +1676,9 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
 {
     int bank_offset = bank_offset_to_rom_addr(BANK_TEXT_SETS, 0);
     std::vector<cart_dialog_command_t> commands;
-
+    
+    cart_dialog_command_t cmd;
+    cmd.addr = pc - 0x10;
     uint8_t code = cart.rom[pc++];
     while (code != DIALOG_CODE_TERMINATE)
     {
@@ -1681,7 +1686,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
         {
             case DIALOG_CODE_SHOW_DIALOG_TYPE_1:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SHOW_DIALOG_1;
                 cmd.text_block = cart.rom[pc++];
                 cmd.string = std::to_string(cart.strings[cmd.text_block - 1]);
@@ -1690,7 +1694,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_SHOW_DIALOG_TYPE_2:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SHOW_DIALOG_2;
                 cmd.text_block = cart.rom[pc++];
                 cmd.string = std::to_string(cart.strings[cmd.text_block - 1]);
@@ -1699,7 +1702,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_SHOW_DIALOG_TYPE_3:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SHOW_DIALOG_3;
                 cmd.text_block = cart.rom[pc++];
                 cmd.string = std::to_string(cart.strings[cmd.text_block - 1]);
@@ -1708,7 +1710,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_JUMP_IF_HAS_ANY_MONEY:
             {
-                cart_dialog_command_t cmd;
                 int jump_addr = (int)cart.rom[pc++];
                 jump_addr |= (int)cart.rom[pc++] << 8;
                 jump_addr += bank_offset;
@@ -1719,7 +1720,7 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_GIVE_ITEM:
             {
-                cart_dialog_command_t cmd;
+                cmd.addr = pc - 0x10;
                 cmd.item = (item_t)cart.rom[pc++];
                 cmd.command = cart_dialog_commands_t::GIVE_ITEM;
                 commands.push_back(cmd);
@@ -1727,7 +1728,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_TAKE_ITEM:
             {
-                cart_dialog_command_t cmd;
                 cmd.item = (item_t)cart.rom[pc++];
                 cmd.command = cart_dialog_commands_t::TAKE_ITEM;
                 commands.push_back(cmd);
@@ -1735,7 +1735,7 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_JUMP_CONDITION:
             {
-                cart_dialog_command_t cmd;
+                cmd.addr = pc - 0x10;
                 cmd.item = (item_t)cart.rom[pc++];
                 int jump_addr = 0;
                 jump_addr = (int)cart.rom[pc++];
@@ -1748,7 +1748,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_GIVE_MONEY:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::GIVE_MONEY;
                 cmd.golds = (int)cart.rom[pc++];
                 cmd.golds |= (int)cart.rom[pc++] << 8;
@@ -1757,7 +1756,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_JUMP_IF_HAS_MONEY:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::JUMP_IF_HAS_MONEY;
                 cmd.golds = (int)cart.rom[pc++];
                 cmd.golds |= (int)cart.rom[pc++] << 8;
@@ -1773,7 +1771,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_GIVE_HEALTH:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::GIVE_HEALTH;
                 cmd.health = (int)cart.rom[pc++];
                 commands.push_back(cmd);
@@ -1781,7 +1778,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_GIVE_MAGIC:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::GIVE_MAGIC;
                 cmd.magic = (int)cart.rom[pc++];
                 commands.push_back(cmd);
@@ -1789,7 +1785,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_ASK_BUY_OR_SELL:
             {
-                cart_dialog_command_t cmd;
                 int jump_addr = (int)cart.rom[pc++];
                 jump_addr |= (int)cart.rom[pc++] << 8;
                 jump_addr += bank_offset;
@@ -1800,7 +1795,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_SHOW_BUY:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SHOW_BUY;
                 int items_addr = (int)cart.rom[pc++];
                 items_addr |= (int)cart.rom[pc++] << 8;
@@ -1808,6 +1802,7 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
                 while (cart.rom[items_addr] != 0xFF)
                 {
                     cart_shop_item_t shop_item;
+                    shop_item.addr = items_addr - 0x10;
                     shop_item.item = (item_t)cart.rom[items_addr++];
                     shop_item.price = (int)cart.rom[items_addr++];
                     shop_item.price |= (int)cart.rom[items_addr++] << 8;
@@ -1818,7 +1813,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_SHOW_SELL:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SHOW_SELL;
                 int items_addr = (int)cart.rom[pc++];
                 items_addr |= (int)cart.rom[pc++] << 8;
@@ -1836,7 +1830,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_JUMP_IF_HAS_TITLE:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::JUMP_IF_HAS_TITLE;
                 cmd.title = (int)cart.rom[pc++];
                 int jump_addr = (int)cart.rom[pc++];
@@ -1848,7 +1841,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_SET_GURU:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::SET_GURU;
                 cmd.guru = (int)cart.rom[pc++];
                 commands.push_back(cmd);
@@ -1856,7 +1848,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_JUMP_IF_CAN_LEVEL_UP:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::JUMP_IF_CAN_LEVEL_UP;
                 int jump_addr = (int)cart.rom[pc++];
                 jump_addr |= (int)cart.rom[pc++] << 8;
@@ -1877,14 +1868,12 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_MEDITATE:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::MEDITATE;
                 commands.push_back(cmd);
                 break;
             }
             case DIALOG_CODE_JUMP_IF_FOUNTAIN:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::JUMP_IF_FOUNTAIN;
                 cmd.fountain = (int)cart.rom[pc++];
                 int jump_addr = (int)cart.rom[pc++];
@@ -1896,7 +1885,6 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             case DIALOG_CODE_FLOW_FOUNTAIN:
             {
-                cart_dialog_command_t cmd;
                 cmd.command = cart_dialog_commands_t::FLOW_FOUNTAIN;
                 cmd.fountain = (int)cart.rom[pc++];
                 commands.push_back(cmd);
@@ -1918,6 +1906,7 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
         }
 
+        cmd.addr = pc - 0x10;
         code = cart.rom[pc++];
     }
 

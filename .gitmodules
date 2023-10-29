@@ -1,3 +1,6 @@
 [submodule "thirdparty/onut"]
 	path = thirdparty/onut
 	url = https://github.com/Daivuk/onut.git
+[submodule "thirdparty/APCpp"]
+	path = thirdparty/APCpp
+	url = https://github.com/Daivuk/APCpp

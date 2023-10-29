@@ -289,6 +289,7 @@ struct cart_entity_t
     int type = -1;
     int x = -1, y = -1;
     int dialog_id = -1;
+    int addr = -1;
 };
 
 
@@ -328,6 +329,7 @@ struct cart_shop_item_t
 {
     item_t item = item_t::ITEM_INVALID;
     int price = -1;
+    int addr;
 };
 
 
@@ -479,6 +481,7 @@ struct cart_dialog_command_t
             int text_block;
         };
     };
+    int addr = 0;
     std::string string; // For debug purpose
     std::vector<cart_dialog_command_t> branch_commands;
     std::vector<cart_shop_item_t> shop_items;

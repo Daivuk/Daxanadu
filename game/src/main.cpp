@@ -1,4 +1,5 @@
 #include "Daxanadu.h"
+#include "version.h"
 
 #include <onut/onut.h>
 #include <onut/Files.h>
@@ -11,6 +12,8 @@ Daxanadu* m_daxanadu = nullptr;
 
 void initSettings()
 {
+    printf("%s\n", DAX_VERSION_FULL_TEXT);
+
     oSettings->setGameName("Daxanadu");
     oSettings->setResolution({1600, 900});
     oSettings->setIsFixedStep(false);

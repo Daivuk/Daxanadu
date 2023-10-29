@@ -47,7 +47,7 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
         { "START", {}, option_t::action, nullptr, BIND(on_new_game) },
         { "CONTINUE", {}, option_t::action, nullptr, BIND(on_continue) },
         { "OPTIONS", {}, option_t::action, nullptr, BIND(on_options) },
-        //{ "ARCHIPELAGO", {}, option_t::action, nullptr, BIND(on_archipelago) },
+        { "ARCHIPELAGO", {}, option_t::action, nullptr, BIND(on_archipelago) },
         { "QUIT", {}, option_t::action, nullptr, BIND(on_quit) },
     };
     m_menus[(int)state_t::main_menu].x = 3;
@@ -648,6 +648,10 @@ void MenuManager::on_continue(menu_option_t* option)
 
 void MenuManager::on_archipelago(menu_option_t* option)
 {
+    if (play_ap_delegate)
+    {
+        play_ap_delegate();
+    }
 }
 
 

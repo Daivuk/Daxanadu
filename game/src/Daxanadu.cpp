@@ -1,4 +1,5 @@
 #include "Daxanadu.h"
+#include "AP.h"
 #include "APU.h"
 #include "Cart.h"
 #include "Controller.h"
@@ -13,12 +14,16 @@
 #include "RoomWatcher.h"
 #include "SoundRenderer.h"
 #include "TileDrawer.h"
+#include "version.h"
 
 #include <onut/Files.h>
+#include <onut/Font.h>
 #include <onut/Input.h>
 #include <onut/Log.h>
+#include <onut/Renderer.h>
 #include <onut/Sound.h>
 #include <onut/Settings.h>
+#include <onut/SpriteBatch.h>
 
 #include <vector>
 
@@ -105,6 +110,11 @@ void Daxanadu::init()
     {
         m_menu_manager->hide();
         m_emulator->get_controller()->set_input_context(m_new_game_input_context); // New game context just shoots "starts" continuously so it will resume the game
+    };
+
+    m_menu_manager->play_ap_delegate = [this]()
+    {
+        m_ap = new AP();
     };
 
     //--- C++ callbacks
@@ -231,6 +241,7 @@ void Daxanadu::init()
 
 void Daxanadu::cleanup()
 {
+    delete m_ap;
     delete m_gameplay_input_context;
     delete m_menu_input_context;
     delete m_new_game_input_context;
@@ -340,6 +351,8 @@ void Daxanadu::load_state(int slot, const std::string& filename)
 
 void Daxanadu::update(float dt)
 {
+    if (m_ap) m_ap->update(dt);
+
     for (int i = 1; i <= 9; ++i)
     {
         if (OInputJustPressed((onut::Input::State)((int)OKey1 - 1 + i)))
@@ -386,4 +399,13 @@ void Daxanadu::render()
     m_emulator->render();
     m_menu_manager->render();
     m_room_watcher->render();
+    if (m_ap) m_ap->render();
+
+    // Version
+    {
+        auto font = OGetFont("font.fnt");
+        oSpriteBatch->begin();
+        oSpriteBatch->drawText(font, DAX_VERSION_FULL_TEXT, { 0.0f, OScreenHf }, OBottomLeft);
+        oSpriteBatch->end();
+    }
 }
