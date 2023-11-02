@@ -6,13 +6,58 @@
 #include <onut/Settings.h>
 
 
-#define PATCH_ADDR(addr) (uint8_t)((addr) & 0xFF), (uint8_t)(((addr) >> 8) & 0xFF)
-#define PATCH_CALL_CPP(id) 0xA9, id, 0x8D, PATCH_ADDR(0x6000)
+static const int BANKS_EMPTY_SPACE[16] = {
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0xAD90,
+    0x0000,
+    0x0000,
+    0xFE00
+};
+
+
+static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+
+    0xAE4D,
+    0x0000,
+    0x0000,
+    0xFFE0
+};
 
 
 Patcher::Patcher(uint8_t* rom)
     : m_rom(rom)
 {
+    for (int i = 0; i < 16; ++i)
+        m_next_banks_empty_space[i] = BANKS_EMPTY_SPACE[i];
+
     apply_new_strings();
     apply_dialog_speed_setting_patch();
     apply_dialog_sound_patch();
@@ -96,32 +141,36 @@ void Patcher::patch(int addr, const std::vector<uint8_t>& code)
 }
 
 
-int Patcher::patch_lo(int bank, int addr, int offset, const std::vector<uint8_t>& code)
+void Patcher::patch(int bank, int addr, int offset, const std::vector<uint8_t>& code)
 {
-    patch(bank * 0x4000 + addr - 0x8000 + offset, code);
-    return 0;
+    if (bank < 15)
+    {
+        patch(bank * 0x4000 + addr - 0x8000 + offset, code);
+    }
+    else
+    {
+        patch(bank * 0x4000 + addr - 0xC000 + offset, code);
+    }
 }
 
 
-int Patcher::patch_hi(int bank, int in_addr, int offset, const std::vector<uint8_t>& code)
+int Patcher::patch_new_code(int bank, const std::vector<uint8_t>& code)
 {
-    int addr = in_addr;
-    if (in_addr == BANK15_EMPTY_SPACE)
+    if (m_next_banks_empty_space[bank] == 0 || BANKS_EMPTY_SPACE_LIMIT[bank] == 0)
     {
-        addr = m_next_bank15_empty_space;
-        if (addr + (int)code.size() >= 0xFFE0)
-        {
-            onut::showMessageBox("ERROR", "No more free space in bank 15");
-            OQuit();
-        }
+        onut::showMessageBox("ERROR", "Bank " + std::to_string(bank) + " not configured for new code");
+        OQuit();
     }
 
-    patch(bank * 0x4000 + addr - 0xC000 + offset, code);
-
-    if (in_addr == BANK15_EMPTY_SPACE)
+    auto addr = m_next_banks_empty_space[bank];
+    if (addr + (int)code.size() >= BANKS_EMPTY_SPACE_LIMIT[bank])
     {
-        m_next_bank15_empty_space += (int)code.size();
+        onut::showMessageBox("ERROR", "No more free space in bank " + std::to_string(bank));
+        OQuit();
     }
+
+    patch(bank, addr, 0, code);
+    m_next_banks_empty_space[bank] += (int)code.size();
 
     return addr;
 }
@@ -160,37 +209,33 @@ void Patcher::apply_dialog_speed_setting_patch()
 
     if (dialog_speed != 0x00 && dialog_speed != 0x01 && dialog_speed != 0x03) dialog_speed = 0x03; // Default if invalid value
 
-    patch_hi(15, 0xF49E, 1, { (uint8_t)dialog_speed });
+    patch(15, 0xF49E, 1, { (uint8_t)dialog_speed });
 }
 
 
 void Patcher::apply_dialog_sound_patch()
 {
     // Play the sound, but not too much. Using the value at $021D which increases constantly.
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
-        0x48, // PHA
-        0xAD, // LDA $021D
-        PATCH_ADDR(0x021D),
-        0x29, // AND #3
-        0x03,
-        0xD0, // BNE +4
-        0x04,
-        0x68, // PLA
-        0x4C, // JMP $D0E4      play_sound
-        PATCH_ADDR(0xD0E4),
-        0x68, // PLA
-        0x60, // RTS
+    auto addr = patch_new_code(15, {
+        OP_PHA(),
+        OP_LDA_ABS(0x021D),
+        OP_AND_IMM(3),
+        OP_BNE(4),
+        OP_PLA(),
+        OP_JMP_ABS(0xD0E4), // play_sound
+        OP_PLA(),
+        OP_RTS(),
     });
 
     // When playing a dialog typing sound, jump to our own function
-    patch_hi(15, 0xF4FB, 1, { PATCH_ADDR(addr) });
+    patch(15, 0xF4FB, 1, { PATCH_ADDR(addr) });
 }
 
 
 void Patcher::apply_meditate_patch()
 {
     // Write new dialog script
-    patch_lo(12, 0xADA0, 0, {
+    patch(12, 0xADA0, 0, {
         0x03, // Show dialog
         0x22, // "You need peace of mind, I'll meditate with you."
         0x14, // Meditate - This calls a C++ function to save state, see bellow
@@ -200,7 +245,7 @@ void Patcher::apply_meditate_patch()
     });
 
     // Point the old guru dialog to this new one
-    patch_lo(12, 0xA5FC, 0, {
+    patch(12, 0xA5FC, 0, {
         0x17, // Jump SCRIPT
         PATCH_ADDR(0xADA0),
     });
@@ -208,17 +253,14 @@ void Patcher::apply_meditate_patch()
     // Erase existing meditate function with NOPes
     std::vector<uint8_t> nopes;
     for (int i = 0x8737; i < 0x8754; ++i)
-        nopes.push_back(0xEA); // NOP;
-    patch_lo(12, 0x8737, 0, nopes);
+        nopes.push_back(OP_NOP());
+    patch(12, 0x8737, 0, nopes);
 
     // Insert our code instead that will call our C++ save state function
-    patch_lo(12, 0x8737, 0, {
-        0x48, // PHA
-        0xA9, // LDA #$01       Save state function
-        0x01,
-        0x8D, // STA $6000      Call the function by writing to the external interface register (0x6000)
-        PATCH_ADDR(0x6000),
-        0x68, // PLA
+    patch(12, 0x8737, 0, {
+        OP_PHA(),
+        PATCH_CALL_CPP(0x01), // Save state function
+        OP_PLA(),
     });
 }
 
@@ -239,11 +281,8 @@ void Patcher::apply_welcome_back()
 
 void Patcher::apply_continue_patch()
 {
-    patch_hi(15, 0xFC89, 0, {
-        0xA9, // LDA #$02               Continue C++ function
-        0x02,
-        0x8D, // STA $6000
-        PATCH_ADDR(0x6000),
+    patch(15, 0xFC89, 0, {
+        PATCH_CALL_CPP(0x02), // Continue C++ function
         // It will load a state, we don't care what follows
     });
 }
@@ -258,30 +297,23 @@ void Patcher::apply_new_game_patch()
     }
 
     std::vector<uint8_t> new_code = {
-        0xA9, // LDA #$05               Notify C++ that we start the game.
-        0x05,
-        0x8D, // STA $6000
-        PATCH_ADDR(0x6000),
-        0xAD, // LDA $0687
-        PATCH_ADDR(0x0687),
+        PATCH_CALL_CPP(0x05), // Notify C++ that we start the game.
+        OP_LDA_ABS(0x0687),
     };
 
     new_code.insert(new_code.end(), original_function.begin(), original_function.end());
 
     // Replace the code that deals with new game with out own that inserts a callback into C++
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, new_code);
+    auto addr = patch_new_code(15, new_code);
 
-    patch_hi(15, 0xFC98, 0, {
-        0x4C, // JMP addr
-        PATCH_ADDR(addr),
-    });
+    patch(15, 0xFC98, 0, { OP_JMP_ABS(addr) });
 }
 
 
 void Patcher::apply_mist_quality_patch()
 {
     // Modification of the function at 0xCF3C, where we inserted our own stuff and change jump addrs
-    m_mist_scroll_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    m_mist_scroll_addr = patch_new_code(15, {
         0xA5, // LDA $24                    This is where current level is stored
         0x24,
         0xC9, // CMP $02                    2 is the ID for the mist world.
@@ -339,27 +371,27 @@ void Patcher::apply_mist_quality_setting_patch()
     if (setting == "1")
     {
         // Jump to our own mist scroll function
-        patch_hi(15, 0xCF3C, 0, {
+        patch(15, 0xCF3C, 0, {
             0x4C, // JMP $CF3B
             PATCH_ADDR(m_mist_scroll_addr)
         });
         
         // Skip the original graphic shift
-        patch_hi(15, 0xCD56, 0, {
+        patch(15, 0xCD56, 0, {
             0x60, // RTS
         });
     }
     else
     {
         // Restore original 3 bytes
-        patch_hi(15, 0xCF3C, 0, {
+        patch(15, 0xCF3C, 0, {
             0xA5, // LDA $1F
             0x1F,
             0xC5, // CMP
         });
 
         // Restore the original byte at 0xCD56
-        patch_hi(15, 0xCD56, 0, {
+        patch(15, 0xCD56, 0, {
             0xAD, // LDA
         });
     }
@@ -372,7 +404,7 @@ void Patcher::apply_coins_despawn_setting_patch()
 
     if (setting == "1")
     {
-        patch_lo(14, 0x8D06, 0, {
+        patch(14, 0x8D06, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
@@ -380,7 +412,7 @@ void Patcher::apply_coins_despawn_setting_patch()
     }
     else
     {
-        patch_lo(14, 0x8D06, 0, {
+        patch(14, 0x8D06, 0, {
             0x9D, // STA $02CC, X
             PATCH_ADDR(0x02CC)
         });
@@ -446,7 +478,7 @@ void Patcher::apply_king_golds_patch()
     // Create our own function to replace the money check. It will
     // instead call into C++ to check our custom registers to see if
     // the gift was given already or not.
-    m_king_golds_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    m_king_golds_addr = patch_new_code(15, {
         0xA9, // LDA #$04                   C++: Check if money was given, and set to true
         0x04,
         0x8D, // STA $6000
@@ -469,14 +501,14 @@ void Patcher::apply_king_golds_setting_patch()
 
     if (setting == "1")
     {
-        patch_lo(12, 0x861F, 0, {
+        patch(12, 0x861F, 0, {
             0x4C,
             PATCH_ADDR(m_king_golds_addr)
         });
     }
     else
     {
-        patch_lo(12, 0x861F, 0, {
+        patch(12, 0x861F, 0, {
             0xAD,
             PATCH_ADDR(0x0392)
         });
@@ -487,10 +519,10 @@ void Patcher::apply_king_golds_setting_patch()
 void Patcher::apply_double_golds_patch()
 {
     // Add a setting byte that we will read to know if we should double or not
-    m_double_golds_setting_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, { 0x00 });
+    m_double_golds_setting_addr = patch_new_code(15, { 0x00 });
 
     // Redo the function that gives the gold, and add the reward twice.
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    auto addr = patch_new_code(15, {
         // Add money once (Reward is stored at $036C[X], where X is current entity)
         0xAD, // LDA $0392
         PATCH_ADDR(0x0392),
@@ -547,7 +579,7 @@ void Patcher::apply_double_golds_patch()
     });
 
     // Jump to our function instead of the original one
-    patch_lo(14, 0x8B9F, 0, {
+    patch(14, 0x8B9F, 0, {
         0x4C, // JMP addr
         PATCH_ADDR(addr)
     });
@@ -560,11 +592,11 @@ void Patcher::apply_double_golds_setting_patch()
 
     if (setting == "1")
     {
-        patch_hi(15, m_double_golds_setting_addr, 0, { 0x01 });
+        patch(15, m_double_golds_setting_addr, 0, { 0x01 });
     }
     else
     {
-        patch_hi(15, m_double_golds_setting_addr, 0, { 0x00 });
+        patch(15, m_double_golds_setting_addr, 0, { 0x00 });
     }
 }
 
@@ -572,10 +604,10 @@ void Patcher::apply_double_golds_setting_patch()
 void Patcher::apply_double_xp_patch()
 {
     // Add a setting byte that we will read to know if we should double or not
-    m_double_xp_setting_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, { 0x00 });
+    m_double_xp_setting_addr = patch_new_code(15, { 0x00 });
 
     // Redo the function that gives the gold, and add the reward twice.
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    auto addr = patch_new_code(15, {
         // Add xp once
 
         0xAD, // LDA $0390
@@ -633,7 +665,7 @@ void Patcher::apply_double_xp_patch()
     });
 
     // Jump to our function instead of the original one
-    patch_hi(15, 0xF957, 0, {
+    patch(15, 0xF957, 0, {
         0x4C, // JMP addr
         PATCH_ADDR(addr)
     });
@@ -646,11 +678,11 @@ void Patcher::apply_double_xp_setting_patch()
 
     if (setting == "1")
     {
-        patch_hi(15, m_double_xp_setting_addr, 0, { 0x01 });
+        patch(15, m_double_xp_setting_addr, 0, { 0x01 });
     }
     else
     {
-        patch_hi(15, m_double_xp_setting_addr, 0, { 0x00 });
+        patch(15, m_double_xp_setting_addr, 0, { 0x00 });
     }
 }
 
@@ -658,7 +690,7 @@ void Patcher::apply_double_xp_setting_patch()
 void Patcher::apply_pause_patch()
 {
     // Pause patch
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    auto addr = patch_new_code(15, {
         0xA9, // LDA #$06                   C++: Show in-game menu and remove input context
         0x06,
         0x8D, // STA $6000
@@ -670,7 +702,7 @@ void Patcher::apply_pause_patch()
         0x60, // RTS
     });
 
-    patch_hi(15, 0xE031, 0, {
+    patch(15, 0xE031, 0, {
         0x20, // JSR addr
         PATCH_ADDR(addr),
         0xEA, // NOP
@@ -678,7 +710,7 @@ void Patcher::apply_pause_patch()
     });
 
     // Unpause patch
-    addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    addr = patch_new_code(15, {
         0xA9, // LDA #0
         0x00,
         0x8D, // STA $0120                  Pause flag
@@ -690,7 +722,7 @@ void Patcher::apply_pause_patch()
         0x60, // RTS
     });
 
-    patch_hi(15, 0xE042, 0, {
+    patch(15, 0xE042, 0, {
         0x20, // JSR addr
         PATCH_ADDR(addr),
         0x60, // RTS
@@ -714,7 +746,7 @@ void Patcher::apply_equip_in_shops_setting_patch()
     if (setting == "1")
     {
         // We remove the check that checks if we are in a building
-        patch_lo(12, 0x8B86, 0, {
+        patch(12, 0x8B86, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
@@ -724,7 +756,7 @@ void Patcher::apply_equip_in_shops_setting_patch()
     else
     {
         // Restore original code
-        patch_lo(12, 0x8B86, 0, m_equip_in_shops_original_code);
+        patch(12, 0x8B86, 0, m_equip_in_shops_original_code);
     }
 }
 
@@ -732,7 +764,7 @@ void Patcher::apply_equip_in_shops_setting_patch()
 void Patcher::apply_inventory_input_patch()
 {
     // Code that will trigger the menu context
-    auto addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    auto addr = patch_new_code(15, {
         0x85, // STA $DE
         0xDE,
         0x86, // STX $DF
@@ -747,7 +779,7 @@ void Patcher::apply_inventory_input_patch()
     });
 
     // Patch the original generic show message function.
-    patch_hi(15, 0xF859, 0, {
+    patch(15, 0xF859, 0, {
         0x20, // JSR addr
         PATCH_ADDR(addr),
         0xEA, // NOP
@@ -758,7 +790,7 @@ void Patcher::apply_inventory_input_patch()
     // that means we're in normal gameplay.
 
     // Code that will trigger the menu context
-    auto check_select_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    auto check_select_addr = patch_new_code(15, {
         0xA9, // LDA #$09                   C++: Use gameplay input context
         0x09,
         0x8D, // STA $6000
@@ -776,7 +808,7 @@ void Patcher::apply_inventory_input_patch()
     });
 
     // Call our subroutine first
-    patch_hi(15, 0xE01C, 0, {
+    patch(15, 0xE01C, 0, {
         0xEA, // NOP
         0xEA, // NOP
         0xEA, // NOP
@@ -788,7 +820,7 @@ void Patcher::apply_inventory_input_patch()
 
 void Patcher::apply_start_full_mana_patch()
 {
-    m_start_full_mana_addr = patch_hi(15, BANK15_EMPTY_SPACE, 0, {
+    m_start_full_mana_addr = patch_new_code(15, {
         0xA9, // LDA #$50
         0x50,
         0x8D, // STA $039A                Mana amount
@@ -799,7 +831,7 @@ void Patcher::apply_start_full_mana_patch()
     });
 
     // Call our subroutine and override original code that sets mana to 0
-    patch_hi(15, 0xDB2F, 0, {
+    patch(15, 0xDB2F, 0, {
         0x20, // JSR addr
         PATCH_ADDR(m_start_full_mana_addr),
         0xEA, // NOP
@@ -815,14 +847,14 @@ void Patcher::apply_start_full_health_setting_patch()
     if (setting == "1")
     {
         // We remove the check that checks if we are in a building
-        patch_hi(15, 0xDEAE, 1, { 0x50 });
-        patch_hi(15, m_start_full_mana_addr, 1, { 0x50 });
+        patch(15, 0xDEAE, 1, { 0x50 });
+        patch(15, m_start_full_mana_addr, 1, { 0x50 });
     }
     else
     {
         // Restore original code
-        patch_hi(15, 0xDEAE, 1, { 0x10 });
-        patch_hi(15, m_start_full_mana_addr, 1, { 0x00 });
+        patch(15, 0xDEAE, 1, { 0x10 });
+        patch(15, m_start_full_mana_addr, 1, { 0x00 });
     }
 }
 
@@ -833,7 +865,7 @@ void Patcher::apply_secret_item_setting_patch()
 
     if (setting == "1")
     {
-        patch_lo(14, 0xA52C, 0, {
+        patch(14, 0xA52C, 0, {
             0xA9, // LDA #4
             0x04,
             0xEA, // NOP
@@ -841,7 +873,7 @@ void Patcher::apply_secret_item_setting_patch()
     }
     else
     {
-        patch_lo(14, 0xA52C, 0, {
+        patch(14, 0xA52C, 0, {
             0xAD, // LDA $043A
             PATCH_ADDR(0x043A)
         });
@@ -860,22 +892,22 @@ void Patcher::apply_reset_gold_xp_patch()
 
 void Patcher::apply_reset_gold_xp_setting_patch()
 {
-    patch_lo(12, 0x95B9, 0, m_reset_gold_xp_original_code);
+    patch(12, 0x95B9, 0, m_reset_gold_xp_original_code);
 
     if (oSettings->getUserSetting("keep_gold") == "1")
     {
         // We just override the code that stores accumulator into Gold bytes.
-        patch_lo(12, 0x95CA, 0, {
+        patch(12, 0x95CA, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
         });
-        patch_lo(12, 0x95D0, 0, {
+        patch(12, 0x95D0, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
         });
-        patch_lo(12, 0x95D3, 0, {
+        patch(12, 0x95D3, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
@@ -885,12 +917,12 @@ void Patcher::apply_reset_gold_xp_setting_patch()
     if (oSettings->getUserSetting("keep_xp") == "1")
     {
         // We just override the code that stores accumulator into XP bytes.
-        patch_lo(12, 0x95BE, 0, {
+        patch(12, 0x95BE, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
         });
-        patch_lo(12, 0x95C4, 0, {
+        patch(12, 0x95C4, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
@@ -912,11 +944,11 @@ void Patcher::apply_xp_wingboots_setting_patch()
 {
     if (oSettings->getUserSetting("xp_wingboots") == "1")
     {
-        patch_hi(15, 0xC599, 0, { 0x28, 0x28, 0x28, 0x28 });
+        patch(15, 0xC599, 0, { 0x28, 0x28, 0x28, 0x28 });
     }
     else
     {
-        patch_hi(15, 0xC599, 0, m_xp_wingboots_values);
+        patch(15, 0xC599, 0, m_xp_wingboots_values);
     }
 }
 
@@ -934,11 +966,11 @@ void Patcher::apply_xp_speed_setting_patch()
 {
     if (oSettings->getUserSetting("xp_speed") == "1")
     {
-        patch_hi(15, 0xE2C4, 0, { 0x08, 0x08, 0x08, 0x08 });
+        patch(15, 0xE2C4, 0, { 0x08, 0x08, 0x08, 0x08 });
     }
     else
     {
-        patch_hi(15, 0xE2C4, 0, m_xp_speed_values);
+        patch(15, 0xE2C4, 0, m_xp_speed_values);
     }
 }
 
@@ -949,18 +981,18 @@ void Patcher::apply_pendant_setting_patch()
 
     if (setting == "0")
     {
-        patch_lo(14, 0x8879, 0, { 0xD0 /* BNE */ });
+        patch(14, 0x8879, 0, { 0xD0 /* BNE */ });
     }
     else if (setting == "1")
     {
-        patch_lo(14, 0x8879, 0, { 0xF0 /* BEQ */ });
+        patch(14, 0x8879, 0, { 0xF0 /* BEQ */ });
     }
 }
 
 
 void Patcher::apply_sfx_patch()
 {
-    patch_hi(15, 0xD0E4, 0, {
+    patch(15, 0xD0E4, 0, {
         0x48, // PHA
         0xA9, // LDA #$0A                   C++: Play sound
         0x0A,

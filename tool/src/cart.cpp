@@ -411,7 +411,7 @@ static void load_tilesets(FILE* f)
     {
         cart_tileset_t tileset;
         tileset.offset = 0;
-        tileset.tiles_data = load_tileset(f, 0x00028010 + 0x50 * 16, 128 + 16);
+        tileset.tiles_data = load_tileset(f, 0x00028010 + 0x50 * 16, 256/* 128 + 16*/);
         cart.tilesets.push_back(tileset);
     }
 }

@@ -1367,7 +1367,9 @@ void renderUI()
         {
             auto name = get_entity_name(entity_id);
             auto name_str = name ? name : "UNKNOWN";
-            if (ImGui::CollapsingHeader((name_str + std::string(" ") + std::to_string(entity_id)).c_str(), name ? ImGuiTreeNodeFlags_DefaultOpen : 0))
+            char id_hex[8];
+            snprintf(id_hex, 8, "0x%02X", entity_id);
+            if (ImGui::CollapsingHeader((name_str + std::string(" ") + id_hex).c_str(), name ? ImGuiTreeNodeFlags_DefaultOpen : 0))
             {
                 auto draw_list = ImGui::GetWindowDrawList();
                 for (const auto& frame : entity_type.frames)

@@ -752,6 +752,7 @@ void MenuManager::load_ap_password(menu_option_t* option)
     for (auto& c : password) c = '*';
     option->name = "  " + password;
     if (option->name.size() > 26) option->name.resize(26);
+    m_menus[(int)state_t::ap_connect_menu].selection = 6;
 }
 
 

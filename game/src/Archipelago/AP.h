@@ -6,13 +6,29 @@
 
 
 struct AP_NetworkItem;
+struct ap_location_t;
+class Patcher;
 
 
 struct ap_info_t
 {
+    uint8_t* rom = nullptr;
+    size_t rom_size = 0;
     std::string address;
     std::string slot_name;
     std::string password;
+    Patcher* patcher = nullptr;
+};
+
+
+struct ap_location_scout_t
+{
+    ap_location_t* loc = nullptr;
+    int64_t item;
+    int player;
+    int flags;
+    std::string player_name;
+    std::string item_name;
 };
 
 
@@ -23,7 +39,8 @@ public:
     {
         idle,
         connecting,
-        connected
+        connected,
+        scouting
     };
 
     AP(const ap_info_t& info);
@@ -45,8 +62,11 @@ public:
 private:
     void load_state();
     void save_state();
+    void patch_locations();
+    void patch_items();
 
     ap_info_t m_info;
     state_t m_state = state_t::idle;
     std::string m_save_dir_name;
+    std::vector<ap_location_scout_t> m_location_scouts;
 };

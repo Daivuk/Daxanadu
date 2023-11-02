@@ -4,6 +4,32 @@
 #include <vector>
 
 
+#define PATCH_ADDR(addr) (uint8_t)((addr) & 0xFF), (uint8_t)(((addr) >> 8) & 0xFF)
+#define PATCH_CALL_CPP(id) 0xA9, id, 0x8D, PATCH_ADDR(0x6000)
+
+
+#define OP_PHA() 0x48
+#define OP_PLA() 0x68
+#define OP_LDA_ABS(addr) 0xAD, PATCH_ADDR(addr)
+#define OP_LDA_IMM(value) 0xA9, value
+#define OP_LDA_ZPG(addr) 0xA5, addr
+#define OP_STA_ZPG(addr) 0x85, addr
+#define OP_LDY_IMM(value) 0xA0, value
+#define OP_STY_ZPG(addr) 0x84, addr
+#define OP_AND_IMM(value) 0x29, value
+#define OP_BNE(rel) 0xD0, rel
+#define OP_BCC(rel) 0x90, rel
+#define OP_JMP_ABS(addr) 0x4C, PATCH_ADDR(addr)
+#define OP_JSR(addr) 0x20, PATCH_ADDR(addr)
+#define OP_RTS() 0x60
+#define OP_NOP() 0xEA
+#define OP_CLC() 0x18
+#define OP_ADC_IMM(value) 0x69, value
+#define OP_SBC_IMM(value) 0xE9, value
+#define OP_TAY() 0xA8
+#define OP_INC_ZPG(addr) 0xE6, addr
+
+
 class Patcher final
 {
 public:
@@ -46,15 +72,13 @@ public:
     void apply_xp_speed_setting_patch();        // XP affects player speed or not
     void apply_pendant_setting_patch();
 
-private:
-    static const int BANK15_EMPTY_SPACE = 0xFE00;
-
     void patch(int addr, const std::vector<uint8_t>& code);
-    int patch_lo(int bank, int addr, int offset, const std::vector<uint8_t>& code);
-    int patch_hi(int bank, int addr, int offset, const std::vector<uint8_t>& code);
+    void patch(int bank, int addr, int offset, const std::vector<uint8_t>& code);
+    int patch_new_code(int bank, const std::vector<uint8_t>& code);
 
+private:
     uint8_t* m_rom = nullptr;
-    int m_next_bank15_empty_space = BANK15_EMPTY_SPACE;
+    int m_next_banks_empty_space[16] = { 0 };
     int m_mist_scroll_addr = 0;
     uint8_t m_cigarette_original_data[8 * 16];
     uint8_t m_cigarette_new_data[8 * 16];

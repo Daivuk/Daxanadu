@@ -119,6 +119,9 @@ void Daxanadu::init()
         ap_info.address = oSettings->getUserSetting("ap_address");
         ap_info.slot_name = oSettings->getUserSetting("ap_slot");
         ap_info.password = oSettings->getUserSetting("ap_password");
+        ap_info.rom = m_emulator->get_cart()->get_prg_rom();
+        ap_info.rom_size = m_emulator->get_cart()->get_prg_rom_size();
+        ap_info.patcher = m_patcher;
         m_ap = new AP(ap_info);
         m_ap->connection_success_delegate = [this]()
         {

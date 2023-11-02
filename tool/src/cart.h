@@ -130,6 +130,7 @@ enum item_t : int
     ITEM_HOURGLASS = 141, // 2B5218
     ITEM_BOOK = 142, // 2B52C
     ITEM_WINGBOOTS = 143, // 2B530
+    // New page
     ITEM_RED_POTION = 144, // 2B534
     ITEM_BLACK_POTION = 145, // 2B538
     ITEM_ELIXIR = 146, // 2B53C

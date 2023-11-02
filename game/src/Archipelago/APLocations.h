@@ -19,7 +19,7 @@ enum class ap_location_type_t
 
 struct ap_location_t
 {
-    int id = -1;
+    int64_t id = -1;
     std::string name;
     ap_location_type_t type = ap_location_type_t::unknown;
     int item_id = -1;
@@ -50,12 +50,12 @@ static ap_location_t AP_LOCATIONS[] = {
 
     // Tower of Trunk
     { 400111, "Tower of Trunk Hidden Mattock", ap_location_type_t::hidden, 0x50, 0x0002C337 },
-    { 400112, "Tower of Trunk Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C335 },
+    { 400112, "Tower of Trunk Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C355 },
     { 400113, "Tower of Trunk Boss Mattock", ap_location_type_t::boss_reward, 0x5B, 0x0002C367 },
 
     // Path to Forepaw
     { 400114, "Path to Forepaw Hidden Red Potion", ap_location_type_t::hidden, 0x5D, 0x0002C327 },
-    { 400115, "Path to Forepaw Glove", ap_location_type_t::world, 0x48, 0x0002C318 },
+    { 400115, "Path to Forepaw Glove", ap_location_type_t::world, 0x48, 0x0002C381 },
 
     // Forepaw
     { 400116, "Forepaw Long Sword", ap_location_type_t::shop, 0x01, 0x0003244F },
