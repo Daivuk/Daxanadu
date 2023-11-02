@@ -164,13 +164,14 @@ void AP::patch_items()
 	copy_sprite(m_info.rom + 0x0001CD26 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x19 * 16, false, false, -4);
 
 	// Replace fire crystal tiles with ointment
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x40 * 16, false, true);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x41 * 16, true, true);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x42 * 16, false, true);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x43 * 16, true, true);
+	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x40 * 16, false, false);
+	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x41 * 16, true, false);
+	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x42 * 16, false, false);
+	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x43 * 16, true, false);
 
-	// Prepare space in unused area for all the new item texts
-	for (int i = 0; i < 16; ++i)
+	// Prepare space in unused area for all the new item texts.
+	// Each location will have item name hardcoded + slot name.
+	for (int i = 0; i < 16 + (sizeof(AP_LOCATIONS) / sizeof(ap_location_t) * 2); ++i)
 	{
 		ROM_LO(12, 0xAE4D)[i * 16] = 0x0D;
 		for (int j = 1; j < 16; ++j)
@@ -207,17 +208,6 @@ void AP::patch_items()
 	m_info.patcher->patch(12, 0x8C50, 0, {
 		OP_JMP_ABS(addr),
 	});
-
-	// We no longer have unused items. Place at new location and the code will have to fix the text lookup...
-	//for (int i = 0; i < 15; ++i) m_info.rom[0x00032D9E + i] = 0x20;
-	//m_info.rom[0x00032D9E + 15] = 0x0D;
-	//memcpy(m_info.rom + 0x00032D9E, "GLOVE", strlen("GLOVE"));
-
-	//m_info.patcher->apply_dialog_sound_patch(
-		//0x9C4D -> 0xAE4D
-
-	// Texts are in bank 12, addr $9B3E
-	// Offsets for each categories are at $9B33
 }
 
 

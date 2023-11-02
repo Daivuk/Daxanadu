@@ -44,11 +44,14 @@ list(APPEND includes PUBLIC
 )
 
 # Onut
+option(ASSIMP_BUILD_ASSIMP_TOOLS "" OFF)
+option(ASSIMP_BUILD_TESTS "" OFF)
 list(APPEND libs PUBLIC libonut)
 list(APPEND includes PUBLIC ../thirdparty/onut/include/)
 
 # APCpp
-option(USE_ZLIB "" FALSE)
+option(USE_ZLIB "" OFF)
+option(ENABLE_PROGRAMS "" OFF)
 add_subdirectory(../thirdparty/APCpp APCpp)
 list(APPEND libs PUBLIC APCpp)
 list(APPEND includes PUBLIC ../thirdparty/APCpp/)
