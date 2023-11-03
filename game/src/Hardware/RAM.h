@@ -16,6 +16,8 @@ public:
     bool cpu_write(uint16_t addr, uint8_t data) override;
     bool cpu_read(uint16_t addr, uint8_t* out_data) override;
 
+    void render();
+
 private:
     uint8_t m_data[0x800];
 };

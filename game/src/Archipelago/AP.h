@@ -8,6 +8,7 @@
 struct AP_NetworkItem;
 struct ap_location_t;
 class Patcher;
+class ExternalInterface;
 
 
 struct ap_info_t
@@ -18,6 +19,7 @@ struct ap_info_t
     std::string slot_name;
     std::string password;
     Patcher* patcher = nullptr;
+    ExternalInterface* external_interface = nullptr;
 };
 
 

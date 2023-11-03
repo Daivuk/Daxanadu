@@ -4,6 +4,15 @@
 #include <vector>
 
 
+#define AP_ITEM_PROGRESSIVE_SWORD 0x96
+#define AP_ITEM_PROGRESSIVE_ARMOR 0x97
+#define AP_ITEM_PROGRESSIVE_SHIELD 0x98
+#define AP_ITEM_POISON 0x99
+#define AP_ITEM_OINTMENT 0x9A
+#define AP_ITEM_GLOVE 0x9B
+#define AP_ITEM_SPRING_ELIXIR 0x9C
+
+
 enum class ap_item_type_t
 {
     unknown,
@@ -27,10 +36,10 @@ struct ap_item_t
 
 
 static ap_item_t AP_ITEMS[] = {
-    { 400000, "Progressive Sword", ap_item_type_t::inventory, 0x96, 0x5A },
-    { 400001, "Progressive Armor", ap_item_type_t::inventory, 0x97, 0x58 },
-    { 400002, "Progressive Shield", ap_item_type_t::inventory, 0x98, 0x59 },
-    { 400003, "Spring Elixir", ap_item_type_t::inventory, 0x9C, 0x4D },
+    { 400000, "Progressive Sword", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_SWORD, 0x5A },
+    { 400001, "Progressive Armor", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_ARMOR, 0x58 },
+    { 400002, "Progressive Shield", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_SHIELD, 0x59 },
+    { 400003, "Spring Elixir", ap_item_type_t::inventory, AP_ITEM_SPRING_ELIXIR, 0x4D },
     { 400004, "Mattock", ap_item_type_t::inventory, 0x89, 0x50 },
     { 400005, "Wingboots", ap_item_type_t::inventory, 0x8F, 0x55 },
     { 400006, "Key Jack", ap_item_type_t::inventory, 0x87, 0x00 },
@@ -56,8 +65,8 @@ static ap_item_t AP_ITEMS[] = {
     { 400026, "Hourglass", ap_item_type_t::inventory, 0x8D, 0x56 },
     { 400027, "Red Potion", ap_item_type_t::inventory, 0x90, 0x4B },
     { 400028, "Elixir", ap_item_type_t::inventory, 0x92, 0x4D },
-    { 400029, "Glove", ap_item_type_t::world, 0x9B, 0x5F },
-    { 400030, "Ointment", ap_item_type_t::world, 0x9A, 0x4E },
-    { 400031, "Poison", ap_item_type_t::world, 0x99, 0x5E },
+    { 400029, "Glove", ap_item_type_t::world, AP_ITEM_GLOVE, 0x5F },
+    { 400030, "Ointment", ap_item_type_t::world, AP_ITEM_OINTMENT, 0x4E },
+    { 400031, "Poison", ap_item_type_t::world, AP_ITEM_POISON, 0x5E },
     { 400032, "Killed Evil One", ap_item_type_t::boss_kill, 0x00, 0x00 },
 };

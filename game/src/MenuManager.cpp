@@ -35,7 +35,7 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
     : m_info(info)
 {
     m_framebuffer = OTexture::createRenderTarget({ PPU::SCREEN_W, PPU::SCREEN_H });
-    m_sfx_volume = (float)get_user_setting("music_volume", 4) / 8.0f;
+    m_sfx_volume = (float)get_user_setting("sound_volume", 4) / 8.0f;
 
     // We create instances of the sounds so we don't have overlay when we replay it fast. We stop previous sound
     m_action_sfx = m_info.action_sfx->createInstance();

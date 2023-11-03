@@ -109,6 +109,7 @@ void Emulator::render()
 
     m_ppu->render();
     m_cpu->render();
+    m_ram->render();
 }
 
 

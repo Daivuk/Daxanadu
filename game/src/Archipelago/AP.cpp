@@ -1,6 +1,7 @@
 #include "AP.h"
 #include "APItems.h"
 #include "APLocations.h"
+#include "ExternalInterface.h"
 #include "Patcher.h"
 #include "version.h"
 
@@ -150,24 +151,51 @@ void AP::patch_items()
 	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
 	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
 	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3
+#define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
+#define SPRITE_ADDR(rom_addr, index) (m_info.rom + rom_addr - 0x10 + index * 16)
 
 	// Replace Crystal with spring elixir
-	copy_sprite(m_info.rom + 0x00028500 + 0x34 * 16, m_info.rom + 0x00028500 + 0x12 * 16, false, true);
-	copy_sprite(m_info.rom + 0x00028500 + 0x35 * 16, m_info.rom + 0x00028500 + 0x13 * 16, false, true);
-	copy_sprite(m_info.rom + 0x00028500 + 0x36 * 16, m_info.rom + 0x00028500 + 0x14 * 16, false, true);
-	copy_sprite(m_info.rom + 0x00028500 + 0x37 * 16, m_info.rom + 0x00028500 + 0x15 * 16, false, true);
+	copy_sprite(TILE_ADDR(0x34), TILE_ADDR(0x12), false, true);
+	copy_sprite(TILE_ADDR(0x35), TILE_ADDR(0x13), false, true);
+	copy_sprite(TILE_ADDR(0x36), TILE_ADDR(0x14), false, true);
+	copy_sprite(TILE_ADDR(0x37), TILE_ADDR(0x15), false, true);
 
 	// Replace Lamp with glove
-	copy_sprite(m_info.rom + 0x0001CD26 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x16 * 16, false, false, 4);
-	copy_sprite(m_info.rom + 0x0001CD26 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x17 * 16, false, false, -4);
-	copy_sprite(m_info.rom + 0x0001CD26 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x18 * 16, false, false, 4);
-	copy_sprite(m_info.rom + 0x0001CD26 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x19 * 16, false, false, -4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0), TILE_ADDR(0x16), false, false, 4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0), TILE_ADDR(0x17), false, false, -4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 1), TILE_ADDR(0x18), false, false, 4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 1), TILE_ADDR(0x19), false, false, -4);
 
 	// Replace fire crystal tiles with ointment
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x40 * 16, false, false);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 0 * 16, m_info.rom + 0x00028500 + 0x41 * 16, true, false);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x42 * 16, false, false);
-	copy_sprite(m_info.rom + 0x0001CE06 - 0x10 + 1 * 16, m_info.rom + 0x00028500 + 0x43 * 16, true, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0), TILE_ADDR(0x40), false, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0), TILE_ADDR(0x41), true, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 1), TILE_ADDR(0x42), false, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 1), TILE_ADDR(0x43), true, false);
+
+	// Replace battle helmet sprites for Magic Shield tiles
+	copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0), false, false);
+	copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 1), false, false);
+	copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 2), false, false);
+	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 3), false, false);
+
+	// Rename battle helmet to progressive shield in the popup dialog
+	memcpy(ROM_LO(13, 0xB243), "I've\xfdgot\xfeprogressive\xfeshield", 27);
+
+	// World items
+	{
+		// Progressive shield (We're lucky this code fits perfectly to replace previous one)
+		m_info.patcher->patch(15, 0xC717, 0, {
+			OP_LDA_ABS(0x100),
+			OP_PHA(),
+			OP_LDX_IMM(12),
+			OP_JSR(0xCC1A), // Switch bank
+			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
+			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+			OP_PLA(),
+			OP_TAX(),
+			OP_JMP_ABS(0xCC1A), // Switch bank
+		});
+	}
 
 	// Prepare space in unused area for all the new item texts.
 	// Each location will have item name hardcoded + slot name.
@@ -184,30 +212,178 @@ void AP::patch_items()
 	memcpy(ROM_LO(12, 0xAE4D), ROM_LO(12, 0x9D4D), 16 * 6);
 
 	// Add new items (There are unused items in the game, but we will avoid them incase they might trigger buffs/nerfs we don't know about)
-	ADD_ITEM("PROG SWORD", 0x96, 0x4D, 0x4E, 0x4F, 0x50);
-	ADD_ITEM("PROG ARMOR", 0x97, 0x5D, 0x5E, 0x5F, 0x60);
-
-	ADD_ITEM("PROG SHIELD", 0x98, 0x69, 0x6A, 0x6B, 0x6C);
-	ADD_ITEM("POISON", 0x99, 0x30, 0x31, 0x32, 0x33);
-	ADD_ITEM("OINTMENT", 0x9A, 0x40, 0x41, 0x42, 0x43);
-	ADD_ITEM("GLOVE", 0x9B, 0x16, 0x17, 0x18, 0x19);
-
-	ADD_ITEM("SPRING ELIXIR", 0x9C, 0x12, 0x13, 0x14, 0x15);
+	ADD_ITEM("PROG SWORD", AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
+	ADD_ITEM("PROG ARMOR", AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
+	ADD_ITEM("PROG SHIELD", AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
+	ADD_ITEM("POISON", AP_ITEM_POISON, 0x30, 0x31, 0x32, 0x33);
+	ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
+	ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
+	ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
 
 	// Write new code in bank12 that allows to jump further to index the new text
-	auto addr = m_info.patcher->patch_new_code(12, {
-		OP_BCC(4),
+	{
+		auto addr = m_info.patcher->patch_new_code(12, {
+			OP_BCC(4),
 
-		OP_LDY_IMM(0xAE),
-		OP_STY_ZPG(0xED),
+			OP_LDY_IMM(0xAE),
+			OP_STY_ZPG(0xED),
 
-		OP_TAY(),
-		OP_JMP_ABS(0x8E9B),
+			OP_TAY(),
+			OP_JMP_ABS(0x8E9B),
+		});
+
+		m_info.patcher->patch(12, 0x8C50, 0, {
+			OP_JMP_ABS(addr),
+		});
+	}
+
+	// 15:C8CD ; Description: Stores an item in the next free slot in the item directory
+
+	// Create a function that checks what inventory item is being added.
+	// So we can change it to something else, like if we are adding progressive sword, add
+	// the next sword instead.
+	{
+		auto choose_prog_sword = m_info.patcher->patch_new_code(12, {
+			OP_LDA_IMM(0), // Initialize A to zero
+			OP_LDY_ABS(0x03BD), // Active weapon
+			OP_BMI(2), // If active weapon is FF, skip
+			OP_LDA_IMM(1), // Active weapon is set, so set A to 1
+			OP_CLC(),
+			OP_ADC_ABS(0x03C2), // Add number of weapons to A
+			OP_RTS(), // A is now the item id to add
+		});
+
+		auto choose_prog_armor = m_info.patcher->patch_new_code(12, {
+			OP_LDA_ABS(0x03C3), // number of armor to A
+			OP_CLC(),
+			OP_ADC_IMM(0x20), // armor IDs start at 32
+			OP_RTS(), // A is now the item id to add
+		});
+
+		auto choose_prog_shield = m_info.patcher->patch_new_code(12, {
+			OP_LDA_IMM(0), // Initialize A to zero
+			OP_LDY_ABS(0x03BF), // Active shield
+			OP_BMI(2), // If active shield is FF, skip
+			OP_LDA_IMM(1), // Active shield is set, so set A to 1
+			OP_CLC(),
+			OP_ADC_ABS(0x03C4), // Add number of shields to A
+			OP_CLC(),
+			OP_ADC_IMM(0x40), // shields IDs start at 64
+			OP_RTS(), // A is now the item id to add
+		});
+
+		auto give_item = m_info.patcher->patch_new_code(12, {
+			// Check if progression sword
+			OP_CMP_IMM(AP_ITEM_PROGRESSIVE_SWORD),
+			OP_BNE(3),
+			OP_JSR(choose_prog_sword),
+
+			// Check if progressive armor
+			OP_CMP_IMM(AP_ITEM_PROGRESSIVE_ARMOR),
+			OP_BNE(3),
+			OP_JSR(choose_prog_armor),
+
+			// Check if progressive shield
+			OP_CMP_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
+			OP_BNE(3),
+			OP_JSR(choose_prog_shield),
+
+			// Store final result
+			OP_STA_ZPG(0xEE),
+			OP_JSR(0xF785),
+			OP_TAX(),
+			OP_RTS(),
+		});
+
+		m_info.patcher->patch(12, 0x9B01, 0, {
+			OP_JSR(give_item),
+			OP_NOP(),
+			OP_NOP(),
+		});
+	}
+
+	// Spring elixir quest
+	{
+		m_info.patcher->patch(12, 0xA1B3, 0, { AP_ITEM_SPRING_ELIXIR }); // Check if has
+		m_info.patcher->patch(12, 0xA1BC, 0, { AP_ITEM_SPRING_ELIXIR }); // Give
+
+		// Remove item, but checks first if it's not selected, and remove it from selected
+		auto remove_item = m_info.patcher->patch_new_code(12, {
+			// Check if the item we remove is selected item
+			OP_PHA(),
+			OP_AND_IMM(0x1F),
+			OP_CMP_ABS(0x03C1),
+			OP_BEQ(4),
+
+			// Normal remove item function
+			OP_PLA(),
+			OP_JMP_ABS(0x9A6A),
+
+			// Clears selected item
+			OP_PLA(),
+			OP_JMP_ABS(0xC4BF), // Removes equip item
+		});
+		m_info.patcher->patch(12, 0x865A, 1, { PATCH_ADDR(remove_item) });
+	}
+
+	// Don't remove keys when used
+	m_info.patcher->patch(15, 0xEBD9, 0, {
+		OP_NOP(), OP_NOP(),
+		OP_NOP(), OP_NOP(), OP_NOP(),
+		OP_NOP(), OP_NOP(), OP_NOP(),
 	});
 
-	m_info.patcher->patch(12, 0x8C50, 0, {
-		OP_JMP_ABS(addr),
+	// Don't remove mattock when used
+	m_info.patcher->patch(15, 0xC64C, 0, {
+		OP_NOP(), OP_NOP(), OP_NOP(),
 	});
+
+	// Wingboots
+	{
+		// Don't remove wing boots when used,
+		// but remove them from selected item and put them back into inventory.
+		m_info.patcher->patch(15, 0xC581, 0, {
+			OP_NOP(), OP_NOP(), OP_NOP(),
+		});
+
+		// Trigger a reuse timeout of 2mins
+	}
+
+	// Item inventory limit to 10
+	{
+		// Persistent inventory items
+		//   Key J
+		//   Key Jo
+		//   Key Q
+		//   Key K
+		//   Key A
+		//   Mattock
+		//   Spring Elixir
+		//   Wingboots
+
+		// Non persistent
+		//   Potion
+		//   Hourglass
+
+		// Max number of item
+		m_info.patcher->patch(12, 0x847D, 4, { 10 });
+
+		// Check at store
+		//m_info.patcher->patch(12, 0x846C, 1, { 6 }); // Where it displays "you cant carry more"
+		m_info.patcher->patch(12, 0x8405, 0, { OP_JMP_ABS(0x8439) });
+
+		// Add to inventory
+		m_info.patcher->patch(15, 0xC8D0, 1, { 10 });
+
+		// Make item inventory window bigger
+		m_info.patcher->patch(12, 0x8AA2, 1, { 0x08 }); // Inventory screen y position
+		m_info.patcher->patch(12, 0x8AFF, 1, { 0x06 }); // y position of items dialog
+		m_info.patcher->patch(12, 0x8B09, 1, { 0x16 }); // height of items dialog
+
+		// Change the redraw area after it's closed
+	}
+
+	// Potion and Hourglass can stack (No limit. well... 255)
 }
 
 

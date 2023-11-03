@@ -14,19 +14,30 @@
 #define OP_LDA_IMM(value) 0xA9, value
 #define OP_LDA_ZPG(addr) 0xA5, addr
 #define OP_STA_ZPG(addr) 0x85, addr
+#define OP_STA_ABS(addr) 0x8D, PATCH_ADDR(addr)
+#define OP_STA_ABSX(addr) 0x9D, PATCH_ADDR(addr)
 #define OP_LDY_IMM(value) 0xA0, value
+#define OP_LDY_ABS(addr) 0xAC, PATCH_ADDR(addr)
 #define OP_STY_ZPG(addr) 0x84, addr
+#define OP_LDX_ABS(addr) 0xAE, PATCH_ADDR(addr)
+#define OP_LDX_IMM(value) 0xA2, value
 #define OP_AND_IMM(value) 0x29, value
-#define OP_BNE(rel) 0xD0, rel
+#define OP_CMP_IMM(value) 0xC9, value
+#define OP_CMP_ABS(addr) 0xCD, PATCH_ADDR(addr)
+#define OP_BMI(rel) 0x30, rel
 #define OP_BCC(rel) 0x90, rel
+#define OP_BNE(rel) 0xD0, rel
+#define OP_BEQ(rel) 0xF0, rel
 #define OP_JMP_ABS(addr) 0x4C, PATCH_ADDR(addr)
 #define OP_JSR(addr) 0x20, PATCH_ADDR(addr)
 #define OP_RTS() 0x60
 #define OP_NOP() 0xEA
 #define OP_CLC() 0x18
 #define OP_ADC_IMM(value) 0x69, value
+#define OP_ADC_ABS(addr) 0x6D, PATCH_ADDR(addr)
 #define OP_SBC_IMM(value) 0xE9, value
 #define OP_TAY() 0xA8
+#define OP_TAX() 0xAA
 #define OP_INC_ZPG(addr) 0xE6, addr
 
 
