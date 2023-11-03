@@ -179,8 +179,9 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 3), false, false);
 
 	// Rename battle helmet to progressive shield in the popup dialog
-	memcpy(ROM_LO(13, 0xB243), "I've\xfdgot\xfeProgressive\xfeShield", 27);
-	memcpy(ROM_LO(13, 0xB25F), "I've\xfdgot\xfeProgressive\xfeSword.", 27);
+	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
+	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
+	memcpy(ROM_LO(13, 0xB229), "Ive""\xfd""got""\xfe""Progressive""\xfe""Armor", 25);
 
 	// World items
 	{
@@ -204,6 +205,19 @@ void AP::patch_items()
 			OP_LDX_IMM(12),
 			OP_JSR(0xCC1A), // Switch bank
 			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
+			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+			OP_PLA(),
+			OP_TAX(),
+			OP_JMP_ABS(0xCC1A), // Switch bank
+		});
+
+		// Progressive armor (We're lucky this code fits perfectly to replace previous one)
+		m_info.patcher->patch(15, 0xC6F7, 0, {
+			OP_LDA_ABS(0x100),
+			OP_PHA(),
+			OP_LDX_IMM(12),
+			OP_JSR(0xCC1A), // Switch bank
+			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_ARMOR),
 			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
 			OP_PLA(),
 			OP_TAX(),
@@ -267,13 +281,6 @@ void AP::patch_items()
 			OP_RTS(), // A is now the item id to add
 		});
 
-		auto choose_prog_armor = m_info.patcher->patch_new_code(12, {
-			OP_LDA_ABS(0x03C3), // number of armor to A
-			OP_CLC(),
-			OP_ADC_IMM(0x20), // armor IDs start at 32
-			OP_RTS(), // A is now the item id to add
-		});
-
 		auto choose_prog_shield = m_info.patcher->patch_new_code(12, {
 			OP_LDA_IMM(0), // Initialize A to zero
 			OP_LDY_ABS(0x03BF), // Active shield
@@ -283,6 +290,18 @@ void AP::patch_items()
 			OP_ADC_ABS(0x03C4), // Add number of shields to A
 			OP_CLC(),
 			OP_ADC_IMM(0x40), // shields IDs start at 64
+			OP_RTS(), // A is now the item id to add
+		});
+
+		auto choose_prog_armor = m_info.patcher->patch_new_code(12, {
+			OP_LDA_IMM(0), // Initialize A to zero
+			OP_LDY_ABS(0x03BE), // Active armor
+			OP_BMI(2), // If active armor is FF, skip
+			OP_LDA_IMM(1), // Active armor is set, so set A to 1
+			OP_CLC(),
+			OP_ADC_ABS(0x03C3), // Add number of armors to A
+			OP_CLC(),
+			OP_ADC_IMM(0x20), // armors IDs start at 32
 			OP_RTS(), // A is now the item id to add
 		});
 
