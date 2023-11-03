@@ -179,10 +179,24 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 3), false, false);
 
 	// Rename battle helmet to progressive shield in the popup dialog
-	memcpy(ROM_LO(13, 0xB243), "I've\xfdgot\xfeprogressive\xfeshield", 27);
+	memcpy(ROM_LO(13, 0xB243), "I've\xfdgot\xfeProgressive\xfeShield", 27);
+	memcpy(ROM_LO(13, 0xB25F), "I've\xfdgot\xfeProgressive\xfeSword.", 27);
 
 	// World items
 	{
+		// Progressive sword (We're lucky this code fits perfectly to replace previous one)
+		m_info.patcher->patch(15, 0xC737, 0, {
+			OP_LDA_ABS(0x100),
+			OP_PHA(),
+			OP_LDX_IMM(12),
+			OP_JSR(0xCC1A), // Switch bank
+			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SWORD),
+			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+			OP_PLA(),
+			OP_TAX(),
+			OP_JMP_ABS(0xCC1A), // Switch bank
+		});
+
 		// Progressive shield (We're lucky this code fits perfectly to replace previous one)
 		m_info.patcher->patch(15, 0xC717, 0, {
 			OP_LDA_ABS(0x100),
