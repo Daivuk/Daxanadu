@@ -206,6 +206,12 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x75), SPRITE_ADDR(0x00019442, 10), false, false); // Jo top
 	copy_sprite(TILE_ADDR(0x76), SPRITE_ADDR(0x00019442, 11), false, false); // Jo bottom
 
+	// Replace rest of unused night monster sprites with spring elixir tiles
+	copy_sprite(TILE_ADDR(0x34), SPRITE_ADDR(0x00019442, 12), false, true);
+	copy_sprite(TILE_ADDR(0x35), SPRITE_ADDR(0x00019442, 13), false, true);
+	copy_sprite(TILE_ADDR(0x36), SPRITE_ADDR(0x00019442, 14), false, true);
+	copy_sprite(TILE_ADDR(0x37), SPRITE_ADDR(0x00019442, 15), false, true);
+
 	// Rename battle helmet to progressive shield in the popup dialog
 	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
 	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
@@ -267,6 +273,7 @@ void AP::patch_items()
 		auto fire_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCF, 0x00 });
 		auto death_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xD0, 0x00 });
 		auto tilte_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xD1, 0x00 });
+		auto spring_elixir_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xD2, 0x00 });
 
 		// Table continue
 		auto dialog_lo = m_info.patcher->patch_new_code(12, {
@@ -284,6 +291,7 @@ void AP::patch_items()
 			LO(fire_dialog),
 			LO(death_dialog),
 			LO(tilte_dialog),
+			LO(spring_elixir_dialog),
 		});
 		auto dialog_hi = m_info.patcher->patch_new_code(12, {
 			HI(key_jack_dialog),
@@ -300,6 +308,7 @@ void AP::patch_items()
 			HI(fire_dialog),
 			HI(death_dialog),
 			HI(tilte_dialog),
+			HI(spring_elixir_dialog),
 		});
 
 		// We want to add dialogs for the new items. They are tightly packed into the
@@ -380,6 +389,8 @@ void AP::patch_items()
 		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_ACE, 0x1432, 0, 1, 2, 3, 1);
 		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_JOKER, 0x1432, 10, 1, 11, 3, 1);
 
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_SPRING_ELIXIR, 0x1432, 12, 13, 14, 15, 2);
+
 #define TOUCHED_RING(dialog_id, item_mask) m_info.patcher->patch_new_code(15, { \
 			OP_LDA_IMM(dialog_id), \
 			OP_JSR(0xF859), \
@@ -393,7 +404,7 @@ void AP::patch_items()
 		})
 
 		// We're wasting a lot of precious space here...
-#define TOUCHED_KEY(dialog_id, item_id) m_info.patcher->patch_new_code(15, { \
+#define TOUCHED_ITEM(dialog_id, item_id) m_info.patcher->patch_new_code(15, { \
 			OP_TXA(), \
 			OP_PHA(), \
 			OP_LDA_IMM(dialog_id), \
@@ -420,11 +431,13 @@ void AP::patch_items()
 		auto touched_dworf_ring_addr = TOUCHED_RING(0x9E, 0x20);
 		auto touched_demons_ring_addr = TOUCHED_RING(0x9F, 0x10);
 
-		auto touched_key_jack_addr = TOUCHED_KEY(0x98, 0x87);
-		auto touched_key_queen_addr = TOUCHED_KEY(0x99, 0x86);
-		auto touched_key_king_addr = TOUCHED_KEY(0x9A, 0x85);
-		auto touched_key_ace_addr = TOUCHED_KEY(0x9B, 0x84);
-		auto touched_key_joker_addr = TOUCHED_KEY(0x9C, 0x88);
+		auto touched_key_jack_addr = TOUCHED_ITEM(0x98, 0x87);
+		auto touched_key_queen_addr = TOUCHED_ITEM(0x99, 0x86);
+		auto touched_key_king_addr = TOUCHED_ITEM(0x9A, 0x85);
+		auto touched_key_ace_addr = TOUCHED_ITEM(0x9B, 0x84);
+		auto touched_key_joker_addr = TOUCHED_ITEM(0x9C, 0x88);
+
+		auto touched_spring_elixir_addr = TOUCHED_ITEM(0xA6, AP_ITEM_SPRING_ELIXIR);
 
 		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
 			OP_CMP_IMM(0x57), // Magical Rod
@@ -443,6 +456,11 @@ void AP::patch_items()
 			OP_CMP_IMM(AP_ENTITY_KEY_KING), OP_BNE(3), OP_JMP_ABS(touched_key_king_addr),
 			OP_CMP_IMM(AP_ENTITY_KEY_ACE), OP_BNE(3), OP_JMP_ABS(touched_key_ace_addr),
 			OP_CMP_IMM(AP_ENTITY_KEY_JOKER), OP_BNE(3), OP_JMP_ABS(touched_key_joker_addr),
+
+			// Magics
+
+			// Spring Elixir
+			OP_CMP_IMM(AP_ENTITY_SPRING_ELIXIR), OP_BNE(3), OP_JMP_ABS(touched_spring_elixir_addr),
 			
 			OP_JMP_ABS(0xC76F), // Go back
 		});

@@ -194,6 +194,7 @@ void Patcher::apply_new_strings()
         "I've got""\xFE""Fire.", // CF
         "I've got""\xFE""Death.", // D0
         "I've got""\xFE""Tilte.", // D1
+        "I've got the""\xFE""Spring Elixir.", // D2
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;

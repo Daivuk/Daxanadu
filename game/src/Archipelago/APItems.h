@@ -22,6 +22,7 @@
 #define AP_ENTITY_KEY_KING 0x36
 #define AP_ENTITY_KEY_ACE 0x46
 #define AP_ENTITY_KEY_JOKER 0x2B
+#define AP_ENTITY_SPRING_ELIXIR 0x16
 
 
 enum class ap_item_type_t
@@ -50,7 +51,7 @@ static ap_item_t AP_ITEMS[] = {
     { 400000, "Progressive Sword", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_SWORD, 0x5A },
     { 400001, "Progressive Armor", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_ARMOR, 0x58 },
     { 400002, "Progressive Shield", ap_item_type_t::inventory, AP_ITEM_PROGRESSIVE_SHIELD, 0x59 },
-    { 400003, "Spring Elixir", ap_item_type_t::inventory, AP_ITEM_SPRING_ELIXIR, 0x4D },
+    { 400003, "Spring Elixir", ap_item_type_t::inventory, AP_ITEM_SPRING_ELIXIR, AP_ENTITY_SPRING_ELIXIR },
     { 400004, "Mattock", ap_item_type_t::inventory, 0x89, 0x50 },
     { 400005, "Wingboots", ap_item_type_t::inventory, 0x8F, 0x55 },
     { 400006, "Key Jack", ap_item_type_t::inventory, 0x87, AP_ENTITY_KEY_JACK },
