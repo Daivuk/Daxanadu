@@ -12,10 +12,11 @@
 #define AP_ITEM_GLOVE 0x9B
 #define AP_ITEM_SPRING_ELIXIR 0x9C
 
-#define AP_ENTITY_RING_OF_ELF 0xFF
-#define AP_ENTITY_RING_OF_RUBY 0x12 // replaces unused snake
-#define AP_ENTITY_RING_OF_DWORF 0xFF
-#define AP_ENTITY_DEMONS_RING 0xFF
+// Replace unused entities
+#define AP_ENTITY_RING_OF_ELF 0x27
+#define AP_ENTITY_RING_OF_RUBY 0x12
+#define AP_ENTITY_RING_OF_DWORF 0x1D
+#define AP_ENTITY_DEMONS_RING 0x24
 
 
 enum class ap_item_type_t
@@ -53,8 +54,8 @@ static ap_item_t AP_ITEMS[] = {
     { 400009, "Key Joker", ap_item_type_t::inventory, 0x88, 0x00 },
     { 400010, "Key Ace", ap_item_type_t::inventory, 0x84, 0x00 },
     { 400011, "Ring of Ruby", ap_item_type_t::inventory, 0x81, AP_ENTITY_RING_OF_RUBY },
-    { 400012, "Ring of Dworf", ap_item_type_t::inventory, 0x82, 0x00 },
-    { 400013, "Demons Ring", ap_item_type_t::inventory, 0x83, 0x00 },
+    { 400012, "Ring of Dworf", ap_item_type_t::inventory, 0x82, AP_ENTITY_RING_OF_DWORF },
+    { 400013, "Demons Ring", ap_item_type_t::inventory, 0x83, AP_ENTITY_DEMONS_RING },
     { 400014, "Black Onyx", ap_item_type_t::inventory, 0x94, 0x49 },
     { 400015, "Sky Spring Flow", ap_item_type_t::spring, 0x00, 0x00 },
     { 400016, "Tower of Fortress Spring Flow", ap_item_type_t::spring, 0x00, 0x00 },
@@ -64,7 +65,7 @@ static ap_item_t AP_ITEMS[] = {
     { 400020, "Fire", ap_item_type_t::inventory, 0x62, 0x00 },
     { 400021, "Death", ap_item_type_t::inventory, 0x63, 0x00 },
     { 400022, "Tilte", ap_item_type_t::inventory, 0x64, 0x00 },
-    { 400023, "Ring of Elf", ap_item_type_t::inventory, 0x80, 0x00 },
+    { 400023, "Ring of Elf", ap_item_type_t::inventory, 0x80, AP_ENTITY_RING_OF_ELF },
     { 400024, "Magical Rod", ap_item_type_t::inventory, 0x8A, 0x57 },
     { 400025, "Pendant", ap_item_type_t::inventory, 0x93, 0x4A },
     { 400026, "Hourglass", ap_item_type_t::inventory, 0x8D, 0x56 },

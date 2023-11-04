@@ -181,10 +181,10 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 3), false, false);
 
 	// Replace snake monster (unused) with ring tiles
-	copy_sprite(TILE_ADDR(0x06), SPRITE_ADDR(0x00018C32, 0), false, false); // Ring of elf cap
-	copy_sprite(TILE_ADDR(0x07), SPRITE_ADDR(0x00018C32, 1), false, false);
-	copy_sprite(TILE_ADDR(0x08), SPRITE_ADDR(0x00018C32, 2), false, false); // Ruby ring cap
-	copy_sprite(TILE_ADDR(0x09), SPRITE_ADDR(0x00018C32, 3), false, false);
+	copy_sprite(TILE_ADDR(0x06), SPRITE_ADDR(0x00018C32, 0), false, true); // Ring of elf cap
+	copy_sprite(TILE_ADDR(0x07), SPRITE_ADDR(0x00018C32, 1), false, true);
+	copy_sprite(TILE_ADDR(0x08), SPRITE_ADDR(0x00018C32, 2), false, true); // Ruby ring cap
+	copy_sprite(TILE_ADDR(0x09), SPRITE_ADDR(0x00018C32, 3), false, true);
 	copy_sprite(TILE_ADDR(0x0A), SPRITE_ADDR(0x00018C32, 4), false, false); // Ring of dworf cap
 	copy_sprite(TILE_ADDR(0x0B), SPRITE_ADDR(0x00018C32, 5), false, false);
 	copy_sprite(TILE_ADDR(0x04), SPRITE_ADDR(0x00018C32, 6), false, false); // Demons ring cap
@@ -238,15 +238,54 @@ void AP::patch_items()
 			OP_JMP_ABS(0xCC1A), // Switch bank
 		});
 
-		// 0x98
-		auto ive_got_ruby_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 });
+		// Start at ID 0x98
+		auto key_jack_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 });
+		auto key_queen_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC5, 0x00 });
+		auto key_king_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC6, 0x00 });
+		auto key_joker_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 });
+		auto key_ace_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC8, 0x00 });
+		auto ruby_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 });
+		auto dworf_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCA, 0x00 });
+		auto demons_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCB, 0x00 });
+		auto elf_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCC, 0x00 });
+		auto deluge_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCD, 0x00 });
+		auto thunder_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCE, 0x00 });
+		auto fire_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCF, 0x00 });
+		auto death_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xD0, 0x00 });
+		auto tilte_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xD1, 0x00 });
 
 		// Table continue
 		auto dialog_lo = m_info.patcher->patch_new_code(12, {
-			LO(ive_got_ruby_ring_dialog),
+			LO(key_jack_dialog),
+			LO(key_queen_dialog),
+			LO(key_king_dialog),
+			LO(key_joker_dialog),
+			LO(key_ace_dialog),
+			LO(ruby_ring_dialog),
+			LO(dworf_ring_dialog),
+			LO(demons_ring_dialog),
+			LO(elf_ring_dialog),
+			LO(deluge_dialog),
+			LO(thunder_dialog),
+			LO(fire_dialog),
+			LO(death_dialog),
+			LO(tilte_dialog),
 		});
 		auto dialog_hi = m_info.patcher->patch_new_code(12, {
-			HI(ive_got_ruby_ring_dialog),
+			HI(key_jack_dialog),
+			HI(key_queen_dialog),
+			HI(key_king_dialog),
+			HI(key_joker_dialog),
+			HI(key_ace_dialog),
+			HI(ruby_ring_dialog),
+			HI(dworf_ring_dialog),
+			HI(demons_ring_dialog),
+			HI(elf_ring_dialog),
+			HI(deluge_dialog),
+			HI(thunder_dialog),
+			HI(fire_dialog),
+			HI(death_dialog),
+			HI(tilte_dialog),
 		});
 
 		// We want to add dialogs for the new items. They are tightly packed into the
@@ -280,60 +319,76 @@ void AP::patch_items()
 		});
 
 		// Ring of Ruby (Replaces unused snake monster)
-		ROM_LO(14, 0xB407)[0x12 * 2 + 0] = 0x10; // 16x16 pixels
-		ROM_LO(14, 0xB407)[0x12 * 2 + 1] = 0x10;
-		ROM_LO(14, 0xB4DF)[0x12] = 0; // 16x16 pixels
-		ROM_LO(14, 0xB544)[0x12] = 5; // Item type
-		ROM_LO(14, 0xB5A9)[0x12] = 0; // No hit points
-		ROM_LO(14, 0xB60E)[0x12] = 0; // No xp
-		ROM_LO(14, 0xB672)[0x12] = 0xFF; // No reward
-		ROM_LO(14, 0xB6D7)[0x12] = 0; // No damage
-		ROM_LO(14, 0xB73B)[0x12] = 0xFC; // This is probably a mask
-		ROM_LO(14, 0xAD2D)[0x12 * 2 + 0] = 0x4F; // Behaviour (copy from Magical Rod)
-		ROM_LO(14, 0xAD2D)[0x12 * 2 + 1] = 0xB2;
-		ROM_LO(14, 0x8087)[0x12 * 2 + 0] = 0x4A; // Entity update function (copy from Magical Rod)
-		ROM_LO(14, 0x8087)[0x12 * 2 + 1] = 0xA3;
-		ROM_LO(6, 0x8002)[0x12 * 2 + 0] = 0x22; // Use snake spritesheet (Now rings)
-		ROM_LO(6, 0x8002)[0x12 * 2 + 1] = 0x0C;
-		int phase_index = ROM_LO(14, 0x8C9F)[0x12];
-		int frames_addr = ROM_LO(7, 0x9036)[phase_index * 2 + 0];
-		frames_addr |= ROM_LO(7, 0x9036)[phase_index * 2 + 1] << 8;
-		frames_addr += 0x8000;
-		int pal = 1;
-		ROM_LO(7, frames_addr)[0] = 0x11; // 2x2
-		ROM_LO(7, frames_addr)[1] = 0x00; // x offset
-		ROM_LO(7, frames_addr)[2] = 0x00; // y offset
-		ROM_LO(7, frames_addr)[3] = 0x08; // unknown, other items use 8
-		ROM_LO(7, frames_addr)[4] = 2; // Sprite ID
-		ROM_LO(7, frames_addr)[5] = pal; // Palette
-		ROM_LO(7, frames_addr)[6] = 3; // Sprite ID
-		ROM_LO(7, frames_addr)[7] = pal; // Palette
-		ROM_LO(7, frames_addr)[8] = 8; // Sprite ID
-		ROM_LO(7, frames_addr)[9] = pal; // Palette
-		ROM_LO(7, frames_addr)[10] = 9; // Sprite ID
-		ROM_LO(7, frames_addr)[11] = pal; // Palette
 
-		auto touched_ruby_ring_addr = m_info.patcher->patch_new_code(15, {
-			OP_LDA_IMM(0x98), // "I've got the Ring of Ruby."
-			OP_JSR(0xF859), // Show dialog
-			0x0C, 0x41, 0x82, // Those are not nopes. Invalid op codes, but without them, things don't work
-			OP_LDA_IMM(0x08), // Pick up sound
-			OP_JSR(0xD0E4), // Play the sound
-			OP_LDA_ABS(0x042C), // Persistent inventory
-			OP_ORA_IMM(0x40), // Add ring of ruby
-			OP_STA_ABS(0x042C),
-			OP_RTS(),
-		});
+#define REPLACE_ENTITY_WITH_ITEM(entity_id, sprite_sheet, sprite0, sprite1, sprite2, sprite3, pal) \
+		{ \
+			ROM_LO(14, 0xB407)[entity_id * 2 + 0] = 0x10; /* 16x16 pixels */ \
+			ROM_LO(14, 0xB407)[entity_id * 2 + 1] = 0x10; \
+			ROM_LO(14, 0xB4DF)[entity_id] = 0; /* 16x16 pixels */ \
+			ROM_LO(14, 0xB544)[entity_id] = 5; /* Item type */ \
+			ROM_LO(14, 0xB5A9)[entity_id] = 0; /* No hit points */ \
+			ROM_LO(14, 0xB60E)[entity_id] = 0; /* No xp */ \
+			ROM_LO(14, 0xB672)[entity_id] = 0xFF; /* No reward */ \
+			ROM_LO(14, 0xB6D7)[entity_id] = 0; /* No damage */ \
+			ROM_LO(14, 0xB73B)[entity_id] = 0xFC; /* This is probably a mask */ \
+			ROM_LO(14, 0xAD2D)[entity_id * 2 + 0] = 0x4F; /* Behaviour (copy from Magical Rod) */ \
+			ROM_LO(14, 0xAD2D)[entity_id * 2 + 1] = 0xB2; \
+			ROM_LO(14, 0x8087)[entity_id * 2 + 0] = 0x4A; /* Entity update function (copy from Magical Rod) */ \
+			ROM_LO(14, 0x8087)[entity_id * 2 + 1] = 0xA3; \
+			ROM_LO(6, 0x8002)[entity_id * 2 + 0] = LO(sprite_sheet); \
+			ROM_LO(6, 0x8002)[entity_id * 2 + 1] = HI(sprite_sheet); \
+			int phase_index = ROM_LO(14, 0x8C9F)[entity_id]; \
+			int frames_addr = ROM_LO(7, 0x9036)[phase_index * 2 + 0]; \
+			frames_addr |= ROM_LO(7, 0x9036)[phase_index * 2 + 1] << 8; \
+			frames_addr += 0x8000; \
+			ROM_LO(7, frames_addr)[0] = 0x11; /* 2x2 */ \
+			ROM_LO(7, frames_addr)[1] = 0x00; /* x offset */ \
+			ROM_LO(7, frames_addr)[2] = 0x00; /* y offset */ \
+			ROM_LO(7, frames_addr)[3] = 0x08; /* unknown, other items use 8 */ \
+			ROM_LO(7, frames_addr)[4] = sprite0; /* Sprite ID */ \
+			ROM_LO(7, frames_addr)[5] = pal; /* Palette */ \
+			ROM_LO(7, frames_addr)[6] = sprite1; /* Sprite ID */ \
+			ROM_LO(7, frames_addr)[7] = pal; /* Palette */ \
+			ROM_LO(7, frames_addr)[8] = sprite2; /* Sprite ID */ \
+			ROM_LO(7, frames_addr)[9] = pal; /* Palette */ \
+			ROM_LO(7, frames_addr)[10] = sprite3; /* Sprite ID */ \
+			ROM_LO(7, frames_addr)[11] = pal; /* Palette */ \
+		}
+
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_ELF, 0x0C22, 0, 1, 8, 9, 0); // Elf
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_RUBY, 0x0C22, 2, 3, 8, 9, 0); // Ruby
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_DWORF, 0x0C22, 4, 5, 8, 9, 2); // Dworf
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_DEMONS_RING, 0x0C22, 6, 7, 8, 9, 1); // Demons
+
+#define TOUCHED_RING(dialog_id, item_mask) m_info.patcher->patch_new_code(15, { \
+			OP_LDA_IMM(dialog_id), \
+			OP_JSR(0xF859), \
+			0x0C, 0x41, 0x82, \
+			OP_LDA_IMM(0x08), \
+			OP_JSR(0xD0E4), \
+			OP_LDA_ABS(0x042C), \
+			OP_ORA_IMM(item_mask), \
+			OP_STA_ABS(0x042C), \
+			OP_RTS(), \
+		})
+
+		auto touched_ruby_ring_addr = TOUCHED_RING(0x9D, 0x40);
+		auto touched_dworf_ring_addr = TOUCHED_RING(0x9E, 0x20);
+		auto touched_demons_ring_addr = TOUCHED_RING(0x9F, 0x10);
+		auto touched_elf_ring_addr = TOUCHED_RING(0xA0, 0x80);
 
 		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
 			OP_CMP_IMM(0x57), // // Magical Rod
 			OP_BNE(3),
 			OP_JMP_ABS(0xC810), // Magical rod pickup code
 
-			// Ruby Ring
-			OP_CMP_IMM(0x12), OP_BNE(3), OP_JMP_ABS(touched_ruby_ring_addr),
+			// Rings
+			OP_CMP_IMM(AP_ENTITY_RING_OF_RUBY), OP_BNE(3), OP_JMP_ABS(touched_ruby_ring_addr),
+			OP_CMP_IMM(AP_ENTITY_RING_OF_DWORF), OP_BNE(3), OP_JMP_ABS(touched_dworf_ring_addr),
+			OP_CMP_IMM(AP_ENTITY_DEMONS_RING), OP_BNE(3), OP_JMP_ABS(touched_demons_ring_addr),
+			OP_CMP_IMM(AP_ENTITY_RING_OF_ELF), OP_BNE(3), OP_JMP_ABS(touched_elf_ring_addr),
 			
-			OP_JMP_ABS(0xC76F),
+			OP_JMP_ABS(0xC76F), // Go back
 		});
 
 		m_info.patcher->patch(15, 0xC768, 0, {
@@ -725,6 +780,11 @@ void AP::patch_locations()
 {
 	for (const auto& scout : m_location_scouts)
 	{
+		//if (scout.loc->id == 400148)
+		//{
+		//	__debugbreak();
+		//}
+
 		ap_item_t* ap_item = nullptr;
 		for (auto& item : AP_ITEMS)
 		{

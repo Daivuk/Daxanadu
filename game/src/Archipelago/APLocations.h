@@ -110,7 +110,7 @@ static ap_location_t AP_LOCATIONS[] = {
     // Tower of Suffer
     { 400147, "Tower of Suffer Hidden Wingboots", ap_location_type_t::hidden, 0x55, 0x0002C670 },
     { 400148, "Tower of Suffer Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C660 },
-    { 400149, "Tower of Suffer Pendant", ap_location_type_t::boss_reward, 0xA4, 0x0002C660 },
+    { 400149, "Tower of Suffer Pendant", ap_location_type_t::boss_reward, 0xA4, 0x0002C67E },
 
     // Victim
     { 400150, "Victim Full Plate", ap_location_type_t::shop, 0x22, 0x00032479 },
