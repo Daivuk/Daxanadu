@@ -22,7 +22,7 @@ static const int BANKS_EMPTY_SPACE[16] = {
     0x0000,
     0x0000,
 
-    0xAD90,
+    0xBE00,
     0x0000,
     0x0000,
     0xFE00
@@ -45,7 +45,7 @@ static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
     0x0000,
     0x0000,
 
-    0xBE00,
+    0xBFA0,
     0x0000,
     0x0000,
     0xFFE0

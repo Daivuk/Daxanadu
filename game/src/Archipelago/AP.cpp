@@ -371,11 +371,11 @@ void AP::patch_items()
 			OP_STA_ABS(0x042C), \
 			OP_RTS(), \
 		})
-
+		
+		auto touched_elf_ring_addr = TOUCHED_RING(0xA0, 0x80);
 		auto touched_ruby_ring_addr = TOUCHED_RING(0x9D, 0x40);
 		auto touched_dworf_ring_addr = TOUCHED_RING(0x9E, 0x20);
 		auto touched_demons_ring_addr = TOUCHED_RING(0x9F, 0x10);
-		auto touched_elf_ring_addr = TOUCHED_RING(0xA0, 0x80);
 
 		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
 			OP_CMP_IMM(0x57), // // Magical Rod
@@ -383,10 +383,10 @@ void AP::patch_items()
 			OP_JMP_ABS(0xC810), // Magical rod pickup code
 
 			// Rings
+			OP_CMP_IMM(AP_ENTITY_RING_OF_ELF), OP_BNE(3), OP_JMP_ABS(touched_elf_ring_addr),
 			OP_CMP_IMM(AP_ENTITY_RING_OF_RUBY), OP_BNE(3), OP_JMP_ABS(touched_ruby_ring_addr),
 			OP_CMP_IMM(AP_ENTITY_RING_OF_DWORF), OP_BNE(3), OP_JMP_ABS(touched_dworf_ring_addr),
 			OP_CMP_IMM(AP_ENTITY_DEMONS_RING), OP_BNE(3), OP_JMP_ABS(touched_demons_ring_addr),
-			OP_CMP_IMM(AP_ENTITY_RING_OF_ELF), OP_BNE(3), OP_JMP_ABS(touched_elf_ring_addr),
 			
 			OP_JMP_ABS(0xC76F), // Go back
 		});
@@ -780,7 +780,7 @@ void AP::patch_locations()
 {
 	for (const auto& scout : m_location_scouts)
 	{
-		//if (scout.loc->id == 400148)
+		//if (scout.loc->id == 400192)
 		//{
 		//	__debugbreak();
 		//}
