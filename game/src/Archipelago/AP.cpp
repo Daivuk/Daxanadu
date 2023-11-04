@@ -212,6 +212,12 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x36), SPRITE_ADDR(0x00019442, 14), false, true);
 	copy_sprite(TILE_ADDR(0x37), SPRITE_ADDR(0x00019442, 15), false, true);
 
+	// Magic
+	copy_sprite(TILE_ADDR(0x7F), SPRITE_ADDR(0x00018C32, 10), false, false); // Deluge
+	copy_sprite(TILE_ADDR(0x80), SPRITE_ADDR(0x00018C32, 11), false, false); // Deluge
+	copy_sprite(TILE_ADDR(0x81), SPRITE_ADDR(0x00018C32, 12), false, false); // Deluge
+	copy_sprite(TILE_ADDR(0x82), SPRITE_ADDR(0x00018C32, 13), false, false); // Deluge
+
 	// Rename battle helmet to progressive shield in the popup dialog
 	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
 	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
@@ -389,6 +395,8 @@ void AP::patch_items()
 		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_ACE, 0x1432, 0, 1, 2, 3, 1);
 		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_JOKER, 0x1432, 10, 1, 11, 3, 1);
 
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_DELUGE, 0x0C22, 10, 11, 12, 13, 1);
+
 		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_SPRING_ELIXIR, 0x1432, 12, 13, 14, 15, 2);
 
 #define TOUCHED_RING(dialog_id, item_mask) m_info.patcher->patch_new_code(15, { \
@@ -437,6 +445,8 @@ void AP::patch_items()
 		auto touched_key_ace_addr = TOUCHED_ITEM(0x9B, 0x84);
 		auto touched_key_joker_addr = TOUCHED_ITEM(0x9C, 0x88);
 
+		auto touched_deluge_addr = TOUCHED_ITEM(0xA1, 0x60);
+
 		auto touched_spring_elixir_addr = TOUCHED_ITEM(0xA6, AP_ITEM_SPRING_ELIXIR);
 
 		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
@@ -458,6 +468,7 @@ void AP::patch_items()
 			OP_CMP_IMM(AP_ENTITY_KEY_JOKER), OP_BNE(3), OP_JMP_ABS(touched_key_joker_addr),
 
 			// Magics
+			OP_CMP_IMM(AP_ENTITY_DELUGE), OP_BNE(3), OP_JMP_ABS(touched_deluge_addr),
 
 			// Spring Elixir
 			OP_CMP_IMM(AP_ENTITY_SPRING_ELIXIR), OP_BNE(3), OP_JMP_ABS(touched_spring_elixir_addr),
@@ -890,19 +901,19 @@ void AP::patch_locations()
 				}
 				break;
 			case ap_location_type_t::world:
-				if (ap_item->entity_id != 0x00)
+				if (ap_item->entity_id != 0xFF)
 				{
 					m_info.rom[scout.loc->addr] = ap_item->entity_id;
 				}
 				break;
 			case ap_location_type_t::boss_reward:
-				if (ap_item->entity_id != 0x00)
+				if (ap_item->entity_id != 0xFF)
 				{
 					m_info.rom[scout.loc->addr] = ap_item->entity_id;
 				}
 				break;
 			case ap_location_type_t::hidden:
-				if (ap_item->entity_id != 0x00)
+				if (ap_item->entity_id != 0xFF)
 				{
 					m_info.rom[scout.loc->addr] = ap_item->entity_id;
 				}
