@@ -12,6 +12,11 @@
 #define AP_ITEM_GLOVE 0x9B
 #define AP_ITEM_SPRING_ELIXIR 0x9C
 
+#define AP_ENTITY_RING_OF_ELF 0xFF
+#define AP_ENTITY_RING_OF_RUBY 0x12 // replaces unused snake
+#define AP_ENTITY_RING_OF_DWORF 0xFF
+#define AP_ENTITY_DEMONS_RING 0xFF
+
 
 enum class ap_item_type_t
 {
@@ -47,7 +52,7 @@ static ap_item_t AP_ITEMS[] = {
     { 400008, "Key King", ap_item_type_t::inventory, 0x85, 0x00 },
     { 400009, "Key Joker", ap_item_type_t::inventory, 0x88, 0x00 },
     { 400010, "Key Ace", ap_item_type_t::inventory, 0x84, 0x00 },
-    { 400011, "Ring of Ruby", ap_item_type_t::inventory, 0x81, 0x00 },
+    { 400011, "Ring of Ruby", ap_item_type_t::inventory, 0x81, AP_ENTITY_RING_OF_RUBY },
     { 400012, "Ring of Dworf", ap_item_type_t::inventory, 0x82, 0x00 },
     { 400013, "Demons Ring", ap_item_type_t::inventory, 0x83, 0x00 },
     { 400014, "Black Onyx", ap_item_type_t::inventory, 0x94, 0x49 },

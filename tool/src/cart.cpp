@@ -607,6 +607,12 @@ static void load_spritesets(FILE* f)
             fseek(f, pointers[i], SEEK_SET);
             fread(entity_type.raw_frames.data(), 1, size, f);
 
+            if (i == 0x57)
+            {
+                int tmp;
+                tmp = 5;
+            }
+
             int idx = 0;
             while (idx + 4 < size)
             {

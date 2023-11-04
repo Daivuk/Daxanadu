@@ -178,6 +178,18 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 2), false, false);
 	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 3), false, false);
 
+	// Replace snake monster (unused) with ring tiles
+	copy_sprite(TILE_ADDR(0x06), SPRITE_ADDR(0x00018C32, 0), false, false); // Ring of elf cap
+	copy_sprite(TILE_ADDR(0x07), SPRITE_ADDR(0x00018C32, 1), false, false);
+	copy_sprite(TILE_ADDR(0x08), SPRITE_ADDR(0x00018C32, 2), false, false); // Ruby ring cap
+	copy_sprite(TILE_ADDR(0x09), SPRITE_ADDR(0x00018C32, 3), false, false);
+	copy_sprite(TILE_ADDR(0x0A), SPRITE_ADDR(0x00018C32, 4), false, false); // Ring of dworf cap
+	copy_sprite(TILE_ADDR(0x0B), SPRITE_ADDR(0x00018C32, 5), false, false);
+	copy_sprite(TILE_ADDR(0x04), SPRITE_ADDR(0x00018C32, 6), false, false); // Demons ring cap
+	copy_sprite(TILE_ADDR(0x05), SPRITE_ADDR(0x00018C32, 7), false, false);
+	copy_sprite(TILE_ADDR(0x0C), SPRITE_ADDR(0x00018C32, 8), false, false); // Loop
+	copy_sprite(TILE_ADDR(0x0D), SPRITE_ADDR(0x00018C32, 9), false, false);
+
 	// Rename battle helmet to progressive shield in the popup dialog
 	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
 	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
@@ -223,6 +235,35 @@ void AP::patch_items()
 			OP_TAX(),
 			OP_JMP_ABS(0xCC1A), // Switch bank
 		});
+
+		// Ring of Ruby (Replaces unused snake monster)
+		ROM_LO(14, 0xB407)[0x12 * 2 + 0] = 0x10; // 16x16 pixels
+		ROM_LO(14, 0xB407)[0x12 * 2 + 1] = 0x10;
+		ROM_LO(14, 0xB4DF)[0x12] = 0; // 16x16 pixels
+		ROM_LO(14, 0xB544)[0x12] = 5; // Item type
+		ROM_LO(14, 0xB5A9)[0x12] = 0; // No hit points
+		ROM_LO(14, 0xB60E)[0x12] = 0; // No xp
+		ROM_LO(14, 0xB672)[0x12] = 0xFF; // No reward
+		ROM_LO(14, 0xB6D7)[0x12] = 0; // No damage
+		ROM_LO(14, 0xB73B)[0x12] = 0xFC; // This is probably a mask
+		ROM_LO(6, 0x8002)[0x12 * 2 + 0] = 0x22; // Use snake spritesheet (Now rings)
+		ROM_LO(6, 0x8002)[0x12 * 2 + 1] = 0x0C;
+		int phase_index = ROM_LO(14, 0x8C9F)[0x12];
+		int frames_addr = ROM_LO(7, 0x9036)[phase_index * 2 + 0];
+		frames_addr |= ROM_LO(7, 0x9036)[phase_index * 2 + 1] << 8;
+		frames_addr += 0x8000;
+		ROM_LO(7, frames_addr)[0] = 0x11; // 2x2
+		ROM_LO(7, frames_addr)[1] = 0x00; // x offset
+		ROM_LO(7, frames_addr)[2] = 0x00; // y offset
+		ROM_LO(7, frames_addr)[3] = 0x08; // unknown, other items use 8
+		ROM_LO(7, frames_addr)[4] = 2; // Sprite ID
+		ROM_LO(7, frames_addr)[5] = 0; // Palette
+		ROM_LO(7, frames_addr)[6] = 3; // Sprite ID
+		ROM_LO(7, frames_addr)[7] = 0; // Palette
+		ROM_LO(7, frames_addr)[8] = 8; // Sprite ID
+		ROM_LO(7, frames_addr)[9] = 0; // Palette
+		ROM_LO(7, frames_addr)[10] = 9; // Sprite ID
+		ROM_LO(7, frames_addr)[11] = 0; // Palette
 	}
 
 	// Prepare space in unused area for all the new item texts.

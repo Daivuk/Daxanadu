@@ -180,6 +180,20 @@ void Patcher::apply_new_strings()
 {
     std::vector<std::string> strings = {
         "Progress saved.", // C3
+        "I've got the""\xFE""Key Jack.", // C4
+        "I've got the""\xFE""Key Queen.", // C5
+        "I've got the""\xFE""Key King.", // C6
+        "I've got the""\xFE""Key Joker.", // C7
+        "I've got the""\xFE""Key Ace.", // C8
+        "I've got the""\xFE""Ring of Ruby.", // C9
+        "I've got the""\xFE""Ring of Dworf.", // CA
+        "I've got the""\xFE""Demons Ring.", // CB
+        "I've got the""\xFE""Ring of Elf.", // CC
+        "I've got""\xFE""Deluge.", // CD
+        "I've got""\xFE""Thunder.", // CE
+        "I've got""\xFE""Fire.", // CF
+        "I've got""\xFE""Death.", // D0
+        "I've got""\xFE""Tilte.", // D1
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;
