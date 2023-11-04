@@ -2,6 +2,7 @@
 
 #include <onut/Font.h>
 #include <onut/SpriteBatch.h>
+#include <imgui/imgui.h>
 
 #include <memory.h>
 
@@ -54,40 +55,38 @@ bool RAM::cpu_read(uint16_t addr, uint8_t* out_data)
 
 void RAM::render()
 {
-#if 1
-    auto font = OGetFont("font.fnt");
-    char buf[260];
-
-    oSpriteBatch->begin();
-
-    // Equiped weapon
-    snprintf(buf, 260, "Weapon: 0x%02X", (int)m_data[0x03BD]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 50));
-
-    // Equiped armor
-    snprintf(buf, 260, "Armor: 0x%02X", (int)m_data[0x03BE]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 70));
-
-    // Equiped shield
-    snprintf(buf, 260, "Armor: 0x%02X", (int)m_data[0x03BF]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 90));
-
-    // Equiped magic
-    snprintf(buf, 260, "Armor: 0x%02X", (int)m_data[0x03C0]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 110));
-
-    // Equiped item
-    snprintf(buf, 260, "Item: 0x%02X", (int)m_data[0x03C1]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 130));
-    
-    snprintf(buf, 260, "Items (%i):", (int)m_data[0x03C6]);
-    oSpriteBatch->drawText(font, buf, Vector2(0, 150));
-    for (int i = 0; i < (int)m_data[0x03C6]; ++i)
+#if defined(_DEBUG)
+    if (ImGui::Begin("RAM"))
     {
-        snprintf(buf, 260, "  0x%02X", (int)m_data[0x03AD + i]);
-        oSpriteBatch->drawText(font, buf, Vector2(0, 170 + (float)i * 20));
-    }
+        ImGui::Text("Weapon: 0x%02X", (int)m_data[0x03BD]);
+        ImGui::Text("Armor: 0x%02X", (int)m_data[0x03BE]);
+        ImGui::Text("Shield: 0x%02X", (int)m_data[0x03BF]);
+        ImGui::Text("Magic: 0x%02X", (int)m_data[0x03C0]);
+        ImGui::Text("Item: 0x%02X", (int)m_data[0x03C1]);
 
-    oSpriteBatch->end();
+        if (ImGui::TreeNode("Items:"))
+        {
+            for (int i = 0; i < (int)m_data[0x03C6]; ++i)
+                ImGui::Text("0x%02X", (int)m_data[0x03AD + i]);
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Active entities:", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (int i = 0; i < 8; ++i)
+            {
+                if (m_data[0x02CC + i] == 0xFF) continue;
+                ImGui::Text("ID: 0x%02X - 0x%02X", (int)m_data[0x02CC + i], (int)m_data[0x02D4 + i]);
+                ImGui::Text("Flag: 0x%02X", (int)m_data[0x02DC + i]);
+                ImGui::Text("Phase: 0x%02X - 0x%02X", (int)m_data[0x02E4 + i], (int)m_data[0x02EC + i]);
+                int behaviour_addr = ((int)m_data[0x035C + i] << 8) | m_data[0x0354 + i];
+                ImGui::Text("Behaviour: 0x%04X", behaviour_addr);
+                ImGui::Text("Message: 0x%02X", (int)m_data[0x036C + i]);
+                ImGui::Separator();
+            }
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
 #endif
 }

@@ -153,6 +153,8 @@ void AP::patch_items()
 	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3
 #define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
 #define SPRITE_ADDR(rom_addr, index) (m_info.rom + rom_addr - 0x10 + index * 16)
+#define LO(addr) (uint8_t)(addr & 0xFF)
+#define HI(addr) (uint8_t)((addr >> 8) & 0xFF)
 
 	// Replace Crystal with spring elixir
 	copy_sprite(TILE_ADDR(0x34), TILE_ADDR(0x12), false, true);
@@ -236,6 +238,47 @@ void AP::patch_items()
 			OP_JMP_ABS(0xCC1A), // Switch bank
 		});
 
+		// 0x98
+		auto ive_got_ruby_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 });
+
+		// Table continue
+		auto dialog_lo = m_info.patcher->patch_new_code(12, {
+			LO(ive_got_ruby_ring_dialog),
+		});
+		auto dialog_hi = m_info.patcher->patch_new_code(12, {
+			HI(ive_got_ruby_ring_dialog),
+		});
+
+		// We want to add dialogs for the new items. They are tightly packed into the
+		// bank 12. Modify the code to jump ahead further if message ID is too big
+		auto get_dialog_addr_addr = m_info.patcher->patch_new_code(12, {
+			OP_SEC(),
+			OP_SBC_IMM(0x98),
+			OP_BMI(12),
+
+			// Greater or equal to 152, we go somewhere else
+			OP_TAX(),
+			OP_LDA_ABSX(dialog_lo), // lo
+			OP_STA_ZPG(0xDB),
+			OP_LDA_ABSX(dialog_hi), // hi
+			OP_STA_ZPG(0xDC),
+			OP_RTS(),
+
+			// Normal code
+			OP_LDA_ABSX(0x9F6B), // lo
+			OP_STA_ZPG(0xDB),
+			OP_LDA_ABSX(0xA003), // hi
+			OP_STA_ZPG(0xDC),
+			OP_RTS(),
+		});
+
+		m_info.patcher->patch(12, 0x824C, 0, {
+			OP_JSR(get_dialog_addr_addr),
+			OP_NOP(), OP_NOP(),
+			OP_NOP(), OP_NOP(), OP_NOP(),
+			OP_NOP(), OP_NOP(),
+		});
+
 		// Ring of Ruby (Replaces unused snake monster)
 		ROM_LO(14, 0xB407)[0x12 * 2 + 0] = 0x10; // 16x16 pixels
 		ROM_LO(14, 0xB407)[0x12 * 2 + 1] = 0x10;
@@ -246,24 +289,56 @@ void AP::patch_items()
 		ROM_LO(14, 0xB672)[0x12] = 0xFF; // No reward
 		ROM_LO(14, 0xB6D7)[0x12] = 0; // No damage
 		ROM_LO(14, 0xB73B)[0x12] = 0xFC; // This is probably a mask
+		ROM_LO(14, 0xAD2D)[0x12 * 2 + 0] = 0x4F; // Behaviour (copy from Magical Rod)
+		ROM_LO(14, 0xAD2D)[0x12 * 2 + 1] = 0xB2;
+		ROM_LO(14, 0x8087)[0x12 * 2 + 0] = 0x4A; // Entity update function (copy from Magical Rod)
+		ROM_LO(14, 0x8087)[0x12 * 2 + 1] = 0xA3;
 		ROM_LO(6, 0x8002)[0x12 * 2 + 0] = 0x22; // Use snake spritesheet (Now rings)
 		ROM_LO(6, 0x8002)[0x12 * 2 + 1] = 0x0C;
 		int phase_index = ROM_LO(14, 0x8C9F)[0x12];
 		int frames_addr = ROM_LO(7, 0x9036)[phase_index * 2 + 0];
 		frames_addr |= ROM_LO(7, 0x9036)[phase_index * 2 + 1] << 8;
 		frames_addr += 0x8000;
+		int pal = 1;
 		ROM_LO(7, frames_addr)[0] = 0x11; // 2x2
 		ROM_LO(7, frames_addr)[1] = 0x00; // x offset
 		ROM_LO(7, frames_addr)[2] = 0x00; // y offset
 		ROM_LO(7, frames_addr)[3] = 0x08; // unknown, other items use 8
 		ROM_LO(7, frames_addr)[4] = 2; // Sprite ID
-		ROM_LO(7, frames_addr)[5] = 0; // Palette
+		ROM_LO(7, frames_addr)[5] = pal; // Palette
 		ROM_LO(7, frames_addr)[6] = 3; // Sprite ID
-		ROM_LO(7, frames_addr)[7] = 0; // Palette
+		ROM_LO(7, frames_addr)[7] = pal; // Palette
 		ROM_LO(7, frames_addr)[8] = 8; // Sprite ID
-		ROM_LO(7, frames_addr)[9] = 0; // Palette
+		ROM_LO(7, frames_addr)[9] = pal; // Palette
 		ROM_LO(7, frames_addr)[10] = 9; // Sprite ID
-		ROM_LO(7, frames_addr)[11] = 0; // Palette
+		ROM_LO(7, frames_addr)[11] = pal; // Palette
+
+		auto touched_ruby_ring_addr = m_info.patcher->patch_new_code(15, {
+			OP_LDA_IMM(0x98), // "I've got the Ring of Ruby."
+			OP_JSR(0xF859), // Show dialog
+			0x0C, 0x41, 0x82, // Those are not nopes. Invalid op codes, but without them, things don't work
+			OP_LDA_IMM(0x08), // Pick up sound
+			OP_JSR(0xD0E4), // Play the sound
+			OP_LDA_ABS(0x042C), // Persistent inventory
+			OP_ORA_IMM(0x40), // Add ring of ruby
+			OP_STA_ABS(0x042C),
+			OP_RTS(),
+		});
+
+		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
+			OP_CMP_IMM(0x57), // // Magical Rod
+			OP_BNE(3),
+			OP_JMP_ABS(0xC810), // Magical rod pickup code
+
+			// Ruby Ring
+			OP_CMP_IMM(0x12), OP_BNE(3), OP_JMP_ABS(touched_ruby_ring_addr),
+			
+			OP_JMP_ABS(0xC76F),
+		});
+
+		m_info.patcher->patch(15, 0xC768, 0, {
+			OP_JMP_ABS(touched_item_addr),
+		});
 	}
 
 	// Prepare space in unused area for all the new item texts.

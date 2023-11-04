@@ -45,7 +45,7 @@ static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
     0x0000,
     0x0000,
 
-    0xAE4D,
+    0xBE00,
     0x0000,
     0x0000,
     0xFFE0
@@ -185,7 +185,7 @@ void Patcher::apply_new_strings()
         "I've got the""\xFE""Key King.", // C6
         "I've got the""\xFE""Key Joker.", // C7
         "I've got the""\xFE""Key Ace.", // C8
-        "I've got the""\xFE""Ring of Ruby.", // C9
+        "I've""\xFD""got""\xFD""the""\xFE""Ring""\xFD""of""\xFD""Ruby.", // C9
         "I've got the""\xFE""Ring of Dworf.", // CA
         "I've got the""\xFE""Demons Ring.", // CB
         "I've got the""\xFE""Ring of Elf.", // CC
