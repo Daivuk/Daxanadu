@@ -192,6 +192,20 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x0C), SPRITE_ADDR(0x00018C32, 8), false, false); // Loop
 	copy_sprite(TILE_ADDR(0x0D), SPRITE_ADDR(0x00018C32, 9), false, false);
 
+	// Replace unused night monster sprites with key tiles
+	copy_sprite(TILE_ADDR(0x26), SPRITE_ADDR(0x00019442, 0), false, false); // A top
+	copy_sprite(TILE_ADDR(0x27), SPRITE_ADDR(0x00019442, 1), false, false); // Dents top
+	copy_sprite(TILE_ADDR(0x28), SPRITE_ADDR(0x00019442, 2), false, false); // A bottom
+	copy_sprite(TILE_ADDR(0x29), SPRITE_ADDR(0x00019442, 3), false, false); // Dents bottom
+	copy_sprite(TILE_ADDR(0x2A), SPRITE_ADDR(0x00019442, 4), false, false); // K bottom
+	copy_sprite(TILE_ADDR(0x2B), SPRITE_ADDR(0x00019442, 5), false, false); // K top
+	copy_sprite(TILE_ADDR(0x71), SPRITE_ADDR(0x00019442, 6), false, false); // Q top
+	copy_sprite(TILE_ADDR(0x72), SPRITE_ADDR(0x00019442, 7), false, false); // Q bottom
+	copy_sprite(TILE_ADDR(0x73), SPRITE_ADDR(0x00019442, 8), false, false); // J top
+	copy_sprite(TILE_ADDR(0x74), SPRITE_ADDR(0x00019442, 9), false, false); // J bottom
+	copy_sprite(TILE_ADDR(0x75), SPRITE_ADDR(0x00019442, 10), false, false); // Jo top
+	copy_sprite(TILE_ADDR(0x76), SPRITE_ADDR(0x00019442, 11), false, false); // Jo bottom
+
 	// Rename battle helmet to progressive shield in the popup dialog
 	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
 	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
@@ -242,8 +256,8 @@ void AP::patch_items()
 		auto key_jack_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 });
 		auto key_queen_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC5, 0x00 });
 		auto key_king_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC6, 0x00 });
-		auto key_joker_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 });
 		auto key_ace_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC8, 0x00 });
+		auto key_joker_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 });
 		auto ruby_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 });
 		auto dworf_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCA, 0x00 });
 		auto demons_ring_dialog = m_info.patcher->patch_new_code(12, { 0x00, 0x01, 0xCB, 0x00 });
@@ -355,10 +369,16 @@ void AP::patch_items()
 			ROM_LO(7, frames_addr)[11] = pal; /* Palette */ \
 		}
 
-		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_ELF, 0x0C22, 0, 1, 8, 9, 0); // Elf
-		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_RUBY, 0x0C22, 2, 3, 8, 9, 0); // Ruby
-		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_DWORF, 0x0C22, 4, 5, 8, 9, 2); // Dworf
-		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_DEMONS_RING, 0x0C22, 6, 7, 8, 9, 1); // Demons
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_ELF, 0x0C22, 0, 1, 8, 9, 0);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_RUBY, 0x0C22, 2, 3, 8, 9, 0);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_RING_OF_DWORF, 0x0C22, 4, 5, 8, 9, 2);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_DEMONS_RING, 0x0C22, 6, 7, 8, 9, 1);
+
+		//REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_JACK, 0x0C22, 8, 1, 9, 3, 1); // Ignore for now
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_QUEEN, 0x1432, 6, 1, 7, 3, 1);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_KING, 0x1432, 4, 1, 5, 3, 1);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_ACE, 0x1432, 0, 1, 2, 3, 1);
+		REPLACE_ENTITY_WITH_ITEM(AP_ENTITY_KEY_JOKER, 0x1432, 10, 1, 11, 3, 1);
 
 #define TOUCHED_RING(dialog_id, item_mask) m_info.patcher->patch_new_code(15, { \
 			OP_LDA_IMM(dialog_id), \
@@ -371,14 +391,43 @@ void AP::patch_items()
 			OP_STA_ABS(0x042C), \
 			OP_RTS(), \
 		})
-		
+
+		// We're wasting a lot of precious space here...
+#define TOUCHED_KEY(dialog_id, item_id) m_info.patcher->patch_new_code(15, { \
+			OP_TXA(), \
+			OP_PHA(), \
+			OP_LDA_IMM(dialog_id), \
+			OP_JSR(0xF859), \
+			0x0C, 0x41, 0x82, \
+			OP_LDA_IMM(0x08), /* Play Sound */ \
+			OP_JSR(0xD0E4), \
+			OP_LDA_ABS(0x100), /* current bank */ \
+			OP_PHA(), \
+			OP_LDX_IMM(12), \
+			OP_JSR(0xCC1A), /* Switch bank */ \
+			OP_LDA_IMM(item_id), \
+			OP_JSR(0x9AF7), /* Give item */ \
+			OP_PLA(), \
+			OP_TAX(), \
+			OP_JSR(0xCC1A), /* Switch bank */ \
+			OP_PLA(), \
+			OP_TAX(), \
+			OP_RTS(), \
+		})
+
 		auto touched_elf_ring_addr = TOUCHED_RING(0xA0, 0x80);
 		auto touched_ruby_ring_addr = TOUCHED_RING(0x9D, 0x40);
 		auto touched_dworf_ring_addr = TOUCHED_RING(0x9E, 0x20);
 		auto touched_demons_ring_addr = TOUCHED_RING(0x9F, 0x10);
 
+		auto touched_key_jack_addr = TOUCHED_KEY(0x98, 0x87);
+		auto touched_key_queen_addr = TOUCHED_KEY(0x99, 0x86);
+		auto touched_key_king_addr = TOUCHED_KEY(0x9A, 0x85);
+		auto touched_key_ace_addr = TOUCHED_KEY(0x9B, 0x84);
+		auto touched_key_joker_addr = TOUCHED_KEY(0x9C, 0x88);
+
 		auto touched_item_addr = m_info.patcher->patch_new_code(15, {
-			OP_CMP_IMM(0x57), // // Magical Rod
+			OP_CMP_IMM(0x57), // Magical Rod
 			OP_BNE(3),
 			OP_JMP_ABS(0xC810), // Magical rod pickup code
 
@@ -387,6 +436,13 @@ void AP::patch_items()
 			OP_CMP_IMM(AP_ENTITY_RING_OF_RUBY), OP_BNE(3), OP_JMP_ABS(touched_ruby_ring_addr),
 			OP_CMP_IMM(AP_ENTITY_RING_OF_DWORF), OP_BNE(3), OP_JMP_ABS(touched_dworf_ring_addr),
 			OP_CMP_IMM(AP_ENTITY_DEMONS_RING), OP_BNE(3), OP_JMP_ABS(touched_demons_ring_addr),
+
+			// Keys
+			OP_CMP_IMM(AP_ENTITY_KEY_JACK), OP_BNE(3), OP_JMP_ABS(touched_key_jack_addr),
+			OP_CMP_IMM(AP_ENTITY_KEY_QUEEN), OP_BNE(3), OP_JMP_ABS(touched_key_queen_addr),
+			OP_CMP_IMM(AP_ENTITY_KEY_KING), OP_BNE(3), OP_JMP_ABS(touched_key_king_addr),
+			OP_CMP_IMM(AP_ENTITY_KEY_ACE), OP_BNE(3), OP_JMP_ABS(touched_key_ace_addr),
+			OP_CMP_IMM(AP_ENTITY_KEY_JOKER), OP_BNE(3), OP_JMP_ABS(touched_key_joker_addr),
 			
 			OP_JMP_ABS(0xC76F), // Go back
 		});

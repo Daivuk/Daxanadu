@@ -40,6 +40,7 @@
 #define OP_SBC_IMM(value) 0xE9, value
 #define OP_TAY() 0xA8
 #define OP_TAX() 0xAA
+#define OP_TXA() 0x8A
 #define OP_INC_ZPG(addr) 0xE6, addr
 #define OP_ORA_IMM(value) 0x09, value
 

@@ -17,6 +17,11 @@
 #define AP_ENTITY_RING_OF_RUBY 0x12
 #define AP_ENTITY_RING_OF_DWORF 0x1D
 #define AP_ENTITY_DEMONS_RING 0x24
+#define AP_ENTITY_KEY_JACK 0x03 // This key should never appear in the world. Required to open first door and every items before are UI-based
+#define AP_ENTITY_KEY_QUEEN 0x35
+#define AP_ENTITY_KEY_KING 0x36
+#define AP_ENTITY_KEY_ACE 0x46
+#define AP_ENTITY_KEY_JOKER 0x2B
 
 
 enum class ap_item_type_t
@@ -48,11 +53,11 @@ static ap_item_t AP_ITEMS[] = {
     { 400003, "Spring Elixir", ap_item_type_t::inventory, AP_ITEM_SPRING_ELIXIR, 0x4D },
     { 400004, "Mattock", ap_item_type_t::inventory, 0x89, 0x50 },
     { 400005, "Wingboots", ap_item_type_t::inventory, 0x8F, 0x55 },
-    { 400006, "Key Jack", ap_item_type_t::inventory, 0x87, 0x00 },
-    { 400007, "Key Queen", ap_item_type_t::inventory, 0x86, 0x00 },
-    { 400008, "Key King", ap_item_type_t::inventory, 0x85, 0x00 },
-    { 400009, "Key Joker", ap_item_type_t::inventory, 0x88, 0x00 },
-    { 400010, "Key Ace", ap_item_type_t::inventory, 0x84, 0x00 },
+    { 400006, "Key Jack", ap_item_type_t::inventory, 0x87, AP_ENTITY_KEY_JACK },
+    { 400007, "Key Queen", ap_item_type_t::inventory, 0x86, AP_ENTITY_KEY_QUEEN },
+    { 400008, "Key King", ap_item_type_t::inventory, 0x85, AP_ENTITY_KEY_KING },
+    { 400009, "Key Joker", ap_item_type_t::inventory, 0x88, AP_ENTITY_KEY_JOKER },
+    { 400010, "Key Ace", ap_item_type_t::inventory, 0x84, AP_ENTITY_KEY_ACE },
     { 400011, "Ring of Ruby", ap_item_type_t::inventory, 0x81, AP_ENTITY_RING_OF_RUBY },
     { 400012, "Ring of Dworf", ap_item_type_t::inventory, 0x82, AP_ENTITY_RING_OF_DWORF },
     { 400013, "Demons Ring", ap_item_type_t::inventory, 0x83, AP_ENTITY_DEMONS_RING },
