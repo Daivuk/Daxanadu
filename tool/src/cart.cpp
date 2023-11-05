@@ -470,7 +470,10 @@ static void load_spritesets(FILE* f)
         {
             //if (i == 1) __debugbreak();
             int offset = 0x18010;
-            if (i >= 55) offset += 0x4000;
+            if (i >= 55)
+            {
+                offset += 0x4000;
+            }
 
             uint16_t sprite_pointer_table_offset;
             fseek(f, offset, SEEK_SET);

@@ -1292,7 +1292,9 @@ void renderUI()
         int timeset_id = 0;
         for (const auto& spriteset : cart.spritesets)
         {
-            if (ImGui::CollapsingHeader(("Spriteset " + std::to_string(timeset_id)).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            char buf[260];
+            snprintf(buf, 260, "Spriteset %02X", timeset_id);
+            if (ImGui::CollapsingHeader(buf, ImGuiTreeNodeFlags_DefaultOpen))
             {
                 int col = 0;
                 int columns = 16;//spriteset.width > 0 ? spriteset.width : 16;

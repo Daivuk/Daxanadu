@@ -24,7 +24,7 @@ static const int BANKS_EMPTY_SPACE[16] = {
 
     0xBE00,
     0x0000,
-    0x0000,
+    0xBDB5,
     0xFCCE
 };
 
@@ -47,7 +47,7 @@ static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
 
     0xBFA0,
     0x0000,
-    0x0000,
+    0xBFFF,
     0xFFE7
 };
 
@@ -185,15 +185,18 @@ void Patcher::apply_new_strings()
         "I've got the""\xFE""Key King.", // C6
         "I've got the""\xFE""Key Ace.", // C7
         "I've got the""\xFE""Key Joker.", // C8
-        "I've""\xFD""got""\xFD""the""\xFE""Ring""\xFD""of""\xFD""Ruby.", // C9
-        "I've got the""\xFE""Ring of Dworf.", // CA
-        "I've got the""\xFE""Demons Ring.", // CB
-        "I've got the""\xFE""Ring of Elf.", // CC
+        
+        "I've got the""\xFE""Ring of Elf.", // C9
+        "I've got the""\xFE""Ring of Ruby.", // CA
+        "I've got the""\xFE""Ring of Dworf.", // CB
+        "I've got the""\xFE""Demons Ring.", // CC
+
         "I've got""\xFE""Deluge.", // CD
         "I've got""\xFE""Thunder.", // CE
         "I've got""\xFE""Fire.", // CF
         "I've got""\xFE""Death.", // D0
         "I've got""\xFE""Tilte.", // D1
+
         "I've got the""\xFE""Spring Elixir.", // D2
     };
 

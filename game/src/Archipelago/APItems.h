@@ -4,6 +4,7 @@
 #include <vector>
 
 
+// Those IDs are outside of normal range. The code is altered to jump to other tables
 #define AP_ITEM_PROGRESSIVE_SWORD 0x96
 #define AP_ITEM_PROGRESSIVE_ARMOR 0x97
 #define AP_ITEM_PROGRESSIVE_SHIELD 0x98
@@ -12,22 +13,22 @@
 #define AP_ITEM_GLOVE 0x9B
 #define AP_ITEM_SPRING_ELIXIR 0x9C
 
-// Replace unused entities
-#define AP_ENTITY_RING_OF_ELF 0x27
-#define AP_ENTITY_RING_OF_RUBY 0x12
-#define AP_ENTITY_RING_OF_DWORF 0x1D
-#define AP_ENTITY_DEMONS_RING 0x24
-#define AP_ENTITY_KEY_JACK 0x03 // This key should never appear in the world. Required to open first door and every items before are UI-based
-#define AP_ENTITY_KEY_QUEEN 0x35
-#define AP_ENTITY_KEY_KING 0x36
-#define AP_ENTITY_KEY_ACE 0x46
-#define AP_ENTITY_KEY_JOKER 0x2B
-#define AP_ENTITY_SPRING_ELIXIR 0x16
-#define AP_ENTITY_DELUGE 0xFF
-#define AP_ENTITY_THUNDER 0xFF
-#define AP_ENTITY_FIRE 0xFF
-#define AP_ENTITY_DEATH 0xFF
-#define AP_ENTITY_TILTE 0xFF
+// Start the new entities at 0x80. This way we can just test for N flag.
+#define AP_ENTITY_RING_OF_ELF 0x80 // Rings
+#define AP_ENTITY_RING_OF_RUBY 0x81
+#define AP_ENTITY_RING_OF_DWORF 0x82
+#define AP_ENTITY_DEMONS_RING 0x83
+#define AP_ENTITY_KEY_JACK 0x84 // Keys
+#define AP_ENTITY_KEY_QUEEN 0x85
+#define AP_ENTITY_KEY_KING 0x86
+#define AP_ENTITY_KEY_ACE 0x87
+#define AP_ENTITY_KEY_JOKER 0x88
+#define AP_ENTITY_DELUGE 0x89 // Magics
+#define AP_ENTITY_THUNDER 0x8A
+#define AP_ENTITY_FIRE 0x8B
+#define AP_ENTITY_DEATH 0x8C
+#define AP_ENTITY_TILTE 0x8D
+#define AP_ENTITY_SPRING_ELIXIR 0x8E // Spring elixir
 
 
 enum class ap_item_type_t
