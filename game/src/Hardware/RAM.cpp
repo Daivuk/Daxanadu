@@ -33,7 +33,15 @@ bool RAM::cpu_write(uint16_t addr, uint8_t data)
         //{
         //    __debugbreak();
         //}
+
         m_data[addr % 0x800] = data;
+
+        //int behaviour_addr = ((int)m_data[0x035C + 7] << 8) | m_data[0x0354 + 7];
+        //if (behaviour_addr == 0xAE12)
+        //{
+        //    __debugbreak();
+        //}
+
         return true;
     }
 
@@ -77,7 +85,9 @@ void RAM::render()
             {
                 if (m_data[0x02CC + i] == 0xFF) continue;
                 ImGui::Text("ID: 0x%02X - 0x%02X", (int)m_data[0x02CC + i], (int)m_data[0x02D4 + i]);
-                ImGui::Text("Flag: 0x%02X", (int)m_data[0x02DC + i]);
+                ImGui::Text("Position: %i, %i", (int)m_data[0x00BA + i], (int)m_data[0x00C2 + i]);
+                auto flags = m_data[0x02DC + i];
+                ImGui::Text("Visible: %s", (flags & 0x10) ? "false" : "true");
                 ImGui::Text("Phase: 0x%02X - 0x%02X", (int)m_data[0x02E4 + i], (int)m_data[0x02EC + i]);
                 int behaviour_addr = ((int)m_data[0x035C + i] << 8) | m_data[0x0354 + i];
                 ImGui::Text("Behaviour: 0x%04X", behaviour_addr);

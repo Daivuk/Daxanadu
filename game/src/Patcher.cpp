@@ -18,7 +18,7 @@ static const int BANKS_EMPTY_SPACE[16] = {
     0x0000,
 
     0x0000,
-    0x0000,
+    0x8000, // Bank 9 not used at all
     0x0000,
     0x0000,
 
@@ -41,7 +41,7 @@ static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
     0x0000,
 
     0x0000,
-    0x0000,
+    0xFFFF,
     0x0000,
     0x0000,
 

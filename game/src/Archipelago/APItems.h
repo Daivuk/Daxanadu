@@ -30,6 +30,8 @@
 #define AP_ENTITY_TILTE 0x8D
 #define AP_ENTITY_SPRING_ELIXIR 0x8E // Spring elixir
 
+#define EXTRA_ITEMS_COUNT 15
+
 
 enum class ap_item_type_t
 {
@@ -83,7 +85,7 @@ static ap_item_t AP_ITEMS[] = {
     { 400026, "Hourglass", ap_item_type_t::inventory, 0x8D, 0x56 },
     { 400027, "Red Potion", ap_item_type_t::inventory, 0x90, 0x4B },
     { 400028, "Elixir", ap_item_type_t::inventory, 0x92, 0x4D },
-    { 400029, "Glove", ap_item_type_t::world, AP_ITEM_GLOVE, 0x5F },
+    { 400029, "Glove", ap_item_type_t::world, AP_ITEM_GLOVE, 0x48, 0x5F },
     { 400030, "Ointment", ap_item_type_t::world, AP_ITEM_OINTMENT, 0x4E },
     { 400031, "Poison", ap_item_type_t::world, AP_ITEM_POISON, 0x5E },
     { 400032, "Killed Evil One", ap_item_type_t::boss_kill, 0x00, 0xFF },
