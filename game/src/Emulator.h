@@ -31,9 +31,11 @@ public:
     ExternalInterface* get_external_interface() const { return m_external_interface; }
     Cart* get_cart() const { return m_cart; }
     PPU* get_ppu() const { return m_ppu; }
+    CPU* get_cpu() const { return m_cpu; }
     Controller* get_controller() const { return m_controller; }
     CPUBUS* get_cpu_bus() const { return m_cpu_bus; };
     APU* get_apu() const { return m_apu; }
+    RAM* get_ram() const { return m_ram; }
 
 private:
     CPUBUS* m_cpu_bus = nullptr;

@@ -243,6 +243,33 @@ void AP::patch_items()
 	// World items
 #if 1
 	{
+		// Load sprite id and ignore 0xFF
+		{
+			auto load_sprite_id_addr = patcher->patch_new_code(14, {
+				OP_LDA_ABSX(0x02CC),
+				OP_CMP_IMM(0xFF),
+				OP_BEQ(3),
+				OP_JMP_ABS(0x8019),
+				OP_JMP_ABS(0x8043),
+			});
+
+			patcher->patch(14, 0x8014, 0, {
+				OP_JMP_ABS(load_sprite_id_addr)
+			});
+
+			auto update_sprite_no_sprite = patcher->patch_new_code(14, {
+				OP_LDA_ABSX(0x02CC),
+				OP_CMP_IMM(0xFF),
+				OP_BEQ(3),
+				OP_JMP_ABS(0x8BDF),
+				OP_JMP_ABS(0x8C17),
+			});
+
+			patcher->patch(14, 0x8BDA, 0, {
+				OP_JMP_ABS(update_sprite_no_sprite)
+			});
+		}
+
 		// Progressive sword (We're lucky this code fits perfectly to replace previous one)
 		patcher->patch(15, 0xC737, 0, {
 			OP_LDA_ABS(0x100),
@@ -549,7 +576,7 @@ void AP::patch_items()
 			auto lookup_lo_x_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSY(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0x4F), // Copy from Magical Rod
+				OP_LDA_IMM(0x17), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSX(0xAD2D), // Original table
 				OP_RTS(),
@@ -558,7 +585,7 @@ void AP::patch_items()
 			auto lookup_hi_x_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSY(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Magical Rod
+				OP_LDA_IMM(0xB2), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSX(0xAD2D + 1), // Original table
 				OP_RTS(),
@@ -567,7 +594,7 @@ void AP::patch_items()
 			auto lookup_lo_y_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0x4F), // Copy from Magical Rod
+				OP_LDA_IMM(0x17), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0xAD2D), // Original table
 				OP_RTS(),
@@ -576,7 +603,7 @@ void AP::patch_items()
 			auto lookup_hi_y_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Magical Rod
+				OP_LDA_IMM(0xB2), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0xAD2D + 1), // Original table
 				OP_RTS(),
@@ -594,7 +621,7 @@ void AP::patch_items()
 			auto lookup16_lo_y_addr = patcher->patch_new_code(15, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0x4F), // Copy from Magical Rod
+				OP_LDA_IMM(0x17), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0xAD2D), // Original table
 				OP_RTS(),
@@ -603,7 +630,7 @@ void AP::patch_items()
 			auto lookup16_hi_y_addr = patcher->patch_new_code(15, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Magical Rod
+				OP_LDA_IMM(0xB2), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0xAD2D + 1), // Original table
 				OP_RTS(),
@@ -618,7 +645,7 @@ void AP::patch_items()
 			auto lookup_lo_y_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0x4A), // Copy from Magical Rod
+				OP_LDA_IMM(0x07 + 2), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0x8087), // Original table
 				OP_RTS(),
@@ -627,7 +654,7 @@ void AP::patch_items()
 			auto lookup_hi_y_addr = patcher->patch_new_code(14, {
 				OP_LDA_ABSX(0x2CC),
 				OP_BPL(3),
-				OP_LDA_IMM(0xA3), // Copy from Magical Rod
+				OP_LDA_IMM(0xA3), // Copy from Red Potion
 				OP_RTS(),
 				OP_LDA_ABSY(0x8087 + 1), // Original table
 				OP_RTS(),
@@ -700,7 +727,7 @@ void AP::patch_items()
 				OP_BPL(5),
 
 				OP_PLA(),
-				OP_CLC(), OP_ADC_IMM(0x57), // Magical Rod
+				OP_CLC(), OP_ADC_IMM(0x4D), // Red Potion
 				//OP_TYA(),
 				//OP_AND_IMM(0x7F), // Start at 0, we read them from another bank
 				OP_RTS(),

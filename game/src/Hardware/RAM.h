@@ -17,6 +17,8 @@ public:
     bool cpu_read(uint16_t addr, uint8_t* out_data) override;
 
     void render();
+    
+    uint8_t get(uint16_t addr) const { return m_data[addr]; }
 
 private:
     uint8_t m_data[0x800];

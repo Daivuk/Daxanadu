@@ -28,6 +28,8 @@ public:
     void update(float dt);
     void render();
 
+    Emulator* get_emulator() const { return m_emulator; }
+
 private:
     void init();
     void cleanup();

@@ -83,7 +83,7 @@ void RAM::render()
         {
             for (int i = 0; i < 8; ++i)
             {
-                if (m_data[0x02CC + i] == 0xFF) continue;
+                //if (m_data[0x02CC + i] == 0xFF) continue;
                 ImGui::Text("ID: 0x%02X - 0x%02X", (int)m_data[0x02CC + i], (int)m_data[0x02D4 + i]);
                 ImGui::Text("Position: %i, %i", (int)m_data[0x00BA + i], (int)m_data[0x00C2 + i]);
                 auto flags = m_data[0x02DC + i];

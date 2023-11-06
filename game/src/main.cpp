@@ -7,7 +7,7 @@
 #include <onut/Timing.h>
 
 
-Daxanadu* m_daxanadu = nullptr;
+Daxanadu* daxanadu = nullptr;
 
 
 void initSettings()
@@ -51,26 +51,26 @@ void init()
 {
     //oTiming->setUpdateFps(60.0988);
 
-    m_daxanadu = new Daxanadu();
+    daxanadu = new Daxanadu();
 }
 
 
 void shutdown()
 {
-    delete m_daxanadu;
-    m_daxanadu = nullptr;
+    delete daxanadu;
+    daxanadu = nullptr;
 }
 
 
 void update()
 {
-    m_daxanadu->update(ODT);
+    daxanadu->update(ODT);
 }
 
 
 void render()
 {
-    m_daxanadu->render();
+    daxanadu->render();
 }
 
 

@@ -21,6 +21,10 @@ public:
 
     void render();
 
+    uint8_t get_a() const { return m_cpu_context.a; }
+    uint8_t get_x() const { return m_cpu_context.x; }
+    uint8_t get_y() const { return m_cpu_context.y; }
+
 public:
     // Reserved for the MSC6502 emulator
     uint8 MCS6502_read(uint16 addr);

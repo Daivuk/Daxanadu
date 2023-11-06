@@ -201,16 +201,27 @@ bool Cart::cpu_write(uint16_t addr, uint8_t data)
     return false;
 }
 
+#include "Daxanadu.h"
+#include "Emulator.h"
+#include "CPU.h"
+#include "RAM.h"
+
+extern Daxanadu* daxanadu;
 
 bool Cart::cpu_read(uint16_t addr, uint8_t* out_data)
 {
     uint32_t mapped_addr;
     if (m_mapper->map_cpu_read(addr, &mapped_addr))
     {
-        //if (mapped_addr == 14 * 0x4000 + 0x88FB - 0x8000)
-        //{
-        //    __debugbreak();
-        //}
+        if (mapped_addr == 14 * 0x4000 + 0xA523 - 0x8000)
+        {
+            auto x = daxanadu->get_emulator()->get_cpu()->get_x();
+            auto ram = daxanadu->get_emulator()->get_ram()->get(0x02CC + x);
+            if (ram == 0x89)
+            {
+                __debugbreak();
+            }
+        }
         *out_data = m_prg_rom[mapped_addr];
         return true;
     }
