@@ -196,34 +196,34 @@ void AP::patch_items()
 	copy_sprite(TILE_ADDR(0x0D), SPRITE_ADDR(0x00018C32, 0x09), false, false);
 
 	// Replace unused night monster sprites with key tiles
-	copy_sprite(TILE_ADDR(0x26), SPRITE_ADDR(0x00019442, 0x00), false, false); // A top
-	copy_sprite(TILE_ADDR(0x27), SPRITE_ADDR(0x00019442, 0x01), false, false); // Dents top
-	copy_sprite(TILE_ADDR(0x28), SPRITE_ADDR(0x00019442, 0x02), false, false); // A bottom
-	copy_sprite(TILE_ADDR(0x29), SPRITE_ADDR(0x00019442, 0x03), false, false); // Dents bottom
-	copy_sprite(TILE_ADDR(0x2A), SPRITE_ADDR(0x00019442, 0x04), false, false); // K bottom
-	copy_sprite(TILE_ADDR(0x2B), SPRITE_ADDR(0x00019442, 0x05), false, false); // K top
-	copy_sprite(TILE_ADDR(0x71), SPRITE_ADDR(0x00019442, 0x06), false, false); // Q top
-	copy_sprite(TILE_ADDR(0x72), SPRITE_ADDR(0x00019442, 0x07), false, false); // Q bottom
-	copy_sprite(TILE_ADDR(0x73), SPRITE_ADDR(0x00019442, 0x08), false, false); // J top
-	copy_sprite(TILE_ADDR(0x74), SPRITE_ADDR(0x00019442, 0x09), false, false); // J bottom
-	copy_sprite(TILE_ADDR(0x75), SPRITE_ADDR(0x00019442, 0x0A), false, false); // Jo top
-	copy_sprite(TILE_ADDR(0x76), SPRITE_ADDR(0x00019442, 0x0B), false, false); // Jo bottom
+	copy_sprite(TILE_ADDR(0x26), SPRITE_ADDR(0x00019442, 0x00), false, true); // A top
+	copy_sprite(TILE_ADDR(0x27), SPRITE_ADDR(0x00019442, 0x01), false, true); // Dents top
+	copy_sprite(TILE_ADDR(0x28), SPRITE_ADDR(0x00019442, 0x02), false, true); // A bottom
+	copy_sprite(TILE_ADDR(0x29), SPRITE_ADDR(0x00019442, 0x03), false, true); // Dents bottom
+	copy_sprite(TILE_ADDR(0x2A), SPRITE_ADDR(0x00019442, 0x04), false, true); // K bottom
+	copy_sprite(TILE_ADDR(0x2B), SPRITE_ADDR(0x00019442, 0x05), false, true); // K top
+	copy_sprite(TILE_ADDR(0x71), SPRITE_ADDR(0x00019442, 0x06), false, true); // Q top
+	copy_sprite(TILE_ADDR(0x72), SPRITE_ADDR(0x00019442, 0x07), false, true); // Q bottom
+	copy_sprite(TILE_ADDR(0x73), SPRITE_ADDR(0x00019442, 0x08), false, true); // J top
+	copy_sprite(TILE_ADDR(0x74), SPRITE_ADDR(0x00019442, 0x09), false, true); // J bottom
+	copy_sprite(TILE_ADDR(0x75), SPRITE_ADDR(0x00019442, 0x0A), false, true); // Jo top
+	copy_sprite(TILE_ADDR(0x76), SPRITE_ADDR(0x00019442, 0x0B), false, true); // Jo bottom
 
 	// Magic
-	copy_sprite(TILE_ADDR(0x7F), SPRITE_ADDR(0x00018C32, 0x0A), false, false); // Deluge
-	copy_sprite(TILE_ADDR(0x80), SPRITE_ADDR(0x00018C32, 0x0B), false, false);
-	copy_sprite(TILE_ADDR(0x83), SPRITE_ADDR(0x00018C32, 0x0C), false, false); // Thunder
-	copy_sprite(TILE_ADDR(0x84), SPRITE_ADDR(0x00018C32, 0x0D), false, false);
-	copy_sprite(TILE_ADDR(0x87), SPRITE_ADDR(0x00018C32, 0x0E), false, false); // Fire
-	copy_sprite(TILE_ADDR(0x88), SPRITE_ADDR(0x00018C32, 0x0F), false, false);
-	copy_sprite(TILE_ADDR(0x7B), SPRITE_ADDR(0x00019CC2, 0x00), false, false); // Death
-	copy_sprite(TILE_ADDR(0x7C), SPRITE_ADDR(0x00019CC2, 0x01), false, false);
-	copy_sprite(TILE_ADDR(0x7D), SPRITE_ADDR(0x00019CC2, 0x02), false, false);
-	copy_sprite(TILE_ADDR(0x7E), SPRITE_ADDR(0x00019CC2, 0x03), false, false);
-	copy_sprite(TILE_ADDR(0x77), SPRITE_ADDR(0x00019CC2, 0x04), false, false); // Tilte
-	copy_sprite(TILE_ADDR(0x78), SPRITE_ADDR(0x00019CC2, 0x05), false, false);
-	copy_sprite(TILE_ADDR(0x79), SPRITE_ADDR(0x00019CC2, 0x06), false, false);
-	copy_sprite(TILE_ADDR(0x7A), SPRITE_ADDR(0x00019CC2, 0x07), false, false);
+	copy_sprite(TILE_ADDR(0x7F), SPRITE_ADDR(0x00018C32, 0x0A), false, true); // Deluge
+	copy_sprite(TILE_ADDR(0x80), SPRITE_ADDR(0x00018C32, 0x0B), false, true);
+	copy_sprite(TILE_ADDR(0x83), SPRITE_ADDR(0x00018C32, 0x0C), false, true); // Thunder
+	copy_sprite(TILE_ADDR(0x84), SPRITE_ADDR(0x00018C32, 0x0D), false, true);
+	copy_sprite(TILE_ADDR(0x87), SPRITE_ADDR(0x00018C32, 0x0E), false, true); // Fire
+	copy_sprite(TILE_ADDR(0x88), SPRITE_ADDR(0x00018C32, 0x0F), false, true);
+	copy_sprite(TILE_ADDR(0x7B), SPRITE_ADDR(0x00019CC2, 0x00), false, true); // Death
+	copy_sprite(TILE_ADDR(0x7C), SPRITE_ADDR(0x00019CC2, 0x01), false, true);
+	copy_sprite(TILE_ADDR(0x7D), SPRITE_ADDR(0x00019CC2, 0x02), false, true);
+	copy_sprite(TILE_ADDR(0x7E), SPRITE_ADDR(0x00019CC2, 0x03), false, true);
+	copy_sprite(TILE_ADDR(0x77), SPRITE_ADDR(0x00019CC2, 0x04), false, true); // Tilte
+	copy_sprite(TILE_ADDR(0x78), SPRITE_ADDR(0x00019CC2, 0x05), false, true);
+	copy_sprite(TILE_ADDR(0x79), SPRITE_ADDR(0x00019CC2, 0x06), false, true);
+	copy_sprite(TILE_ADDR(0x7A), SPRITE_ADDR(0x00019CC2, 0x07), false, true);
 
 	// Replace rest of unused night monster sprites with spring elixir tiles
 	copy_sprite(TILE_ADDR(0x34), SPRITE_ADDR(0x00019442, 0x0C), false, true);
@@ -731,25 +731,22 @@ void AP::patch_items()
 		// Phase table
 		{
 			auto lookup_y_addr = patcher->patch_new_code(14, {
-				//OP_LDA_IMM(0xF8), OP_RTS(),
+				OP_BPL(13),
 
-				OP_PHA(),
 				OP_TYA(),
-				OP_BPL(6),
-
-				OP_PLA(),
-				//OP_CLC(), OP_ADC_IMM(0x57), // Magical Rod
-				OP_TYA(),
-				OP_AND_IMM(0x7F), // Start at 0, we read them from another bank
+				OP_AND_IMM(0x7F),
 				OP_TAY(),
-				OP_RTS(),
 
-				OP_PLA(),
-				OP_CLC(), OP_ADC_ABSY(0x8C9F), // Original table
-				OP_RTS(),
+				OP_LDA_ABS(0x0100), // Original code (Dont remove)
+				OP_PHA(), // Original code (Dont remove)
+				OP_LDX_IMM(9), // Where we keep our new frames
+				OP_JMP_ABS(0xF05E),
+
+				OP_ADC_ABSY(0x8C9F), // Original table
+				OP_JMP_ABS(0xF057), // This will load bank 7
 			});
 
-			patcher->patch(14, 0x8C92, 0, { OP_JSR(lookup_y_addr) });
+			patcher->patch(14, 0x8C92, 0, { OP_JMP_ABS(lookup_y_addr) });
 		}
 
 		// Frame addr table at the start of the bank 9 (Bank 9 is empty, we put our new sprites in there)
@@ -760,50 +757,43 @@ void AP::patch_items()
 		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
 			patcher->patch_new_code(9, { PATCH_ADDR(0x0008 + EXTRA_ITEMS_COUNT * 2 + i * 12) }); // Offset into the bank to the frame
 
-		const uint8_t frame_pals[EXTRA_ITEMS_COUNT] = {
-			0, 0, 2, 1, // Rings
-			1, 1, 1, 1, 1, // Keys
-			1, 1, 1, 1, 1, // Magics
-			2, // Spring Elixir
-		};
+#define ADD_ENTITY_ITEM_SPRITE(s0, s1, s2, s3, f0, f1, f2, f3, pal) \
+			patcher->patch_new_code(9, { \
+				0x11, /* 2x2 */ \
+				0x00, /* x offset */ \
+				0x00, /* y offset */ \
+				0x08, /* unknown, other items use 8 */ \
+				s0, /* Sprite ID */ \
+				f0 | pal, /* Palette */ \
+				s1, /* Sprite ID */ \
+				f1 | pal, /* Palette */ \
+				s2, /* Sprite ID */ \
+				f2 | pal, /* Palette */ \
+				s3, /* Sprite ID */ \
+				f3 | pal, /* Palette */ \
+			})
 
-		for (uint8_t pal : frame_pals)
-		{
-			patcher->patch_new_code(9, {
-				0x11, /* 2x2 */
-				0x00, /* x offset */
-				0x00, /* y offset */
-				0x08, /* unknown, other items use 8 */
-				0x00, /* Sprite ID */
-				pal, /* Palette */
-				0x01, /* Sprite ID */
-				pal, /* Palette */
-				0x02, /* Sprite ID */
-				pal, /* Palette */
-				0x03, /* Sprite ID */
-				pal, /* Palette */
-			});
-		}
+#define FLIP_V 0b10000000
+#define FLIP_H 0b01000000
 
-		// Setup next entity frame
-		{
-			auto addr = patcher->patch_new_code(14, {
-				OP_PHA(),
-				OP_TYA(),
-				OP_BPL(10),
+		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x08, 0x09, 0, 0, 0, 0, 0); // Rings
+		ADD_ENTITY_ITEM_SPRITE(0x02, 0x03, 0x08, 0x09, 0, 0, 0, 0, 0);
+		ADD_ENTITY_ITEM_SPRITE(0x04, 0x05, 0x08, 0x09, 0, 0, 0, 0, 2);
+		ADD_ENTITY_ITEM_SPRITE(0x06, 0x07, 0x08, 0x09, 0, 0, 0, 0, 1);
 
-				OP_PLA(),
-				OP_TAY(),
-				OP_LDA_ABS(0x0100),
-				OP_LDX_IMM(9), // Where we keep our new frames
-				OP_JMP_ABS(0xF05E),
+		ADD_ENTITY_ITEM_SPRITE(0x08, 0x01, 0x09, 0x03, 0, 0, 0, 0, 1); // Keys
+		ADD_ENTITY_ITEM_SPRITE(0x06, 0x01, 0x07, 0x03, 0, 0, 0, 0, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x04, 0x01, 0x05, 0x03, 0, 0, 0, 0, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x0A, 0x01, 0x0B, 0x03, 0, 0, 0, 0, 1);
+		
+		ADD_ENTITY_ITEM_SPRITE(0x0A, 0x0B, 0x0A, 0x0B, 0, 0, FLIP_V, FLIP_V, 1); // Magics
+		ADD_ENTITY_ITEM_SPRITE(0x0C, 0x0D, 0x0C, 0x0D, 0, 0, FLIP_V, FLIP_V, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x0E, 0x0F, 0x0E, 0x0F, 0, 0, FLIP_V, FLIP_V, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0, 1);
+		ADD_ENTITY_ITEM_SPRITE(0x04, 0x05, 0x06, 0x07, 0, 0, 0, 0, 1);
 
-				OP_PLA(),
-				OP_JMP_ABS(0xF057), // This will load bank 7
-			});
-
-			patcher->patch(14, 0x8C95, 0, { OP_JMP_ABS(addr) });
-		}
+		ADD_ENTITY_ITEM_SPRITE(0x0C, 0x0D, 0x0E, 0x0F, 0, 0, 0, 0, 2); // Elixir
 
 		auto entity_to_item_table_addr = patcher->patch_new_code(15, {
 			0x64, 0x65, 0x66, 0x67, // Rings
