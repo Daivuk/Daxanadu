@@ -258,11 +258,11 @@ void AP::patch_items()
 			});
 
 			auto update_sprite_no_sprite = patcher->patch_new_code(14, {
-				OP_LDA_ABSX(0x02CC),
-				OP_CMP_IMM(0xFF),
+				OP_LDY_ABSX(0x02CC),
+				OP_CPY_IMM(0xFF),
 				OP_BEQ(3),
 				OP_JMP_ABS(0x8BDF),
-				OP_JMP_ABS(0x8C17),
+				OP_RTS(),
 			});
 
 			patcher->patch(14, 0x8BDA, 0, {
@@ -487,6 +487,17 @@ void AP::patch_items()
 			patcher->patch(14, 0x8AF3, 0, { OP_JSR(lookup_y_addr) });
 			patcher->patch(14, 0xA546, 0, { OP_JSR(lookup_x_addr) });
 			patcher->patch(14, 0xA673, 0, { OP_JSR(lookup_y_addr) });
+
+			auto lookup15_y_addr = patcher->patch_new_code(15, {
+				OP_TYA(),
+				OP_BPL(3),
+				OP_LDA_IMM(0x05), // 5 = item
+				OP_RTS(),
+				OP_LDA_ABSY(0xB544), // Original table
+				OP_RTS(),
+			});
+
+			patcher->patch(15, 0xEFFD, 0, { OP_JSR(lookup15_y_addr) });
 		}
 
 		// Entity health
@@ -690,6 +701,18 @@ void AP::patch_items()
 				0x1D, // AP_ENTITY_SPRING_ELIXIR
 			});
 
+			auto entity_id_lookup_addr = patcher->patch_new_code(15, {
+				OP_LDA_ABS(0x038B), // Current entity we're working with
+				OP_BPL(6),
+				OP_AND_IMM(0x7F),
+				OP_TAY(),
+				OP_LDA_ABSY(sprite_redirector_table_addr),
+				OP_RTS(),
+			});
+
+			patcher->patch(15, 0xCD8F, 0, { OP_JSR(entity_id_lookup_addr) });
+			patcher->patch(15, 0xCDA6, 0, { OP_JSR(entity_id_lookup_addr) });
+
 			auto get_sprite_bank_addr = patcher->patch_new_code(15, {
 				OP_BMI(5), // New items are in first bank
 				OP_CMP_IMM(0x37),
@@ -703,33 +726,22 @@ void AP::patch_items()
 				OP_NOP(),
 				OP_NOP(),
 			});
-
-			auto entity_id_lookup_addr = patcher->patch_new_code(15, {
-				OP_LDA_ABS(0x038B), // Current entity we're working with
-				OP_BPL(6),
-				OP_AND_IMM(0x7F),
-				OP_TAY(),
-				OP_LDA_ABSY(sprite_redirector_table_addr),
-				OP_RTS(),
-			});
-
-			patcher->patch(15, 0xCD8F, 0, { OP_JSR(entity_id_lookup_addr) });
-			patcher->patch(15, 0xCDA6, 0, { OP_JSR(entity_id_lookup_addr) });
 		}
 
 		// Phase table
 		{
 			auto lookup_y_addr = patcher->patch_new_code(14, {
-				OP_LDA_IMM(0xF8), OP_RTS(),
+				//OP_LDA_IMM(0xF8), OP_RTS(),
 
 				OP_PHA(),
 				OP_TYA(),
-				OP_BPL(5),
+				OP_BPL(6),
 
 				OP_PLA(),
-				OP_CLC(), OP_ADC_IMM(0x4D), // Red Potion
-				//OP_TYA(),
-				//OP_AND_IMM(0x7F), // Start at 0, we read them from another bank
+				//OP_CLC(), OP_ADC_IMM(0x57), // Magical Rod
+				OP_TYA(),
+				OP_AND_IMM(0x7F), // Start at 0, we read them from another bank
+				OP_TAY(),
 				OP_RTS(),
 
 				OP_PLA(),
@@ -815,17 +827,14 @@ void AP::patch_items()
 			OP_JSR(0xD0E4),
 
 			// Give item
-			//OP_PLA(),
-			//OP_TAX(),
-			//OP_LDA_ABSX(entity_to_item_table_addr),
-			//
-			//OP_LDA_ABS(0x0100), OP_PHA(), // Push current bank
-
-			//OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank
-			//OP_TXA(),
-			//OP_JSR(0x9AF7), // Give item
-
-			//OP_PLA(), OP_JSR(0xCC1A), // Switch back bank
+			OP_PLA(),
+			OP_TAX(),
+			OP_LDA_ABSX(entity_to_item_table_addr),
+			OP_LDA_ABS(0x0100), OP_PHA(), // Push current bank
+			OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank
+			OP_TXA(),
+			OP_JSR(0x9AF7), // Give item
+			OP_PLA(), OP_JSR(0xCC1A), // Switch back bank
 
 			OP_PLA(), OP_TAX(), // Pop X
 			OP_RTS(),

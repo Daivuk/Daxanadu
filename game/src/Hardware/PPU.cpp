@@ -647,7 +647,7 @@ void PPU::render()
     oSpriteBatch->drawSpriteWithUVs(m_screen_texture, OScreenCenterf, 
                                     Vector4(0, 8.0f / (float)SCREEN_H, 1.0f, ((float)SCREEN_H - 8.0f) / (float)SCREEN_H),
                                     Color::White, 0.0f, scale, OCenter);
-#if 0
+#if 1
     oSpriteBatch->drawSprite(m_chr_textures[0], Vector2(0, 16), Color::White, 0.0f, 2.0f, OTopLeft);
     oSpriteBatch->drawSprite(m_chr_textures[1], Vector2(0, 16 + 128 * 2 + 2), Color::White, 0.0f, 2.0f, OTopLeft);
     oSpriteBatch->drawSprite(m_nametable_textures[0], Vector2(res.x - SCREEN_W, 16), Color::White, OTopLeft);

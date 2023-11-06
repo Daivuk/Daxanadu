@@ -15,7 +15,7 @@ void initSettings()
     printf("%s\n", DAX_VERSION_FULL_TEXT);
 
     oSettings->setGameName("Daxanadu");
-    oSettings->setResolution({1200, 900});
+    oSettings->setResolution({1400, 900});
     oSettings->setIsFixedStep(false);
     oSettings->setShowFPS(true);
     oSettings->setIsResizableWindow(true);

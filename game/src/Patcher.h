@@ -20,6 +20,7 @@
 #define OP_STA_ABSX(addr) 0x9D, PATCH_ADDR(addr)
 #define OP_LDY_IMM(value) 0xA0, value
 #define OP_LDY_ABS(addr) 0xAC, PATCH_ADDR(addr)
+#define OP_LDY_ABSX(addr) 0xBC, PATCH_ADDR(addr)
 #define OP_STY_ZPG(addr) 0x84, addr
 #define OP_LDX_ABS(addr) 0xAE, PATCH_ADDR(addr)
 #define OP_LDX_IMM(value) 0xA2, value
