@@ -14,23 +14,25 @@
 #define AP_ITEM_SPRING_ELIXIR 0x9C
 
 // Start the new entities at 0x80. This way we can just test for N flag.
-#define AP_ENTITY_RING_OF_ELF 0x80 // Rings
+#define AP_ENTITY_RING_OF_ELF 0x80
 #define AP_ENTITY_RING_OF_RUBY 0x81
 #define AP_ENTITY_RING_OF_DWORF 0x82
 #define AP_ENTITY_DEMONS_RING 0x83
-#define AP_ENTITY_KEY_JACK 0x84 // Keys
+#define AP_ENTITY_KEY_JACK 0x84
 #define AP_ENTITY_KEY_QUEEN 0x85
 #define AP_ENTITY_KEY_KING 0x86
 #define AP_ENTITY_KEY_ACE 0x87
 #define AP_ENTITY_KEY_JOKER 0x88
-#define AP_ENTITY_DELUGE 0x89 // Magics
+#define AP_ENTITY_DELUGE 0x89
 #define AP_ENTITY_THUNDER 0x8A
 #define AP_ENTITY_FIRE 0x8B
 #define AP_ENTITY_DEATH 0x8C
 #define AP_ENTITY_TILTE 0x8D
-#define AP_ENTITY_SPRING_ELIXIR 0x8E // Spring elixir
+#define AP_ENTITY_SPRING_ELIXIR 0x8E
+#define AP_ENTITY_AP 0x8F
+#define AP_ENTITY_AP_PROGRESSION 0x90
 
-#define EXTRA_ITEMS_COUNT 15
+#define EXTRA_ITEMS_COUNT 17
 
 
 enum class ap_item_type_t

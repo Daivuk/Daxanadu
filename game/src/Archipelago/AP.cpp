@@ -89,7 +89,7 @@ void AP::connect()
 }
 
 
-static void copy_sprite(uint8_t* src, uint8_t* dst, bool flip, bool invert_green_red, int shift = 0)
+static void copy_sprite(uint8_t* src, uint8_t* dst, int flip /*1=h,2=v*/, bool invert_green_red, int shift = 0)
 {
 	if (!flip && !invert_green_red && shift == 0)
 	{
@@ -101,6 +101,12 @@ static void copy_sprite(uint8_t* src, uint8_t* dst, bool flip, bool invert_green
 	{
 		uint8_t src_plane0 = src[y];
 		uint8_t src_plane1 = src[y + 8];
+
+		if (flip & 2)
+		{
+			src_plane0 = src[7 - y];
+			src_plane1 = src[7 - y + 8];
+		}
 
 		uint8_t dst_plane0 = 0;
 		uint8_t dst_plane1 = 0;
@@ -115,7 +121,7 @@ static void copy_sprite(uint8_t* src, uint8_t* dst, bool flip, bool invert_green
 				b0 = b1;
 				b1 = tmp;
 			}
-			if (flip)
+			if (flip & 1)
 			{
 				dst_plane0 |= b0 << (7 - x);
 				dst_plane1 |= b1 << (7 - x);
@@ -145,6 +151,8 @@ void AP::patch_items()
 {
 #define BANK_ADDR_LO(bank, addr) (bank * 0x4000 + (addr - 0x8000))
 #define ROM_LO(bank, addr) (m_info.rom + BANK_ADDR_LO(bank, addr))
+#define BANK_OFFSET(bank, offset) (bank * 0x4000 + offset)
+#define ROM_OFFSET_LO(bank, offset) (m_info.rom + BANK_ADDR_LO(bank, (offset) + 0x8000))
 #define ADD_ITEM(name, id, tile0, tile1, tile2, tile3) \
 	memcpy(ROM_LO(12, 0xAE4D) + (id - 0x90) * 16 + 1, name, strlen(name)); \
 	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
@@ -159,81 +167,28 @@ void AP::patch_items()
 	auto patcher = m_info.patcher;
 
 	// Replace Crystal with spring elixir
-	copy_sprite(TILE_ADDR(0x34), TILE_ADDR(0x12), false, true);
-	copy_sprite(TILE_ADDR(0x35), TILE_ADDR(0x13), false, true);
-	copy_sprite(TILE_ADDR(0x36), TILE_ADDR(0x14), false, true);
-	copy_sprite(TILE_ADDR(0x37), TILE_ADDR(0x15), false, true);
+	copy_sprite(TILE_ADDR(0x34), TILE_ADDR(0x12), 0, true);
+	copy_sprite(TILE_ADDR(0x35), TILE_ADDR(0x13), 0, true);
+	copy_sprite(TILE_ADDR(0x36), TILE_ADDR(0x14), 0, true);
+	copy_sprite(TILE_ADDR(0x37), TILE_ADDR(0x15), 0, true);
 
 	// Replace Lamp with glove
-	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x00), TILE_ADDR(0x16), false, false, 4);
-	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x00), TILE_ADDR(0x17), false, false, -4);
-	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x01), TILE_ADDR(0x18), false, false, 4);
-	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x01), TILE_ADDR(0x19), false, false, -4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x00), TILE_ADDR(0x16), 0, false, 4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x00), TILE_ADDR(0x17), 0, false, -4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x01), TILE_ADDR(0x18), 0, false, 4);
+	copy_sprite(SPRITE_ADDR(0x0001CD26, 0x01), TILE_ADDR(0x19), 0, false, -4);
 
 	// Replace fire crystal tiles with ointment
-	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x00), TILE_ADDR(0x40), false, false);
-	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x00), TILE_ADDR(0x41), true, false);
-	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x42), false, false);
-	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x43), true, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x00), TILE_ADDR(0x40), 0, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x00), TILE_ADDR(0x41), 1, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x42), 0, false);
+	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x43), 1, false);
 
 	// Replace battle helmet sprites for Magic Shield tiles
-	copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0x00), false, false);
-	copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 0x01), false, false);
-	copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 0x02), false, false);
-	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 0x03), false, false);
-
-#if 1
-	// Replace snake monster (unused) with ring tiles
-	copy_sprite(TILE_ADDR(0x06), SPRITE_ADDR(0x00018C32, 0x00), false, true); // Ring of elf cap
-	copy_sprite(TILE_ADDR(0x07), SPRITE_ADDR(0x00018C32, 0x01), false, true);
-	copy_sprite(TILE_ADDR(0x08), SPRITE_ADDR(0x00018C32, 0x02), false, true); // Ruby ring cap
-	copy_sprite(TILE_ADDR(0x09), SPRITE_ADDR(0x00018C32, 0x03), false, true);
-	copy_sprite(TILE_ADDR(0x0A), SPRITE_ADDR(0x00018C32, 0x04), false, false); // Ring of dworf cap
-	copy_sprite(TILE_ADDR(0x0B), SPRITE_ADDR(0x00018C32, 0x05), false, false);
-	copy_sprite(TILE_ADDR(0x04), SPRITE_ADDR(0x00018C32, 0x06), false, false); // Demons ring cap
-	copy_sprite(TILE_ADDR(0x05), SPRITE_ADDR(0x00018C32, 0x07), false, false);
-	copy_sprite(TILE_ADDR(0x0C), SPRITE_ADDR(0x00018C32, 0x08), false, false); // Loop
-	copy_sprite(TILE_ADDR(0x0D), SPRITE_ADDR(0x00018C32, 0x09), false, false);
-
-	// Replace unused night monster sprites with key tiles
-	copy_sprite(TILE_ADDR(0x26), SPRITE_ADDR(0x00019442, 0x00), false, true); // A top
-	copy_sprite(TILE_ADDR(0x27), SPRITE_ADDR(0x00019442, 0x01), false, true); // Dents top
-	copy_sprite(TILE_ADDR(0x28), SPRITE_ADDR(0x00019442, 0x02), false, true); // A bottom
-	copy_sprite(TILE_ADDR(0x29), SPRITE_ADDR(0x00019442, 0x03), false, true); // Dents bottom
-	copy_sprite(TILE_ADDR(0x2A), SPRITE_ADDR(0x00019442, 0x04), false, true); // K bottom
-	copy_sprite(TILE_ADDR(0x2B), SPRITE_ADDR(0x00019442, 0x05), false, true); // K top
-	copy_sprite(TILE_ADDR(0x71), SPRITE_ADDR(0x00019442, 0x06), false, true); // Q top
-	copy_sprite(TILE_ADDR(0x72), SPRITE_ADDR(0x00019442, 0x07), false, true); // Q bottom
-	copy_sprite(TILE_ADDR(0x73), SPRITE_ADDR(0x00019442, 0x08), false, true); // J top
-	copy_sprite(TILE_ADDR(0x74), SPRITE_ADDR(0x00019442, 0x09), false, true); // J bottom
-	copy_sprite(TILE_ADDR(0x75), SPRITE_ADDR(0x00019442, 0x0A), false, true); // Jo top
-	copy_sprite(TILE_ADDR(0x76), SPRITE_ADDR(0x00019442, 0x0B), false, true); // Jo bottom
-
-	// Magic
-	copy_sprite(TILE_ADDR(0x7F), SPRITE_ADDR(0x00018C32, 0x0A), false, true); // Deluge
-	copy_sprite(TILE_ADDR(0x80), SPRITE_ADDR(0x00018C32, 0x0B), false, true);
-	copy_sprite(TILE_ADDR(0x83), SPRITE_ADDR(0x00018C32, 0x0C), false, true); // Thunder
-	copy_sprite(TILE_ADDR(0x84), SPRITE_ADDR(0x00018C32, 0x0D), false, true);
-	copy_sprite(TILE_ADDR(0x87), SPRITE_ADDR(0x00018C32, 0x0E), false, true); // Fire
-	copy_sprite(TILE_ADDR(0x88), SPRITE_ADDR(0x00018C32, 0x0F), false, true);
-	copy_sprite(TILE_ADDR(0x7B), SPRITE_ADDR(0x00019CC2, 0x00), false, true); // Death
-	copy_sprite(TILE_ADDR(0x7C), SPRITE_ADDR(0x00019CC2, 0x01), false, true);
-	copy_sprite(TILE_ADDR(0x7D), SPRITE_ADDR(0x00019CC2, 0x02), false, true);
-	copy_sprite(TILE_ADDR(0x7E), SPRITE_ADDR(0x00019CC2, 0x03), false, true);
-	copy_sprite(TILE_ADDR(0x77), SPRITE_ADDR(0x00019CC2, 0x04), false, true); // Tilte
-	copy_sprite(TILE_ADDR(0x78), SPRITE_ADDR(0x00019CC2, 0x05), false, true);
-	copy_sprite(TILE_ADDR(0x79), SPRITE_ADDR(0x00019CC2, 0x06), false, true);
-	copy_sprite(TILE_ADDR(0x7A), SPRITE_ADDR(0x00019CC2, 0x07), false, true);
-
-	// Replace rest of unused night monster sprites with spring elixir tiles
-	copy_sprite(TILE_ADDR(0x34), SPRITE_ADDR(0x00019442, 0x0C), false, true);
-	copy_sprite(TILE_ADDR(0x35), SPRITE_ADDR(0x00019442, 0x0D), false, true);
-	copy_sprite(TILE_ADDR(0x36), SPRITE_ADDR(0x00019442, 0x0E), false, true);
-	copy_sprite(TILE_ADDR(0x37), SPRITE_ADDR(0x00019442, 0x0F), false, true);
-#else
-	// Copy new sprites into bank 9. We can fill it all up without trying to be "smart",
-	// the bank is completely empty!
-#endif
+	copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0x00), 0, false);
+	copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 0x01), 0, false);
+	copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 0x02), 0, false);
+	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 0x03), 0, false);
 
 	// Rename battle helmet to progressive shield in the popup dialog
 	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
@@ -329,6 +284,8 @@ void AP::patch_items()
 
 		auto spring_elixir_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD2, 0x00 }); // 0xA6
 
+		auto ap_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD3, 0x00 }); // 0xA6
+
 		// Table continue
 		auto dialog_lo = patcher->patch_new_code(12, {
 			LO(elf_ring_dialog),
@@ -346,6 +303,8 @@ void AP::patch_items()
 			LO(death_dialog),
 			LO(tilte_dialog),
 			LO(spring_elixir_dialog),
+			LO(ap_dialog),
+			LO(ap_dialog),
 		});
 		auto dialog_hi = patcher->patch_new_code(12, {
 			HI(elf_ring_dialog),
@@ -363,6 +322,8 @@ void AP::patch_items()
 			HI(death_dialog),
 			HI(tilte_dialog),
 			HI(spring_elixir_dialog),
+			HI(ap_dialog),
+			HI(ap_dialog),
 		});
 
 		// We want to add dialogs for the new items. They are tightly packed into the
@@ -698,55 +659,40 @@ void AP::patch_items()
 
 		// Sprite sheets lookup
 		{
-			// 0x12 = unused mario64 dog monster
-			// 0x1D = unused knight monster
-			// 0x24 = unused curly tail pike monster
-			auto sprite_redirector_table_addr = patcher->patch_new_code(15, {
-				0x12, // AP_ENTITY_RING_OF_ELF
-				0x12, // AP_ENTITY_RING_OF_RUBY
-				0x12, // AP_ENTITY_RING_OF_DWORF
-				0x12, // AP_ENTITY_DEMONS_RING
-
-				0x12, // AP_ENTITY_KEY_JACK
-				0x1D, // AP_ENTITY_KEY_QUEEN
-				0x1D, // AP_ENTITY_KEY_KING
-				0x1D, // AP_ENTITY_KEY_ACE
-				0x1D, // AP_ENTITY_KEY_JOKER
-
-				0x12, // AP_ENTITY_DELUGE
-				0x12, // AP_ENTITY_THUNDER
-				0x12, // AP_ENTITY_FIRE
-				0x24, // AP_ENTITY_DEATH
-				0x24, // AP_ENTITY_TILTE
-
-				0x1D, // AP_ENTITY_SPRING_ELIXIR
-			});
-
 			auto entity_id_lookup_addr = patcher->patch_new_code(15, {
 				OP_LDA_ABS(0x038B), // Current entity we're working with
-				OP_BPL(6),
-				OP_AND_IMM(0x7F),
-				OP_TAY(),
-				OP_LDA_ABSY(sprite_redirector_table_addr),
-				OP_RTS(),
+				OP_BPL(5),
+				OP_AND_IMM(0x1F),
+				OP_JMP_ABS(0xCD98),
+				OP_JMP_ABS(0xCD92),
 			});
 
-			patcher->patch(15, 0xCD8F, 0, { OP_JSR(entity_id_lookup_addr) });
-			patcher->patch(15, 0xCDA6, 0, { OP_JSR(entity_id_lookup_addr) });
+			patcher->patch(15, 0xCD8F, 0, { OP_JMP_ABS(entity_id_lookup_addr) });
 
 			auto get_sprite_bank_addr = patcher->patch_new_code(15, {
-				OP_BMI(5), // New items are in first bank
+				OP_BMI(8),
 				OP_CMP_IMM(0x37),
 				OP_BCC(1), // First bank
 				OP_INY(),
+				OP_JMP_ABS(0xC286),
+				OP_LDA_IMM(9), // New items are in bank 9
+				OP_JMP_ABS(0xC289),
+			});
+
+			patcher->patch(15, 0xC281, 0, { OP_JMP_ABS(get_sprite_bank_addr) });
+
+			// Number of tiles an entity needs
+			auto lookup_y_addr = patcher->patch_new_code(15, {
+				OP_BPL(3),
+
+				OP_LDA_IMM(4),
+				OP_RTS(),
+
+				OP_LDA_ABSY(0xCE1B), // Original table
 				OP_RTS(),
 			});
 
-			patcher->patch(15, 0xC281, 0, {
-				OP_JSR(get_sprite_bank_addr),
-				OP_NOP(),
-				OP_NOP(),
-			});
+			patcher->patch(15, 0xCDAA, 0, { OP_JSR(lookup_y_addr) });
 		}
 
 		// Phase table
@@ -755,7 +701,7 @@ void AP::patch_items()
 				OP_BPL(13),
 
 				OP_TYA(),
-				OP_AND_IMM(0x7F),
+				OP_AND_IMM(0x1F),
 				OP_TAY(),
 
 				OP_LDA_ABS(0x0100), // Original code (Dont remove)
@@ -770,98 +716,202 @@ void AP::patch_items()
 			patcher->patch(14, 0x8C92, 0, { OP_JMP_ABS(lookup_y_addr) });
 		}
 
-		// Frame addr table at the start of the bank 9 (Bank 9 is empty, we put our new sprites in there)
-		patcher->patch_new_code(9, {
-			0, 0, 0, 0, 0, 0,
-			PATCH_ADDR(0x0008) // Frame pointer array location
-		});
-		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
-			patcher->patch_new_code(9, { PATCH_ADDR(0x0008 + EXTRA_ITEMS_COUNT * 2 + i * 12) }); // Offset into the bank to the frame
+		// Bank 9, the sprite definitions and tiles
+		{
+			const int HEADER_SIZE = 8;
+			const int FRAME_OFFSETS_TABLE_OFFSET = HEADER_SIZE;
+			const int FRAMES_OFFSET = FRAME_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
+			const int TILE_OFFSETS_TABLE_OFFSET = FRAMES_OFFSET + EXTRA_ITEMS_COUNT * 12;
+			const int TILES_OFFSET = TILE_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
 
-#define ADD_ENTITY_ITEM_SPRITE(s0, s1, s2, s3, f0, f1, f2, f3, pal) \
-			patcher->patch_new_code(9, { \
-				0x11, /* 2x2 */ \
-				0x00, /* x offset */ \
-				0x00, /* y offset */ \
-				0x08, /* unknown, other items use 8 */ \
-				s0, /* Sprite ID */ \
-				f0 | pal, /* Palette */ \
-				s1, /* Sprite ID */ \
-				f1 | pal, /* Palette */ \
-				s2, /* Sprite ID */ \
-				f2 | pal, /* Palette */ \
-				s3, /* Sprite ID */ \
-				f3 | pal, /* Palette */ \
-			})
+			// Frame addr table at the start of the bank 9 (Bank 9 is empty, we put our new sprites in there)
+			patcher->patch_new_code(9, {
+				PATCH_ADDR(TILE_OFFSETS_TABLE_OFFSET),
+				0, 0, 0, 0,
+				PATCH_ADDR(FRAME_OFFSETS_TABLE_OFFSET)
+			});
 
-#define FLIP_V 0b10000000
-#define FLIP_H 0b01000000
+			//--- Frames
+			for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
+				patcher->patch_new_code(9, { PATCH_ADDR(FRAMES_OFFSET + i * 12) });
 
-		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x08, 0x09, 0, 0, 0, 0, 0); // Rings
-		ADD_ENTITY_ITEM_SPRITE(0x02, 0x03, 0x08, 0x09, 0, 0, 0, 0, 0);
-		ADD_ENTITY_ITEM_SPRITE(0x04, 0x05, 0x08, 0x09, 0, 0, 0, 0, 2);
-		ADD_ENTITY_ITEM_SPRITE(0x06, 0x07, 0x08, 0x09, 0, 0, 0, 0, 1);
+			const uint8_t pal_lookup[] = {
+				0, 0, 2, 1, // Rings
+				1, 1, 1, 1, 1, // Keys
+				1, 1, 1, 1, 1, // Magics
+				2, // Spring Elixir
+				1, 1, // AP
+			};
 
-		ADD_ENTITY_ITEM_SPRITE(0x08, 0x01, 0x09, 0x03, 0, 0, 0, 0, 1); // Keys
-		ADD_ENTITY_ITEM_SPRITE(0x06, 0x01, 0x07, 0x03, 0, 0, 0, 0, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x04, 0x01, 0x05, 0x03, 0, 0, 0, 0, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x0A, 0x01, 0x0B, 0x03, 0, 0, 0, 0, 1);
-		
-		ADD_ENTITY_ITEM_SPRITE(0x0A, 0x0B, 0x0A, 0x0B, 0, 0, FLIP_V, FLIP_V, 1); // Magics
-		ADD_ENTITY_ITEM_SPRITE(0x0C, 0x0D, 0x0C, 0x0D, 0, 0, FLIP_V, FLIP_V, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x0E, 0x0F, 0x0E, 0x0F, 0, 0, FLIP_V, FLIP_V, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0, 1);
-		ADD_ENTITY_ITEM_SPRITE(0x04, 0x05, 0x06, 0x07, 0, 0, 0, 0, 1);
+			// Only difference between different sprites is the palette
+			for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
+			{
+				uint8_t pal = pal_lookup[i];
+				patcher->patch_new_code(9, {
+					0x11, /* 2x2 */
+					0x00, /* x offset */
+					0x00, /* y offset */
+					0x08, /* unknown, other items use 8 */
+					0, /* Sprite ID */
+					pal, /* Palette */
+					1, /* Sprite ID */
+					pal, /* Palette */
+					2, /* Sprite ID */
+					pal, /* Palette */
+					3, /* Sprite ID */
+					pal, /* Palette */
+				});
+			}
 
-		ADD_ENTITY_ITEM_SPRITE(0x0C, 0x0D, 0x0E, 0x0F, 0, 0, 0, 0, 2); // Elixir
+			//--- Tiles
+			for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
+			{
+				patcher->patch_new_code(9, { PATCH_ADDR(TILES_OFFSET + i * 64) }); // Offset into the bank to the tiles
+			}
 
-		auto entity_to_item_table_addr = patcher->patch_new_code(15, {
-			0x64, 0x65, 0x66, 0x67, // Rings
-			0x87, 0x86, 0x85, 0x84, 0x88, // Keys
-			0x60, 0x61, 0x62, 0x63, 0x64, // Magics
-			AP_ITEM_SPRING_ELIXIR,
-		});
+#define DST_TILE(idx) ROM_OFFSET_LO(9, TILES_OFFSET + idx * 16)
 
-		auto touched_new_item_addr = patcher->patch_new_code(15, {
-			// Show dialog
-			OP_AND_IMM(0x7F),
-			OP_CLC(),
-			OP_ADC_IMM(0x98),
-			OP_JSR(0xF859),
-			0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
+			// Ring of elf
+			copy_sprite(TILE_ADDR(0x06), DST_TILE(0), 0, true);
+			copy_sprite(TILE_ADDR(0x07), DST_TILE(1), 0, true);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(2), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(3), 0, false);
 
-			// Play sound
-			OP_LDA_IMM(0x08),
-			OP_JSR(0xD0E4),
+			// Ruby
+			copy_sprite(TILE_ADDR(0x08), DST_TILE(4), 0, true);
+			copy_sprite(TILE_ADDR(0x09), DST_TILE(5), 0, true);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(6), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(7), 0, false);
 
-			// Give item
-			OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank 12
-			OP_LDX_ABS(0x0378),
-			OP_LDA_ABSX(0x02CC),
-			OP_TAX(),
-			OP_LDA_ABSX(entity_to_item_table_addr - 0x80),
-			OP_JSR(0x9AF7), // Give item
-			OP_LDX_IMM(14), OP_JSR(0xCC1A), // Switch bank 14
+			// Dworf
+			copy_sprite(TILE_ADDR(0x0A), DST_TILE(8), 0, false);
+			copy_sprite(TILE_ADDR(0x0B), DST_TILE(9), 0, false);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(10), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(11), 0, false);
 
-			OP_RTS(),
-		});
+			// Demons
+			copy_sprite(TILE_ADDR(0x04), DST_TILE(12), 0, false);
+			copy_sprite(TILE_ADDR(0x05), DST_TILE(13), 0, false);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(14), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(15), 0, false);
 
-		auto touched_item_addr = patcher->patch_new_code(15, {
-			OP_CMP_IMM(0x57), // Magical Rod
-			OP_BNE(3),
-			OP_JMP_ABS(0xC810), // Magical rod pickup code
+			// Jack
+			copy_sprite(TILE_ADDR(0x73), DST_TILE(16), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(17), 0, true);
+			copy_sprite(TILE_ADDR(0x74), DST_TILE(18), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(19), 0, true);
 
-			OP_TAY(), // Do we care about integrity of Y here? We do for X that I know
-			OP_BPL(3),
-			OP_JMP_ABS(touched_new_item_addr),
+			// Queen
+			copy_sprite(TILE_ADDR(0x71), DST_TILE(20), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(21), 0, true);
+			copy_sprite(TILE_ADDR(0x72), DST_TILE(22), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(23), 0, true);
 			
-			OP_JMP_ABS(0xC76F), // Return where we were
-		});
+			// King
+			copy_sprite(TILE_ADDR(0x2A), DST_TILE(24), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(25), 0, true);
+			copy_sprite(TILE_ADDR(0x2B), DST_TILE(26), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(27), 0, true);
+			
+			// Ace
+			copy_sprite(TILE_ADDR(0x26), DST_TILE(28), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(29), 0, true);
+			copy_sprite(TILE_ADDR(0x28), DST_TILE(30), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(31), 0, true);
+			
+			// Joker
+			copy_sprite(TILE_ADDR(0x75), DST_TILE(32), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(33), 0, true);
+			copy_sprite(TILE_ADDR(0x76), DST_TILE(34), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(35), 0, true);
+			
+			// Deluge
+			copy_sprite(TILE_ADDR(0x7F), DST_TILE(36), 0, true);
+			copy_sprite(TILE_ADDR(0x80), DST_TILE(37), 0, true);
+			copy_sprite(TILE_ADDR(0x7F), DST_TILE(38), 2, true);
+			copy_sprite(TILE_ADDR(0x80), DST_TILE(39), 2, true);
+			
+			// Thunder
+			copy_sprite(TILE_ADDR(0x83), DST_TILE(40), 0, true);
+			copy_sprite(TILE_ADDR(0x84), DST_TILE(41), 0, true);
+			copy_sprite(TILE_ADDR(0x83), DST_TILE(42), 2, true);
+			copy_sprite(TILE_ADDR(0x84), DST_TILE(43), 2, true);
+			
+			// Fire
+			copy_sprite(TILE_ADDR(0x87), DST_TILE(44), 0, true);
+			copy_sprite(TILE_ADDR(0x88), DST_TILE(45), 0, true);
+			copy_sprite(TILE_ADDR(0x87), DST_TILE(46), 2, true);
+			copy_sprite(TILE_ADDR(0x88), DST_TILE(47), 2, true);
+			
+			// Death
+			copy_sprite(TILE_ADDR(0x7B), DST_TILE(48), 0, true);
+			copy_sprite(TILE_ADDR(0x7C), DST_TILE(49), 0, true);
+			copy_sprite(TILE_ADDR(0x7D), DST_TILE(50), 0, true);
+			copy_sprite(TILE_ADDR(0x7E), DST_TILE(51), 0, true);
+			
+			// Tilte
+			copy_sprite(TILE_ADDR(0x77), DST_TILE(52), 0, true);
+			copy_sprite(TILE_ADDR(0x78), DST_TILE(53), 0, true);
+			copy_sprite(TILE_ADDR(0x79), DST_TILE(54), 0, true);
+			copy_sprite(TILE_ADDR(0x7A), DST_TILE(55), 0, true);
+			
+			// Spring Elixir
+			copy_sprite(TILE_ADDR(0x34), DST_TILE(56), 0, true);
+			copy_sprite(TILE_ADDR(0x35), DST_TILE(57), 0, true);
+			copy_sprite(TILE_ADDR(0x36), DST_TILE(58), 0, true);
+			copy_sprite(TILE_ADDR(0x37), DST_TILE(59), 0, true);
+		}
 
-		patcher->patch(15, 0xC768, 0, {
-			OP_JMP_ABS(touched_item_addr),
-		});
+		// Touching an item entity
+		{
+			auto entity_to_item_table_addr = patcher->patch_new_code(15, {
+				0x80, 0x81, 0x82, 0x83, // Rings
+				0x87, 0x86, 0x85, 0x84, 0x88, // Keys
+				0x60, 0x61, 0x62, 0x63, 0x64, // Magics
+				AP_ITEM_SPRING_ELIXIR,
+			});
+
+			auto touched_new_item_addr = patcher->patch_new_code(15, {
+				// Show dialog
+				OP_AND_IMM(0x1F),
+				OP_CLC(),
+				OP_AND_IMM(0x1F),
+				OP_ADC_IMM(0x98),
+				OP_JSR(0xF859),
+				0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
+
+				// Play sound
+				OP_LDA_IMM(0x08),
+				OP_JSR(0xD0E4),
+
+				// Give item
+				OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank 12
+				OP_LDX_ABS(0x0378),
+				OP_LDA_ABSX(0x02CC),
+				OP_TAX(),
+				OP_LDA_ABSX(entity_to_item_table_addr - 0x80),
+				OP_JSR(0x9AF7), // Give item
+				OP_LDX_IMM(14), OP_JSR(0xCC1A), // Switch bank 14
+
+				OP_RTS(),
+			});
+
+			auto touched_item_addr = patcher->patch_new_code(15, {
+				OP_CMP_IMM(0x57), // Magical Rod
+				OP_BNE(3),
+				OP_JMP_ABS(0xC810), // Magical rod pickup code
+
+				OP_TAY(), // Do we care about integrity of Y here? We do for X that I know
+				OP_BPL(3),
+				OP_JMP_ABS(touched_new_item_addr),
+			
+				OP_JMP_ABS(0xC76F), // Return where we were
+			});
+
+			patcher->patch(15, 0xC768, 0, {
+				OP_JMP_ABS(touched_item_addr),
+			});
+		}
 	}
 #endif
 

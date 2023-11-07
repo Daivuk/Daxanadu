@@ -489,7 +489,7 @@ static void load_spritesets(FILE* f)
 		    int tile_count = (int)sprites_tiles_count[i];
 
             cart_tileset_t tileset;
-            tileset.offset = 0;
+            tileset.offset = offset;
             tileset.addr = offset + (int)sprite_data_pointer;
             if (tile_count > 0)
                 tileset.tiles_data = load_tileset(f, offset + (int)sprite_data_pointer, tile_count, ENTITY_PALETTE);
