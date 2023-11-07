@@ -83,10 +83,11 @@ void RAM::render()
         {
             for (int i = 0; i < 8; ++i)
             {
-                //if (m_data[0x02CC + i] == 0xFF) continue;
+                if (m_data[0x02CC + i] == 0xFF) continue;
                 ImGui::Text("ID: 0x%02X - 0x%02X", (int)m_data[0x02CC + i], (int)m_data[0x02D4 + i]);
                 ImGui::Text("Position: %i, %i", (int)m_data[0x00BA + i], (int)m_data[0x00C2 + i]);
                 auto flags = m_data[0x02DC + i];
+                ImGui::Text("Flags: 0x%02X", (int)flags);
                 ImGui::Text("Visible: %s", (flags & 0x10) ? "false" : "true");
                 ImGui::Text("Phase: 0x%02X - 0x%02X", (int)m_data[0x02E4 + i], (int)m_data[0x02EC + i]);
                 int behaviour_addr = ((int)m_data[0x035C + i] << 8) | m_data[0x0354 + i];

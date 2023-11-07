@@ -213,15 +213,23 @@ bool Cart::cpu_read(uint16_t addr, uint8_t* out_data)
     uint32_t mapped_addr;
     if (m_mapper->map_cpu_read(addr, &mapped_addr))
     {
-        if (mapped_addr == 14 * 0x4000 + 0xA523 - 0x8000)
-        {
-            auto x = daxanadu->get_emulator()->get_cpu()->get_x();
-            auto ram = daxanadu->get_emulator()->get_ram()->get(0x02CC + x);
-            if (ram == 0x89)
-            {
-                __debugbreak();
-            }
-        }
+        //if (mapped_addr == 14 * 0x4000 + 0x8919 - 0x8000)
+        //{
+        //    auto ram = daxanadu->get_emulator()->get_ram();
+
+        //    auto SpriteBox_Left = ram->get(0x03E2);
+        //    auto SpriteBox_Top = ram->get(0x03E3);
+        //    auto SpriteBox_Width = ram->get(0x03E4);
+        //    auto SpriteBox_Height = ram->get(0x03E5);
+
+        //    //auto x = daxanadu->get_emulator()->get_cpu()->get_x();
+        //    auto x = ram->get(0x0378); // Current Sprite
+        //    auto y = daxanadu->get_emulator()->get_cpu()->get_y();
+        //    if (ram->get(0x02CC + x) == 0x89)
+        //    {
+        //        __debugbreak();
+        //    }
+        //}
         *out_data = m_prg_rom[mapped_addr];
         return true;
     }

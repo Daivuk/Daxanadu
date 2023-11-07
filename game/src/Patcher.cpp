@@ -180,17 +180,18 @@ void Patcher::apply_new_strings()
 {
     std::vector<std::string> strings = {
         "Progress saved.", // C3
-        "I've got the""\xFE""Key Jack.", // C4
-        "I've got the""\xFE""Key Queen.", // C5
-        "I've got the""\xFE""Key King.", // C6
-        "I've got the""\xFE""Key Ace.", // C7
-        "I've got the""\xFE""Key Joker.", // C8
-        
-        "I've got the""\xFE""Ring of Elf.", // C9
-        "I've got the""\xFE""Ring of Ruby.", // CA
-        "I've got the""\xFE""Ring of Dworf.", // CB
-        "I've got the""\xFE""Demons Ring.", // CC
 
+        "I've got the""\xFE""Ring of Elf.", // C4
+        "I've got the""\xFE""Ring of Ruby.", // C5
+        "I've got the""\xFE""Ring of Dworf.", // C6
+        "I've got the""\xFE""Demons Ring.", // C7
+
+        "I've got the""\xFE""Key Jack.", // C8
+        "I've got the""\xFE""Key Queen.", // C9
+        "I've got the""\xFE""Key King.", // CA
+        "I've got the""\xFE""Key Ace.", // CB
+        "I've got the""\xFE""Key Joker.", // CC
+        
         "I've got""\xFE""Deluge.", // CD
         "I've got""\xFE""Thunder.", // CE
         "I've got""\xFE""Fire.", // CF

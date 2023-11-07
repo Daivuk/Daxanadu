@@ -310,16 +310,16 @@ void AP::patch_items()
 		});
 
 		// Dialogs, Start at ID 0x98
-		auto elf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 }); // 0x98
-		auto ruby_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCA, 0x00 }); // 0x99
-		auto dworf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCB, 0x00 }); // 0x9A
-		auto demons_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCC, 0x00 }); // 0x9B
+		auto elf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 }); // 0x98
+		auto ruby_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC5, 0x00 }); // 0x99
+		auto dworf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC6, 0x00 }); // 0x9A
+		auto demons_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 }); // 0x9B
 
-		auto key_jack_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 }); // 0x9C
-		auto key_queen_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC5, 0x00 }); // 0x9D
-		auto key_king_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC6, 0x00 }); // 0x9E
-		auto key_ace_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC8, 0x00 }); // 0x9F
-		auto key_joker_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 }); // 0xA0
+		auto key_jack_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC8, 0x00 }); // 0x9C
+		auto key_queen_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 }); // 0x9D
+		auto key_king_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCA, 0x00 }); // 0x9E
+		auto key_ace_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCB, 0x00 }); // 0x9F
+		auto key_joker_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCC, 0x00 }); // 0xA0
 
 		auto deluge_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCD, 0x00 }); // 0xA1
 		auto thunder_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCE, 0x00 }); // 0xA2
@@ -331,15 +331,15 @@ void AP::patch_items()
 
 		// Table continue
 		auto dialog_lo = patcher->patch_new_code(12, {
-			LO(key_jack_dialog),
-			LO(key_queen_dialog),
-			LO(key_king_dialog),
-			LO(key_joker_dialog),
-			LO(key_ace_dialog),
+			LO(elf_ring_dialog),
 			LO(ruby_ring_dialog),
 			LO(dworf_ring_dialog),
 			LO(demons_ring_dialog),
-			LO(elf_ring_dialog),
+			LO(key_jack_dialog),
+			LO(key_queen_dialog),
+			LO(key_king_dialog),
+			LO(key_ace_dialog),
+			LO(key_joker_dialog),
 			LO(deluge_dialog),
 			LO(thunder_dialog),
 			LO(fire_dialog),
@@ -348,15 +348,15 @@ void AP::patch_items()
 			LO(spring_elixir_dialog),
 		});
 		auto dialog_hi = patcher->patch_new_code(12, {
-			HI(key_jack_dialog),
-			HI(key_queen_dialog),
-			HI(key_king_dialog),
-			HI(key_joker_dialog),
-			HI(key_ace_dialog),
+			HI(elf_ring_dialog),
 			HI(ruby_ring_dialog),
 			HI(dworf_ring_dialog),
 			HI(demons_ring_dialog),
-			HI(elf_ring_dialog),
+			HI(key_jack_dialog),
+			HI(key_queen_dialog),
+			HI(key_king_dialog),
+			HI(key_ace_dialog),
+			HI(key_joker_dialog),
 			HI(deluge_dialog),
 			HI(thunder_dialog),
 			HI(fire_dialog),
@@ -369,7 +369,7 @@ void AP::patch_items()
 		// bank 12. Modify the code to jump ahead further if message ID is too big
 		auto get_dialog_addr_addr = patcher->patch_new_code(12, {
 			OP_SEC(),
-			OP_SBC_IMM(0xA0),
+			OP_SBC_IMM(0x98),
 			OP_BCC(12),
 
 			// Greater or equal to 0x98, we go somewhere else
@@ -675,6 +675,27 @@ void AP::patch_items()
 			patcher->patch(14, 0x8C13, 0, { OP_JSR(lookup_lo_y_addr) });
 		}
 
+		// Function that gets the rectangle for the sprite. Let's redo it and hardcode our known values
+		{
+			auto get_sprite_rect_addr = patcher->patch_new_code(14, {
+				OP_LDA_ABSX(0x02CC), // Load sprite ID
+				OP_BPL(19),
+
+				OP_LDA_ZPGX(0xBA),
+				OP_STA_ABS(0x03E2), // Left
+				OP_LDA_ZPGX(0xC2),
+				OP_STA_ABS(0x03E3), // Top
+				OP_LDA_IMM(0x10),
+				OP_STA_ABS(0x03E4), // Width
+				OP_STA_ABS(0x03E5), // Height
+				OP_RTS(),
+
+				OP_JMP_ABS(0x8A0F), // Continue normally
+			});
+
+			patcher->patch(14, 0x8A0C, 0, { OP_JMP_ABS(get_sprite_rect_addr) });
+		}
+
 		// Sprite sheets lookup
 		{
 			// 0x12 = unused mario64 dog monster
@@ -803,30 +824,26 @@ void AP::patch_items()
 		});
 
 		auto touched_new_item_addr = patcher->patch_new_code(15, {
-			OP_TXA(), OP_PHA(), // Push X
-
 			// Show dialog
 			OP_AND_IMM(0x7F),
-			OP_PHA(),
 			OP_CLC(),
 			OP_ADC_IMM(0x98),
 			OP_JSR(0xF859),
+			0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
 
 			// Play sound
 			OP_LDA_IMM(0x08),
 			OP_JSR(0xD0E4),
 
 			// Give item
-			OP_PLA(),
+			OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank 12
+			OP_LDX_ABS(0x0378),
+			OP_LDA_ABSX(0x02CC),
 			OP_TAX(),
-			OP_LDA_ABSX(entity_to_item_table_addr),
-			OP_LDA_ABS(0x0100), OP_PHA(), // Push current bank
-			OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank
-			OP_TXA(),
+			OP_LDA_ABSX(entity_to_item_table_addr - 0x80),
 			OP_JSR(0x9AF7), // Give item
-			OP_PLA(), OP_JSR(0xCC1A), // Switch back bank
+			OP_LDX_IMM(14), OP_JSR(0xCC1A), // Switch bank 14
 
-			OP_PLA(), OP_TAX(), // Pop X
 			OP_RTS(),
 		});
 
@@ -835,11 +852,11 @@ void AP::patch_items()
 			OP_BNE(3),
 			OP_JMP_ABS(0xC810), // Magical rod pickup code
 
-			OP_PHA(), OP_PLA(), // Do we need this to trigger N? TODO try without
+			OP_TAY(), // Do we care about integrity of Y here? We do for X that I know
 			OP_BPL(3),
 			OP_JMP_ABS(touched_new_item_addr),
 			
-			OP_JMP_ABS(0xC76F), // Go back
+			OP_JMP_ABS(0xC76F), // Return where we were
 		});
 
 		patcher->patch(15, 0xC768, 0, {
