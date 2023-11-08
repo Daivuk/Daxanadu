@@ -560,11 +560,14 @@ void AP::patch_items()
 			auto entity_type_lookup_hi_addr = patcher->patch_new_code(14, entity_type_hi);
 
 			auto lookup_x_addr = patcher->patch_new_code(14, {
-				OP_BPL(11),
-
-				OP_LDA_IMM(0x17),
+				OP_BPL(19),
+				
+				OP_AND_IMM(0x1F),
+				OP_JSR(0xF785), // Divide by 32
+				OP_TAX(),
+				OP_LDA_ABSX(entity_type_lookup_lo_addr),
 				OP_STA_ABSY(0x0354),
-				OP_LDA_IMM(0xB2),
+				OP_LDA_ABSX(entity_type_lookup_hi_addr),
 				OP_STA_ABSY(0x035C),
 				OP_RTS(),
 
@@ -578,11 +581,14 @@ void AP::patch_items()
 			});
 
 			auto lookup_y_addr = patcher->patch_new_code(14, {
-				OP_BPL(11),
-
-				OP_LDA_IMM(0x17),
+				OP_BPL(19),
+				
+				OP_AND_IMM(0x1F),
+				OP_JSR(0xF785), // Divide by 32
+				OP_TAY(),
+				OP_LDA_ABSY(entity_type_lookup_lo_addr),
 				OP_STA_ABSX(0x0354),
-				OP_LDA_IMM(0xB2),
+				OP_LDA_ABSY(entity_type_lookup_hi_addr),
 				OP_STA_ABSX(0x035C),
 				OP_RTS(),
 
@@ -631,11 +637,14 @@ void AP::patch_items()
 			auto entity_type_lookup15_hi_addr = patcher->patch_new_code(15, entity_type_hi);
 
 			auto lookup15_addr = patcher->patch_new_code(15, {
-				OP_BPL(13),
+				OP_BPL(21),
 
-				OP_LDA_IMM(0x17),
+				OP_AND_IMM(0x1F),
+				OP_JSR(0xF785), // Divide by 32
+				OP_TAY(),
+				OP_LDA_ABSY(entity_type_lookup15_lo_addr),
 				OP_STA_ABSX(0x0354),
-				OP_LDA_IMM(0xB2),
+				OP_LDA_ABSY(entity_type_lookup15_hi_addr),
 				OP_STA_ABSX(0x035C),
 				OP_JMP_ABS(0xC24A),
 
@@ -668,11 +677,14 @@ void AP::patch_items()
 			auto entity_update_lookup_hi_addr = patcher->patch_new_code(14, entity_update_hi);
 
 			auto update_addr = patcher->patch_new_code(14, {
-				OP_BPL(7),
+				OP_BPL(15),
 
-				OP_LDA_IMM(0xA3),
+				OP_AND_IMM(0x1F),
+				OP_JSR(0xF785), // Divide by 32
+				OP_TAY(),
+				OP_LDA_ABSY(entity_update_lookup_hi_addr), // Notice we do HI first
 				OP_PHA(),
-				OP_LDA_IMM(0x09),
+				OP_LDA_ABSY(entity_update_lookup_lo_addr),
 				OP_PHA(),
 				OP_RTS(),
 
