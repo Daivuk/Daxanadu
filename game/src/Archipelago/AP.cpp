@@ -547,8 +547,8 @@ void AP::patch_items()
 		{
 			std::vector<uint8_t> entity_type_lo = {
 				0x17, // Red Potion stays
-				0x17, // Hidden Red Potion
-				0x17, // Boss Mattock
+				0x63, // Hidden Red Potion
+				0x5B, // Boss Mattock
 			};
 			std::vector<uint8_t> entity_type_hi = {
 				0xB2, // Red Potion
@@ -562,7 +562,7 @@ void AP::patch_items()
 			auto lookup_x_addr = patcher->patch_new_code(14, {
 				OP_BPL(19),
 				
-				OP_AND_IMM(0x1F),
+				OP_AND_IMM(0x7F),
 				OP_JSR(0xF785), // Divide by 32
 				OP_TAX(),
 				OP_LDA_ABSX(entity_type_lookup_lo_addr),
@@ -583,7 +583,7 @@ void AP::patch_items()
 			auto lookup_y_addr = patcher->patch_new_code(14, {
 				OP_BPL(19),
 				
-				OP_AND_IMM(0x1F),
+				OP_AND_IMM(0x7F),
 				OP_JSR(0xF785), // Divide by 32
 				OP_TAY(),
 				OP_LDA_ABSY(entity_type_lookup_lo_addr),
@@ -639,7 +639,7 @@ void AP::patch_items()
 			auto lookup15_addr = patcher->patch_new_code(15, {
 				OP_BPL(21),
 
-				OP_AND_IMM(0x1F),
+				OP_AND_IMM(0x7F),
 				OP_JSR(0xF785), // Divide by 32
 				OP_TAY(),
 				OP_LDA_ABSY(entity_type_lookup15_lo_addr),
@@ -679,7 +679,7 @@ void AP::patch_items()
 			auto update_addr = patcher->patch_new_code(14, {
 				OP_BPL(15),
 
-				OP_AND_IMM(0x1F),
+				OP_AND_IMM(0x7F),
 				OP_JSR(0xF785), // Divide by 32
 				OP_TAY(),
 				OP_LDA_ABSY(entity_update_lookup_hi_addr), // Notice we do HI first
@@ -1407,15 +1407,15 @@ void AP::patch_locations()
 				}
 				break;
 			case ap_location_type_t::hidden:
-				if (ap_item->entity_id != 0xFF)
+				if (ap_item->hidden_entity_id != 0xFF)
 				{
-					m_info.rom[scout.loc->addr] = ap_item->entity_id + 32;
+					m_info.rom[scout.loc->addr] = ap_item->hidden_entity_id;
 				}
 				break;
 			case ap_location_type_t::boss_reward:
-				if (ap_item->entity_id != 0xFF)
+				if (ap_item->boss_entity_id != 0xFF)
 				{
-					m_info.rom[scout.loc->addr] = ap_item->entity_id + 64;
+					m_info.rom[scout.loc->addr] = ap_item->boss_entity_id;
 				}
 				break;
 		}

@@ -8,8 +8,8 @@ enum class ap_location_type_t
 {
     unknown,
     world, // Just standing there in the world
-    boss_reward, // Kill a boss to reveal the item
     hidden, // Kill all monsters in the room to reveal, each "item room" counter tick.
+    boss_reward, // Kill a boss to reveal the item
     shop, // Buy at a shop
     give, // Given by an NPC
     spring, // Activatable spring
