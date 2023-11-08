@@ -69,7 +69,7 @@ void RoomWatcher::update(float dt)
                     break;
                 case 4:
                 case 5:
-                    room_name = "NASCON";
+                    room_name = "MASCON";
                     break;
                 case 6:
                 case 7:

@@ -184,16 +184,16 @@ void AP::patch_items()
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x42), 0, false);
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x43), 1, false);
 
-	// Replace battle helmet sprites for Magic Shield tiles
-	copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0x00), 0, false);
-	copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 0x01), 0, false);
-	copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 0x02), 0, false);
-	copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 0x03), 0, false);
+	//// Replace battle helmet sprites for Magic Shield tiles
+	//copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0x00), 0, false);
+	//copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 0x01), 0, false);
+	//copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 0x02), 0, false);
+	//copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 0x03), 0, false);
 
-	// Rename battle helmet to progressive shield in the popup dialog
-	memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
-	memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
-	memcpy(ROM_LO(13, 0xB229), "Ive""\xfd""got""\xfe""Progressive""\xfe""Armor", 25);
+	//// Rename battle helmet to progressive shield in the popup dialog
+	//memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
+	//memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
+	//memcpy(ROM_LO(13, 0xB229), "Ive""\xfd""got""\xfe""Progressive""\xfe""Armor", 25);
 
 	// World items
 #if 1
@@ -225,44 +225,44 @@ void AP::patch_items()
 			});
 		}
 
-		// Progressive sword (We're lucky this code fits perfectly to replace previous one)
-		patcher->patch(15, 0xC737, 0, {
-			OP_LDA_ABS(0x100),
-			OP_PHA(),
-			OP_LDX_IMM(12),
-			OP_JSR(0xCC1A), // Switch bank
-			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SWORD),
-			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-			OP_PLA(),
-			OP_TAX(),
-			OP_JMP_ABS(0xCC1A), // Switch bank
-		});
+		//// Progressive sword (We're lucky this code fits perfectly to replace previous one)
+		//patcher->patch(15, 0xC737, 0, {
+		//	OP_LDA_ABS(0x100),
+		//	OP_PHA(),
+		//	OP_LDX_IMM(12),
+		//	OP_JSR(0xCC1A), // Switch bank
+		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SWORD),
+		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+		//	OP_PLA(),
+		//	OP_TAX(),
+		//	OP_JMP_ABS(0xCC1A), // Switch bank
+		//});
 
-		// Progressive shield (We're lucky this code fits perfectly to replace previous one)
-		patcher->patch(15, 0xC717, 0, {
-			OP_LDA_ABS(0x100),
-			OP_PHA(),
-			OP_LDX_IMM(12),
-			OP_JSR(0xCC1A), // Switch bank
-			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
-			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-			OP_PLA(),
-			OP_TAX(),
-			OP_JMP_ABS(0xCC1A), // Switch bank
-		});
+		//// Progressive shield (We're lucky this code fits perfectly to replace previous one)
+		//patcher->patch(15, 0xC717, 0, {
+		//	OP_LDA_ABS(0x100),
+		//	OP_PHA(),
+		//	OP_LDX_IMM(12),
+		//	OP_JSR(0xCC1A), // Switch bank
+		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
+		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+		//	OP_PLA(),
+		//	OP_TAX(),
+		//	OP_JMP_ABS(0xCC1A), // Switch bank
+		//});
 
-		// Progressive armor (We're lucky this code fits perfectly to replace previous one)
-		patcher->patch(15, 0xC6F7, 0, {
-			OP_LDA_ABS(0x100),
-			OP_PHA(),
-			OP_LDX_IMM(12),
-			OP_JSR(0xCC1A), // Switch bank
-			OP_LDA_IMM(AP_ITEM_PROGRESSIVE_ARMOR),
-			OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-			OP_PLA(),
-			OP_TAX(),
-			OP_JMP_ABS(0xCC1A), // Switch bank
-		});
+		//// Progressive armor (We're lucky this code fits perfectly to replace previous one)
+		//patcher->patch(15, 0xC6F7, 0, {
+		//	OP_LDA_ABS(0x100),
+		//	OP_PHA(),
+		//	OP_LDX_IMM(12),
+		//	OP_JSR(0xCC1A), // Switch bank
+		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_ARMOR),
+		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
+		//	OP_PLA(),
+		//	OP_TAX(),
+		//	OP_JMP_ABS(0xCC1A), // Switch bank
+		//});
 
 		// Dialogs, Start at ID 0x98
 		auto elf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 }); // 0x98
@@ -284,7 +284,11 @@ void AP::patch_items()
 
 		auto spring_elixir_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD2, 0x00 }); // 0xA6
 
-		auto ap_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD3, 0x00 }); // 0xA6
+		auto progressive_sword_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD3, 0x00 }); // 0xA7
+		auto progressive_armor_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD4, 0x00 }); // 0xA8
+		auto progressive_shield_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD5, 0x00 }); // 0xA9
+
+		auto ap_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD6, 0x00 }); // 0xAA
 
 		// Table continue
 		auto dialog_lo = patcher->patch_new_code(12, {
@@ -303,6 +307,9 @@ void AP::patch_items()
 			LO(death_dialog),
 			LO(tilte_dialog),
 			LO(spring_elixir_dialog),
+			LO(progressive_sword_dialog),
+			LO(progressive_armor_dialog),
+			LO(progressive_shield_dialog),
 			LO(ap_dialog),
 			LO(ap_dialog),
 		});
@@ -322,6 +329,9 @@ void AP::patch_items()
 			HI(death_dialog),
 			HI(tilte_dialog),
 			HI(spring_elixir_dialog),
+			HI(progressive_sword_dialog),
+			HI(progressive_armor_dialog),
+			HI(progressive_shield_dialog),
 			HI(ap_dialog),
 			HI(ap_dialog),
 		});
@@ -804,6 +814,7 @@ void AP::patch_items()
 				1, 1, 1, 1, 1, // Keys
 				1, 1, 1, 1, 1, // Magics
 				2, // Spring Elixir
+				1, 1, 1, // Progressive items
 				1, 1, // AP
 			};
 
@@ -924,6 +935,24 @@ void AP::patch_items()
 			copy_sprite(TILE_ADDR(0x35), DST_TILE(57), 0, true);
 			copy_sprite(TILE_ADDR(0x36), DST_TILE(58), 0, true);
 			copy_sprite(TILE_ADDR(0x37), DST_TILE(59), 0, true);
+			
+			// Progressive Sword
+			copy_sprite(TILE_ADDR(0x4D), DST_TILE(60), 0, true);
+			copy_sprite(TILE_ADDR(0x4E), DST_TILE(61), 0, true);
+			copy_sprite(TILE_ADDR(0x4F), DST_TILE(62), 0, true);
+			copy_sprite(TILE_ADDR(0x50), DST_TILE(63), 0, true);
+			
+			// Progressive Armor
+			copy_sprite(TILE_ADDR(0x5D), DST_TILE(64), 0, true);
+			copy_sprite(TILE_ADDR(0x5E), DST_TILE(65), 0, true);
+			copy_sprite(TILE_ADDR(0x5F), DST_TILE(66), 0, true);
+			copy_sprite(TILE_ADDR(0x60), DST_TILE(67), 0, true);
+			
+			// Progressive Shield
+			copy_sprite(TILE_ADDR(0x69), DST_TILE(68), 0, true);
+			copy_sprite(TILE_ADDR(0x6A), DST_TILE(69), 0, true);
+			copy_sprite(TILE_ADDR(0x6B), DST_TILE(70), 0, true);
+			copy_sprite(TILE_ADDR(0x6C), DST_TILE(71), 0, true);
 		}
 
 		// Touching an item entity
@@ -933,6 +962,16 @@ void AP::patch_items()
 				0x87, 0x86, 0x85, 0x84, 0x88, // Keys
 				0x60, 0x61, 0x62, 0x63, 0x64, // Magics
 				AP_ITEM_SPRING_ELIXIR,
+
+				// Progressives
+				AP_ITEM_PROGRESSIVE_SWORD,
+				AP_ITEM_PROGRESSIVE_ARMOR,
+				AP_ITEM_PROGRESSIVE_SHIELD,
+
+				// Consumables
+				0x90, // Red Potion
+				0x92, // Elixir
+				AP_ITEM_POISON, AP_ITEM_OINTMENT, AP_ITEM_GLOVE
 			});
 
 			auto touched_new_item_addr = patcher->patch_new_code(15, {

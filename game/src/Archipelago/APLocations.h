@@ -123,7 +123,7 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400154, "Mist Hidden Poison 1", ap_location_type_t::hidden, 0x5E, 0x0002C5FE },
     { 400155, "Mist Hidden Poison 2", ap_location_type_t::hidden, 0x5E, 0x0002C5F8 },
     { 400156, "Mist Hidden Wingboots", ap_location_type_t::hidden, 0x55, 0x0002C5E4 },
-    { 400157, "Misty Magic Hall", ap_location_type_t::give, 0x62, 0x0002C373, 0x0002C36A },
+    { 400157, "Misty Magic Hall", ap_location_type_t::give, 0x62, 0x00032373, 0x0003236A },
     { 400158, "Misty House", ap_location_type_t::give, 0x84, 0x0003228B, 0x00032285 },
 
     // Useless Tower

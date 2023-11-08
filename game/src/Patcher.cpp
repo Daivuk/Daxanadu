@@ -200,7 +200,11 @@ void Patcher::apply_new_strings()
 
         "I've got the""\xFE""Spring Elixir.", // D2
 
-        "I've got the""\xFE""Archipelago.", // D3
+        "I've got the""\xfe""Progressive""\xfe""Sword.", // D3
+        "I've got the""\xfe""Progressive""\xfe""Armor.", // D4
+        "I've got the""\xfe""Progressive""\xfe""Shield.", // D5
+
+        "I've got the""\xFE""Archipelago.", // D6
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;
