@@ -951,8 +951,9 @@ void AP::patch_items()
 				OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank 12
 				OP_LDX_ABS(0x0378),
 				OP_LDA_ABSX(0x02CC),
+				OP_AND_IMM(0x1F),
 				OP_TAX(),
-				OP_LDA_ABSX(entity_to_item_table_addr - 0x80),
+				OP_LDA_ABSX(entity_to_item_table_addr),
 				OP_JSR(0x9AF7), // Give item
 				OP_LDX_IMM(14), OP_JSR(0xCC1A), // Switch bank 14
 
