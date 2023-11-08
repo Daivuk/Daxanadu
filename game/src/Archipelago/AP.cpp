@@ -545,95 +545,147 @@ void AP::patch_items()
 
 		// Entity behaviour
 		{
-			auto lookup_lo_x_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSY(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0x17), // Copy from Red Potion
+			std::vector<uint8_t> entity_type_lo = {
+				0x17, // Red Potion stays
+				0x17, // Hidden Red Potion
+				0x17, // Boss Mattock
+			};
+			std::vector<uint8_t> entity_type_hi = {
+				0xB2, // Red Potion
+				0xB2, // Hidden Red Potion
+				0xB2, // Boss Mattock
+			};
+
+			auto entity_type_lookup_lo_addr = patcher->patch_new_code(14, entity_type_lo);
+			auto entity_type_lookup_hi_addr = patcher->patch_new_code(14, entity_type_hi);
+
+			auto lookup_x_addr = patcher->patch_new_code(14, {
+				OP_BPL(11),
+
+				OP_LDA_IMM(0x17),
+				OP_STA_ABSY(0x0354),
+				OP_LDA_IMM(0xB2),
+				OP_STA_ABSY(0x035C),
 				OP_RTS(),
-				OP_LDA_ABSX(0xAD2D), // Original table
+
+				OP_ASL_A(),
+				OP_TAX(),
+				OP_LDA_ABSX(0xAD2D),
+				OP_STA_ABSY(0x0354),
+				OP_LDA_ABSX(0xAD2D + 1),
+				OP_STA_ABSY(0x035C),
 				OP_RTS(),
 			});
 
-			auto lookup_hi_x_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSY(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Red Potion
+			auto lookup_y_addr = patcher->patch_new_code(14, {
+				OP_BPL(11),
+
+				OP_LDA_IMM(0x17),
+				OP_STA_ABSX(0x0354),
+				OP_LDA_IMM(0xB2),
+				OP_STA_ABSX(0x035C),
 				OP_RTS(),
-				OP_LDA_ABSX(0xAD2D + 1), // Original table
+
+				OP_ASL_A(),
+				OP_TAY(),
+				OP_LDA_ABSY(0xAD2D),
+				OP_STA_ABSX(0x0354),
+				OP_LDA_ABSY(0xAD2D + 1),
+				OP_STA_ABSX(0x035C),
 				OP_RTS(),
 			});
 
-			auto lookup_lo_y_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0x17), // Copy from Red Potion
-				OP_RTS(),
-				OP_LDA_ABSY(0xAD2D), // Original table
-				OP_RTS(),
+			patcher->patch(14, 0xA207, 0, {
+				OP_JSR(lookup_x_addr),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(),
 			});
 
-			auto lookup_hi_y_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Red Potion
-				OP_RTS(),
-				OP_LDA_ABSY(0xAD2D + 1), // Original table
-				OP_RTS(),
+			patcher->patch(14, 0xAC03, 0, {
+				OP_JSR(lookup_y_addr),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(),
 			});
 
-			patcher->patch(14, 0xA209, 0, { OP_JSR(lookup_lo_x_addr) });
-			patcher->patch(14, 0xA20F, 0, { OP_JSR(lookup_hi_x_addr) });
-			patcher->patch(14, 0xAC05, 0, { OP_JSR(lookup_lo_y_addr) });
-			patcher->patch(14, 0xAC0B, 0, { OP_JSR(lookup_hi_y_addr) });
-			patcher->patch(14, 0xAC83, 0, { OP_JSR(lookup_lo_y_addr) });
-			patcher->patch(14, 0xAC89, 0, { OP_JSR(lookup_hi_y_addr) });
-			patcher->patch(14, 0xACB2, 0, { OP_JSR(lookup_lo_y_addr) });
-			patcher->patch(14, 0xACB8, 0, { OP_JSR(lookup_hi_y_addr) });
-
-			auto lookup16_lo_y_addr = patcher->patch_new_code(15, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0x17), // Copy from Red Potion
-				OP_RTS(),
-				OP_LDA_ABSY(0xAD2D), // Original table
-				OP_RTS(),
+			patcher->patch(14, 0xAC81, 0, {
+				OP_JSR(lookup_y_addr),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(),
 			});
 
-			auto lookup16_hi_y_addr = patcher->patch_new_code(15, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0xB2), // Copy from Red Potion
-				OP_RTS(),
-				OP_LDA_ABSY(0xAD2D + 1), // Original table
-				OP_RTS(),
+			patcher->patch(14, 0xACB0, 0, {
+				OP_JSR(lookup_y_addr),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(), OP_NOP(),
+				OP_NOP(), OP_NOP(),
 			});
 
-			patcher->patch(15, 0xC23E, 0, { OP_JSR(lookup16_lo_y_addr) });
-			patcher->patch(15, 0xC244, 0, { OP_JSR(lookup16_hi_y_addr) });
+			auto entity_type_lookup15_lo_addr = patcher->patch_new_code(15, entity_type_lo);
+			auto entity_type_lookup15_hi_addr = patcher->patch_new_code(15, entity_type_hi);
+
+			auto lookup15_addr = patcher->patch_new_code(15, {
+				OP_BPL(13),
+
+				OP_LDA_IMM(0x17),
+				OP_STA_ABSX(0x0354),
+				OP_LDA_IMM(0xB2),
+				OP_STA_ABSX(0x035C),
+				OP_JMP_ABS(0xC24A),
+
+				OP_ASL_A(),
+				OP_TAY(),
+				OP_LDA_ABSY(0xAD2D),
+				OP_STA_ABSX(0x0354),
+				OP_LDA_ABSY(0xAD2E),
+				OP_STA_ABSX(0x035C),
+				OP_JMP_ABS(0xC24A),
+			});
+
+			patcher->patch(15, 0xC23C, 0, { OP_JMP_ABS(lookup15_addr) });
 		}
 
 		// Entity update function
 		{
-			auto lookup_lo_y_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0x07 + 2), // Copy from Red Potion
+			std::vector<uint8_t> entity_update_lo = {
+				0x09, // Red Potion stays
+				0x09, // Hidden Red Potion
+				0x09, // Boss Mattock
+			};
+			std::vector<uint8_t> entity_update_hi = {
+				0xA3, // Red Potion
+				0xA3, // Hidden Red Potion
+				0xA3, // Boss Mattock
+			};
+
+			auto entity_update_lookup_lo_addr = patcher->patch_new_code(14, entity_update_lo);
+			auto entity_update_lookup_hi_addr = patcher->patch_new_code(14, entity_update_hi);
+
+			auto update_addr = patcher->patch_new_code(14, {
+				OP_BPL(7),
+
+				OP_LDA_IMM(0xA3),
+				OP_PHA(),
+				OP_LDA_IMM(0x09),
+				OP_PHA(),
 				OP_RTS(),
-				OP_LDA_ABSY(0x8087), // Original table
+
+				OP_ASL_A(),
+				OP_TAY(),
+				OP_LDA_ABSY(0x8087 + 1),
+				OP_PHA(),
+				OP_LDA_ABSY(0x8087),
+				OP_PHA(),
 				OP_RTS(),
 			});
 
-			auto lookup_hi_y_addr = patcher->patch_new_code(14, {
-				OP_LDA_ABSX(0x2CC),
-				OP_BPL(3),
-				OP_LDA_IMM(0xA3), // Copy from Red Potion
-				OP_RTS(),
-				OP_LDA_ABSY(0x8087 + 1), // Original table
-				OP_RTS(),
-			});
-
-			patcher->patch(14, 0x8C0F, 0, { OP_JSR(lookup_hi_y_addr) }); // Notice this one does HI first
-			patcher->patch(14, 0x8C13, 0, { OP_JSR(lookup_lo_y_addr) });
+			patcher->patch(14, 0x8C0D, 0, { OP_JMP_ABS(update_addr) });
 		}
 
 		// Function that gets the rectangle for the sprite. Let's redo it and hardcode our known values
@@ -875,7 +927,6 @@ void AP::patch_items()
 				// Show dialog
 				OP_AND_IMM(0x1F),
 				OP_CLC(),
-				OP_AND_IMM(0x1F),
 				OP_ADC_IMM(0x98),
 				OP_JSR(0xF859),
 				0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
@@ -1343,16 +1394,16 @@ void AP::patch_locations()
 					m_info.rom[scout.loc->addr] = ap_item->entity_id;
 				}
 				break;
-			case ap_location_type_t::boss_reward:
-				if (ap_item->entity_id != 0xFF)
-				{
-					m_info.rom[scout.loc->addr] = ap_item->entity_id;
-				}
-				break;
 			case ap_location_type_t::hidden:
 				if (ap_item->entity_id != 0xFF)
 				{
-					m_info.rom[scout.loc->addr] = ap_item->entity_id;
+					m_info.rom[scout.loc->addr] = ap_item->entity_id + 32;
+				}
+				break;
+			case ap_location_type_t::boss_reward:
+				if (ap_item->entity_id != 0xFF)
+				{
+					m_info.rom[scout.loc->addr] = ap_item->entity_id + 64;
 				}
 				break;
 		}

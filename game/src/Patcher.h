@@ -13,12 +13,13 @@
 #define OP_LDA_ABS(addr) 0xAD, PATCH_ADDR(addr)
 #define OP_LDA_IMM(value) 0xA9, value
 #define OP_LDA_ZPG(addr) 0xA5, addr
+#define OP_LDA_ZPGX(addr) 0xB5, addr
 #define OP_LDA_ABSX(addr) 0xBD, PATCH_ADDR(addr)
 #define OP_LDA_ABSY(addr) 0xB9, PATCH_ADDR(addr)
 #define OP_STA_ZPG(addr) 0x85, addr
-#define OP_LDA_ZPGX(addr) 0xB5, addr
 #define OP_STA_ABS(addr) 0x8D, PATCH_ADDR(addr)
 #define OP_STA_ABSX(addr) 0x9D, PATCH_ADDR(addr)
+#define OP_STA_ABSY(addr) 0x99, PATCH_ADDR(addr)
 #define OP_LDY_IMM(value) 0xA0, value
 #define OP_LDY_ABS(addr) 0xAC, PATCH_ADDR(addr)
 #define OP_LDY_ABSX(addr) 0xBC, PATCH_ADDR(addr)
@@ -52,6 +53,7 @@
 #define OP_INC_ZPG(addr) 0xE6, addr
 #define OP_INY() 0xC8
 #define OP_ORA_IMM(value) 0x09, value
+#define OP_ASL_A() 0x0A
 
 
 class Patcher final
