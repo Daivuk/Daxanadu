@@ -81,7 +81,7 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400129, "Tower of Fortress Poison 2", ap_location_type_t::world, 0x4C, 0x0002C442 },
     { 400130, "Tower of Fortress Hidden Wingboots", ap_location_type_t::world, 0x55, 0x0002C410 },
     { 400131, "Tower of Fortress Ointment", ap_location_type_t::world, 0x4E, 0x0002C450 },
-    { 400132, "Tower of Fortress Boss Wingboots", ap_location_type_t::world, 0x5C, 0x0002C46A },
+    { 400132, "Tower of Fortress Boss Wingboots", ap_location_type_t::boss_reward, 0x5C, 0x0002C46A },
     { 400133, "Tower of Fortress Elixir", ap_location_type_t::world, 0x4D, 0x0002C472 },
     { 400134, "Tower of Fortress Guru", ap_location_type_t::give, 0x88, 0x00032199, 0x00032193 },
     { 400135, "Tower of Fortress Spring", ap_location_type_t::spring, 0x61, 0x000321AC, 0x000321AC },

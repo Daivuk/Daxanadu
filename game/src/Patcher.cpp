@@ -181,6 +181,7 @@ void Patcher::apply_new_strings()
     std::vector<std::string> strings = {
         "Progress saved.", // C3
 
+        // Don't change the order of these
         "I've got the""\xFE""Ring of Elf.", // C4
         "I've got the""\xFE""Ring of Ruby.", // C5
         "I've got the""\xFE""Ring of Dworf.", // C6
@@ -198,13 +199,23 @@ void Patcher::apply_new_strings()
         "I've got""\xFE""Death.", // D0
         "I've got""\xFE""Tilte.", // D1
 
-        "I've got the""\xFE""Spring Elixir.", // D2
+        "I've got the""\xfe""Progressive""\xfe""Sword.", // D2
+        "I've got the""\xfe""Progressive""\xfe""Armor.", // D3
+        "I've got the""\xfe""Progressive""\xfe""Shield.", // D4
 
-        "I've got the""\xfe""Progressive""\xfe""Sword.", // D3
-        "I've got the""\xfe""Progressive""\xfe""Armor.", // D4
-        "I've got the""\xfe""Progressive""\xfe""Shield.", // D5
+        "I've got the""\xFE""Spring Elixir.", // D5
+        "I've got the""\xFE""Mattock.", // D6
+        "I've got the""\xFE""Wing Boots.", // D7
+        "I've got the""\xFE""Black Onyx.", // D8
+        "I've got the""\xFE""Magical Rod.", // D9
+        "I've got the""\xFE""Pendant.", // DA
 
-        "I've got the""\xFE""Archipelago.", // D6
+        "I'm holding""\xFE""Red Potion.", // DB
+        "I'm holding""\xFE""Elixir.", // DC
+        "I'm holding""\xFE""Poison.", // DD
+        "I'm holding""\xFE""Ointment.", // DE
+        "I'm holding""\xFE""Glove.", // DF
+        "I'm holding""\xFE""Hour Glass.", // E0
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;

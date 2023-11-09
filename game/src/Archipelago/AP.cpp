@@ -184,17 +184,6 @@ void AP::patch_items()
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x42), 0, false);
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x43), 1, false);
 
-	//// Replace battle helmet sprites for Magic Shield tiles
-	//copy_sprite(TILE_ADDR(0x69), SPRITE_ADDR(0x0001CFC6, 0x00), 0, false);
-	//copy_sprite(TILE_ADDR(0x6A), SPRITE_ADDR(0x0001CFC6, 0x01), 0, false);
-	//copy_sprite(TILE_ADDR(0x6B), SPRITE_ADDR(0x0001CFC6, 0x02), 0, false);
-	//copy_sprite(TILE_ADDR(0x6C), SPRITE_ADDR(0x0001CFC6, 0x03), 0, false);
-
-	//// Rename battle helmet to progressive shield in the popup dialog
-	//memcpy(ROM_LO(13, 0xB243), "I've""\xfd""got""\xfe""Progressive""\xfe""Shield", 27);
-	//memcpy(ROM_LO(13, 0xB25F), "I've""\xfd""got""\xfe""Progressive""\xfe""Sword.", 27);
-	//memcpy(ROM_LO(13, 0xB229), "Ive""\xfd""got""\xfe""Progressive""\xfe""Armor", 25);
-
 	// World items
 #if 1
 	{
@@ -225,129 +214,25 @@ void AP::patch_items()
 			});
 		}
 
-		//// Progressive sword (We're lucky this code fits perfectly to replace previous one)
-		//patcher->patch(15, 0xC737, 0, {
-		//	OP_LDA_ABS(0x100),
-		//	OP_PHA(),
-		//	OP_LDX_IMM(12),
-		//	OP_JSR(0xCC1A), // Switch bank
-		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SWORD),
-		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-		//	OP_PLA(),
-		//	OP_TAX(),
-		//	OP_JMP_ABS(0xCC1A), // Switch bank
-		//});
-
-		//// Progressive shield (We're lucky this code fits perfectly to replace previous one)
-		//patcher->patch(15, 0xC717, 0, {
-		//	OP_LDA_ABS(0x100),
-		//	OP_PHA(),
-		//	OP_LDX_IMM(12),
-		//	OP_JSR(0xCC1A), // Switch bank
-		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_SHIELD),
-		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-		//	OP_PLA(),
-		//	OP_TAX(),
-		//	OP_JMP_ABS(0xCC1A), // Switch bank
-		//});
-
-		//// Progressive armor (We're lucky this code fits perfectly to replace previous one)
-		//patcher->patch(15, 0xC6F7, 0, {
-		//	OP_LDA_ABS(0x100),
-		//	OP_PHA(),
-		//	OP_LDX_IMM(12),
-		//	OP_JSR(0xCC1A), // Switch bank
-		//	OP_LDA_IMM(AP_ITEM_PROGRESSIVE_ARMOR),
-		//	OP_JSR(0x9AF7), // Give item (Usually called by dialogs)
-		//	OP_PLA(),
-		//	OP_TAX(),
-		//	OP_JMP_ABS(0xCC1A), // Switch bank
-		//});
+		// --- IMPORTANT ---
+		// This needs to be first.
+		// We save some bank space on tables because we're alligned on page.
 
 		// Dialogs, Start at ID 0x98
-		auto elf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC4, 0x00 }); // 0x98
-		auto ruby_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC5, 0x00 }); // 0x99
-		auto dworf_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC6, 0x00 }); // 0x9A
-		auto demons_ring_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC7, 0x00 }); // 0x9B
-
-		auto key_jack_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC8, 0x00 }); // 0x9C
-		auto key_queen_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xC9, 0x00 }); // 0x9D
-		auto key_king_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCA, 0x00 }); // 0x9E
-		auto key_ace_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCB, 0x00 }); // 0x9F
-		auto key_joker_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCC, 0x00 }); // 0xA0
-
-		auto deluge_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCD, 0x00 }); // 0xA1
-		auto thunder_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCE, 0x00 }); // 0xA2
-		auto fire_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xCF, 0x00 }); // 0xA3
-		auto death_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD0, 0x00 }); // 0xA4
-		auto tilte_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD1, 0x00 }); // 0xA5
-
-		auto spring_elixir_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD2, 0x00 }); // 0xA6
-
-		auto progressive_sword_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD3, 0x00 }); // 0xA7
-		auto progressive_armor_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD4, 0x00 }); // 0xA8
-		auto progressive_shield_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD5, 0x00 }); // 0xA9
-
-		auto ap_dialog = patcher->patch_new_code(12, { 0x00, 0x01, 0xD6, 0x00 }); // 0xAA
-
-		// Table continue
-		auto dialog_lo = patcher->patch_new_code(12, {
-			LO(elf_ring_dialog),
-			LO(ruby_ring_dialog),
-			LO(dworf_ring_dialog),
-			LO(demons_ring_dialog),
-			LO(key_jack_dialog),
-			LO(key_queen_dialog),
-			LO(key_king_dialog),
-			LO(key_ace_dialog),
-			LO(key_joker_dialog),
-			LO(deluge_dialog),
-			LO(thunder_dialog),
-			LO(fire_dialog),
-			LO(death_dialog),
-			LO(tilte_dialog),
-			LO(spring_elixir_dialog),
-			LO(progressive_sword_dialog),
-			LO(progressive_armor_dialog),
-			LO(progressive_shield_dialog),
-			LO(ap_dialog),
-			LO(ap_dialog),
-		});
-		auto dialog_hi = patcher->patch_new_code(12, {
-			HI(elf_ring_dialog),
-			HI(ruby_ring_dialog),
-			HI(dworf_ring_dialog),
-			HI(demons_ring_dialog),
-			HI(key_jack_dialog),
-			HI(key_queen_dialog),
-			HI(key_king_dialog),
-			HI(key_ace_dialog),
-			HI(key_joker_dialog),
-			HI(deluge_dialog),
-			HI(thunder_dialog),
-			HI(fire_dialog),
-			HI(death_dialog),
-			HI(tilte_dialog),
-			HI(spring_elixir_dialog),
-			HI(progressive_sword_dialog),
-			HI(progressive_armor_dialog),
-			HI(progressive_shield_dialog),
-			HI(ap_dialog),
-			HI(ap_dialog),
-		});
+		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
+			patcher->patch_new_code(12, { 0x00, 0x01, (uint8_t)(0xC4 + i), 0x00 }); // 0x98
 
 		// We want to add dialogs for the new items. They are tightly packed into the
 		// bank 12. Modify the code to jump ahead further if message ID is too big
 		auto get_dialog_addr_addr = patcher->patch_new_code(12, {
 			OP_SEC(),
 			OP_SBC_IMM(0x98),
-			OP_BCC(12),
+			OP_BCC(9),
 
 			// Greater or equal to 0x98, we go somewhere else
-			OP_TAX(),
-			OP_LDA_ABSX(dialog_lo), // lo
+			OP_ASL_A(), OP_ASL_A(), // lo
 			OP_STA_ZPG(0xDB),
-			OP_LDA_ABSX(dialog_hi), // hi
+			OP_LDA_IMM(0xBE), // hi
 			OP_STA_ZPG(0xDC),
 			OP_RTS(),
 
@@ -813,9 +698,11 @@ void AP::patch_items()
 				0, 0, 2, 1, // Rings
 				1, 1, 1, 1, 1, // Keys
 				1, 1, 1, 1, 1, // Magics
-				2, // Spring Elixir
 				1, 1, 1, // Progressive items
-				1, 1, // AP
+				2, 0, 2, 2, 0, 1, // Tools
+				1, 0, 0, 0, 0, 3, // Consumables
+				0, 0, // AP
+				0, // ?
 			};
 
 			// Only difference between different sprites is the palette
@@ -844,115 +731,183 @@ void AP::patch_items()
 				patcher->patch_new_code(9, { PATCH_ADDR(TILES_OFFSET + i * 64) }); // Offset into the bank to the tiles
 			}
 
-#define DST_TILE(idx) ROM_OFFSET_LO(9, TILES_OFFSET + idx * 16)
+			int tile_id = 0;
+#define DST_TILE() ROM_OFFSET_LO(9, TILES_OFFSET + tile_id++ * 16)
+#define SRC_TILE(addr, id) m_info.rom + (addr - 0x10) + id * 16
 
 			// Ring of elf
-			copy_sprite(TILE_ADDR(0x06), DST_TILE(0), 0, true);
-			copy_sprite(TILE_ADDR(0x07), DST_TILE(1), 0, true);
-			copy_sprite(TILE_ADDR(0x0C), DST_TILE(2), 0, false);
-			copy_sprite(TILE_ADDR(0x0D), DST_TILE(3), 0, false);
+			copy_sprite(TILE_ADDR(0x06), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x07), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(), 0, false);
 
 			// Ruby
-			copy_sprite(TILE_ADDR(0x08), DST_TILE(4), 0, true);
-			copy_sprite(TILE_ADDR(0x09), DST_TILE(5), 0, true);
-			copy_sprite(TILE_ADDR(0x0C), DST_TILE(6), 0, false);
-			copy_sprite(TILE_ADDR(0x0D), DST_TILE(7), 0, false);
+			copy_sprite(TILE_ADDR(0x08), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x09), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(), 0, false);
 
 			// Dworf
-			copy_sprite(TILE_ADDR(0x0A), DST_TILE(8), 0, false);
-			copy_sprite(TILE_ADDR(0x0B), DST_TILE(9), 0, false);
-			copy_sprite(TILE_ADDR(0x0C), DST_TILE(10), 0, false);
-			copy_sprite(TILE_ADDR(0x0D), DST_TILE(11), 0, false);
+			copy_sprite(TILE_ADDR(0x0A), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0B), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(), 0, false);
 
 			// Demons
-			copy_sprite(TILE_ADDR(0x04), DST_TILE(12), 0, false);
-			copy_sprite(TILE_ADDR(0x05), DST_TILE(13), 0, false);
-			copy_sprite(TILE_ADDR(0x0C), DST_TILE(14), 0, false);
-			copy_sprite(TILE_ADDR(0x0D), DST_TILE(15), 0, false);
+			copy_sprite(TILE_ADDR(0x04), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x05), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0C), DST_TILE(), 0, false);
+			copy_sprite(TILE_ADDR(0x0D), DST_TILE(), 0, false);
 
 			// Jack
-			copy_sprite(TILE_ADDR(0x73), DST_TILE(16), 0, true);
-			copy_sprite(TILE_ADDR(0x27), DST_TILE(17), 0, true);
-			copy_sprite(TILE_ADDR(0x74), DST_TILE(18), 0, true);
-			copy_sprite(TILE_ADDR(0x29), DST_TILE(19), 0, true);
+			copy_sprite(TILE_ADDR(0x73), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x74), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(), 0, true);
 
 			// Queen
-			copy_sprite(TILE_ADDR(0x71), DST_TILE(20), 0, true);
-			copy_sprite(TILE_ADDR(0x27), DST_TILE(21), 0, true);
-			copy_sprite(TILE_ADDR(0x72), DST_TILE(22), 0, true);
-			copy_sprite(TILE_ADDR(0x29), DST_TILE(23), 0, true);
+			copy_sprite(TILE_ADDR(0x71), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x72), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(), 0, true);
 			
 			// King
-			copy_sprite(TILE_ADDR(0x2A), DST_TILE(24), 0, true);
-			copy_sprite(TILE_ADDR(0x27), DST_TILE(25), 0, true);
-			copy_sprite(TILE_ADDR(0x2B), DST_TILE(26), 0, true);
-			copy_sprite(TILE_ADDR(0x29), DST_TILE(27), 0, true);
+			copy_sprite(TILE_ADDR(0x2A), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x2B), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(), 0, true);
 			
 			// Ace
-			copy_sprite(TILE_ADDR(0x26), DST_TILE(28), 0, true);
-			copy_sprite(TILE_ADDR(0x27), DST_TILE(29), 0, true);
-			copy_sprite(TILE_ADDR(0x28), DST_TILE(30), 0, true);
-			copy_sprite(TILE_ADDR(0x29), DST_TILE(31), 0, true);
+			copy_sprite(TILE_ADDR(0x26), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x28), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(), 0, true);
 			
 			// Joker
-			copy_sprite(TILE_ADDR(0x75), DST_TILE(32), 0, true);
-			copy_sprite(TILE_ADDR(0x27), DST_TILE(33), 0, true);
-			copy_sprite(TILE_ADDR(0x76), DST_TILE(34), 0, true);
-			copy_sprite(TILE_ADDR(0x29), DST_TILE(35), 0, true);
+			copy_sprite(TILE_ADDR(0x75), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x27), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x76), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x29), DST_TILE(), 0, true);
 			
 			// Deluge
-			copy_sprite(TILE_ADDR(0x7F), DST_TILE(36), 0, true);
-			copy_sprite(TILE_ADDR(0x80), DST_TILE(37), 0, true);
-			copy_sprite(TILE_ADDR(0x7F), DST_TILE(38), 2, true);
-			copy_sprite(TILE_ADDR(0x80), DST_TILE(39), 2, true);
+			copy_sprite(TILE_ADDR(0x7F), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x80), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x7F), DST_TILE(), 2, true);
+			copy_sprite(TILE_ADDR(0x80), DST_TILE(), 2, true);
 			
 			// Thunder
-			copy_sprite(TILE_ADDR(0x83), DST_TILE(40), 0, true);
-			copy_sprite(TILE_ADDR(0x84), DST_TILE(41), 0, true);
-			copy_sprite(TILE_ADDR(0x83), DST_TILE(42), 2, true);
-			copy_sprite(TILE_ADDR(0x84), DST_TILE(43), 2, true);
+			copy_sprite(TILE_ADDR(0x83), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x84), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x83), DST_TILE(), 2, true);
+			copy_sprite(TILE_ADDR(0x84), DST_TILE(), 2, true);
 			
 			// Fire
-			copy_sprite(TILE_ADDR(0x87), DST_TILE(44), 0, true);
-			copy_sprite(TILE_ADDR(0x88), DST_TILE(45), 0, true);
-			copy_sprite(TILE_ADDR(0x87), DST_TILE(46), 2, true);
-			copy_sprite(TILE_ADDR(0x88), DST_TILE(47), 2, true);
+			copy_sprite(TILE_ADDR(0x87), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x88), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x87), DST_TILE(), 2, true);
+			copy_sprite(TILE_ADDR(0x88), DST_TILE(), 2, true);
 			
 			// Death
-			copy_sprite(TILE_ADDR(0x7B), DST_TILE(48), 0, true);
-			copy_sprite(TILE_ADDR(0x7C), DST_TILE(49), 0, true);
-			copy_sprite(TILE_ADDR(0x7D), DST_TILE(50), 0, true);
-			copy_sprite(TILE_ADDR(0x7E), DST_TILE(51), 0, true);
+			copy_sprite(TILE_ADDR(0x7B), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x7C), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x7D), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x7E), DST_TILE(), 0, true);
 			
 			// Tilte
-			copy_sprite(TILE_ADDR(0x77), DST_TILE(52), 0, true);
-			copy_sprite(TILE_ADDR(0x78), DST_TILE(53), 0, true);
-			copy_sprite(TILE_ADDR(0x79), DST_TILE(54), 0, true);
-			copy_sprite(TILE_ADDR(0x7A), DST_TILE(55), 0, true);
-			
-			// Spring Elixir
-			copy_sprite(TILE_ADDR(0x34), DST_TILE(56), 0, true);
-			copy_sprite(TILE_ADDR(0x35), DST_TILE(57), 0, true);
-			copy_sprite(TILE_ADDR(0x36), DST_TILE(58), 0, true);
-			copy_sprite(TILE_ADDR(0x37), DST_TILE(59), 0, true);
+			copy_sprite(TILE_ADDR(0x77), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x78), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x79), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x7A), DST_TILE(), 0, true);
 			
 			// Progressive Sword
-			copy_sprite(TILE_ADDR(0x4D), DST_TILE(60), 0, true);
-			copy_sprite(TILE_ADDR(0x4E), DST_TILE(61), 0, true);
-			copy_sprite(TILE_ADDR(0x4F), DST_TILE(62), 0, true);
-			copy_sprite(TILE_ADDR(0x50), DST_TILE(63), 0, true);
+			copy_sprite(SRC_TILE(0x0001D006, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 2), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 3), DST_TILE(), 0, false);
 			
 			// Progressive Armor
-			copy_sprite(TILE_ADDR(0x5D), DST_TILE(64), 0, true);
-			copy_sprite(TILE_ADDR(0x5E), DST_TILE(65), 0, true);
-			copy_sprite(TILE_ADDR(0x5F), DST_TILE(66), 0, true);
-			copy_sprite(TILE_ADDR(0x60), DST_TILE(67), 0, true);
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE(), 1, false);
 			
 			// Progressive Shield
-			copy_sprite(TILE_ADDR(0x69), DST_TILE(68), 0, true);
-			copy_sprite(TILE_ADDR(0x6A), DST_TILE(69), 0, true);
-			copy_sprite(TILE_ADDR(0x6B), DST_TILE(70), 0, true);
-			copy_sprite(TILE_ADDR(0x6C), DST_TILE(71), 0, true);
+			copy_sprite(TILE_ADDR(0x69), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x6A), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x6B), DST_TILE(), 0, true);
+			copy_sprite(TILE_ADDR(0x6C), DST_TILE(), 0, true);
+			
+			// Spring Elixir
+			copy_sprite(SRC_TILE(0x0001CDC6, 0), DST_TILE(), 0, true);
+			copy_sprite(SRC_TILE(0x0001CDC6, 1), DST_TILE(), 0, true);
+			copy_sprite(SRC_TILE(0x0001CDC6, 2), DST_TILE(), 0, true);
+			copy_sprite(SRC_TILE(0x0001CDC6, 3), DST_TILE(), 0, true);
+			
+			// Mattock
+			copy_sprite(SRC_TILE(0x0001CE26, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CE26, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CE26, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CE26, 1), DST_TILE(), 1, false);
+			
+			// Wingboots
+			copy_sprite(SRC_TILE(0x0001CF06, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF06, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF06, 2), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF06, 3), DST_TILE(), 0, false);
+			
+			// Black Onyx
+			copy_sprite(SRC_TILE(0x0001CD46, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CD46, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CD46, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CD46, 1), DST_TILE(), 1, false);
+			
+			// Magical Rod
+			copy_sprite(SRC_TILE(0x0001CF66, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF66, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF66, 2), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF66, 3), DST_TILE(), 0, false);
+			
+			// Pendant
+			copy_sprite(SRC_TILE(0x0001CD66, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CD66, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CD66, 2), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CD66, 3), DST_TILE(), 0, false);
+			
+			// Red Potion
+			copy_sprite(SRC_TILE(0x0001CDA6, 0), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 0), DST_TILE(), 0, false, -4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 1), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 1), DST_TILE(), 0, false, -4);
+			
+			// Elixir
+			copy_sprite(SRC_TILE(0x0001CDC6, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CDC6, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CDC6, 2), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CDC6, 3), DST_TILE(), 0, false);
+			
+			// Poison
+			copy_sprite(SRC_TILE(0x0001CDA6, 0), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 0), DST_TILE(), 0, false, -4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 1), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CDA6, 1), DST_TILE(), 0, false, -4);
+			
+			// Ointment
+			copy_sprite(SRC_TILE(0x0001CE06, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CE06, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CE06, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CE06, 1), DST_TILE(), 1, false);
+			
+			// Glove
+			copy_sprite(SRC_TILE(0x0001CD26, 0), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CD26, 0), DST_TILE(), 0, false, -4);
+			copy_sprite(SRC_TILE(0x0001CD26, 1), DST_TILE(), 0, false, 4);
+			copy_sprite(SRC_TILE(0x0001CD26, 1), DST_TILE(), 0, false, -4);
+			
+			// Hour Glass
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
 		}
 
 		// Touching an item entity
@@ -961,17 +916,27 @@ void AP::patch_items()
 				0x80, 0x81, 0x82, 0x83, // Rings
 				0x87, 0x86, 0x85, 0x84, 0x88, // Keys
 				0x60, 0x61, 0x62, 0x63, 0x64, // Magics
-				AP_ITEM_SPRING_ELIXIR,
 
 				// Progressives
 				AP_ITEM_PROGRESSIVE_SWORD,
 				AP_ITEM_PROGRESSIVE_ARMOR,
 				AP_ITEM_PROGRESSIVE_SHIELD,
 
+				// Tools
+				AP_ITEM_SPRING_ELIXIR,
+				0x89, // Mattock
+				0x8F, // Wing boots
+				0x94, // Black Onyx
+				0x8A, // Magical Rod
+				0x93, // Pendant
+
 				// Consumables
 				0x90, // Red Potion
 				0x92, // Elixir
-				AP_ITEM_POISON, AP_ITEM_OINTMENT, AP_ITEM_GLOVE
+				AP_ITEM_POISON,
+				AP_ITEM_OINTMENT,
+				AP_ITEM_GLOVE,
+				0x8D, // Hour Glass
 			});
 
 			auto touched_new_item_addr = patcher->patch_new_code(15, {
