@@ -153,12 +153,6 @@ void AP::patch_items()
 #define ROM_LO(bank, addr) (m_info.rom + BANK_ADDR_LO(bank, addr))
 #define BANK_OFFSET(bank, offset) (bank * 0x4000 + offset)
 #define ROM_OFFSET_LO(bank, offset) (m_info.rom + BANK_ADDR_LO(bank, (offset) + 0x8000))
-#define ADD_ITEM(name, id, tile0, tile1, tile2, tile3) \
-	memcpy(ROM_LO(12, 0xAE4D) + (id - 0x90) * 16 + 1, name, strlen(name)); \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3
 #define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
 #define SPRITE_ADDR(rom_addr, index) (m_info.rom + rom_addr - 0x10 + index * 16)
 #define LO(addr) (uint8_t)(addr & 0xFF)
@@ -984,13 +978,12 @@ void AP::patch_items()
 #endif
 
 	// Prepare space in unused area for all the new item texts.
-	// Each location will have item name hardcoded + slot name.
-	for (int i = 0; i < 16 + (sizeof(AP_LOCATIONS) / sizeof(ap_location_t) * 2); ++i)
+	for (int i = 0; i < 16 * 32; i += 16)
 	{
-		ROM_LO(12, 0xAE4D)[i * 16] = 0x0D;
+		ROM_LO(12, 0xAE4D)[i] = 0x0D;
 		for (int j = 1; j < 16; ++j)
 		{
-			ROM_LO(12, 0xAE4D)[i * 16 + j] = 0x20;
+			ROM_LO(12, 0xAE4D)[i + j] = 0x20;
 		}
 	}
 
@@ -998,6 +991,13 @@ void AP::patch_items()
 	memcpy(ROM_LO(12, 0xAE4D), ROM_LO(12, 0x9D4D), 16 * 6);
 
 	// Add new items (There are unused items in the game, but we will avoid them incase they might trigger buffs/nerfs we don't know about)
+#define ADD_ITEM(name, id, tile0, tile1, tile2, tile3) \
+	memcpy(ROM_LO(12, 0xAE4D) + (id - 0x90) * 16 + 1, name, strlen(name)); \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3
+
 	ADD_ITEM("PROG SWORD", AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
 	ADD_ITEM("PROG ARMOR", AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
 	ADD_ITEM("PROG SHIELD", AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
@@ -1063,7 +1063,69 @@ void AP::patch_items()
 			OP_RTS(), // A is now the item id to add
 		});
 
+//RAM:03AD ItemInventory:  .BYTE 0 ; (uninited)    ; DATA XREF: StoreInInventory+7w
+//RAM:03AE                 ; 0 .BYTE uninited & unexplored
+//RAM:03AF                 ; 0 .BYTE uninited & unexplored
+//RAM:03B0                 ; 0 .BYTE uninited & unexplored
+// 
+//RAM:03B1                 ; 0 .BYTE uninited & unexplored
+//RAM:03B2                 ; 0 .BYTE uninited & unexplored
+//RAM:03B3                 ; 0 .BYTE uninited & unexplored
+//RAM:03B4                 ; 0 .BYTE uninited & unexplored
+// 
+//RAM:03B5                 ; 0 .BYTE uninited & unexplored
+//RAM:03B6                 ; 0 .BYTE uninited & unexplored
+//RAM:03B7                 ; 0 .BYTE uninited & unexplored
+//RAM:03B8                 ; 0 .BYTE uninited & unexplored
+// 
+//RAM:03B9                 ; 0 .BYTE uninited & unexplored
+//RAM:03BA                 ; 0 .BYTE uninited & unexplored
+//RAM:03BB                 ; 0 .BYTE uninited & unexplored
+//RAM:03BC                 ; 0 .BYTE uninited & unexplored
+
+		auto add_new_common = patcher->patch_new_code(12, {
+			OP_LDX_IMM(0xFF),
+			OP_INX(),
+			OP_LDY_ABSX(0x03B5),
+			OP_BNE(0xFA),
+			OP_STA_ABSX(0x03B5),
+			OP_INC_ABSX(0x03B9),
+			OP_RTS(),
+		});
+
+		auto add_common = patcher->patch_new_code(12, {
+			OP_LDX_IMM(3),
+			OP_CMP_ABSX(0x03B5),
+			OP_BEQ(6),
+			OP_DEX(),
+			OP_BPL(0xF8), // -8
+			OP_JMP_ABS(add_new_common),
+			OP_STA_ABSX(0x03B5),
+			OP_INC_ABSX(0x03B9),
+			OP_RTS(),
+		});
+
+		auto add_poison = patcher->patch_new_code(12, {
+			OP_RTS(), // TODO
+		});
+
 		auto give_item = patcher->patch_new_code(12, {
+			// Check if it's poison. We hurt player, we don't add to inventory
+			OP_CMP_IMM(AP_ITEM_POISON),
+			OP_BNE(3),
+			OP_JMP_ABS(add_poison),
+
+			// Check if our item is common
+			OP_CMP_IMM(0x90), // Red Potion
+			OP_BEQ(12),
+			OP_CMP_IMM(AP_ITEM_OINTMENT),
+			OP_BEQ(8),
+			OP_CMP_IMM(AP_ITEM_GLOVE),
+			OP_BEQ(4),
+			OP_CMP_IMM(0x8D), // Hour Glass
+			OP_BNE(3),
+			OP_JMP_ABS(add_common),
+
 			// Check if progression sword
 			OP_CMP_IMM(AP_ITEM_PROGRESSIVE_SWORD),
 			OP_BNE(3),
@@ -1083,14 +1145,10 @@ void AP::patch_items()
 			OP_STA_ZPG(0xEE),
 			OP_JSR(0xF785),
 			OP_TAX(),
-			OP_RTS(),
+			OP_JMP_ABS(0x9B06),
 		});
 
-		patcher->patch(12, 0x9B01, 0, {
-			OP_JSR(give_item),
-			OP_NOP(),
-			OP_NOP(),
-		});
+		patcher->patch(12, 0x9B01, 0, { OP_JMP_ABS(give_item) });
 	}
 
 	// Spring elixir quest
@@ -1140,24 +1198,112 @@ void AP::patch_items()
 		// Trigger a reuse timeout of 2mins
 	}
 
-	// Item inventory limit to 12
+	// New inventory categories
 	{
-		// Persistent inventory items
-		//   Key J
-		//   Key Jo
-		//   Key Q
-		//   Key K
-		//   Key A
-		//   Mattock
+		memcpy(ROM_LO(12, 0xAE4D) + 0 * 16 + 1, "COMMON", strlen("COMMON"));
+
+		// Goes into ITEM (unique/persistent)
+		//   Key Jack
+		//   Key Queen
+		//   Key King
+		//   Key Ace
+		//   Key Joker
 		//   Spring Elixir
+		//   Mattock
 		//   Wingboots
 
-		// Non persistent
-		//   Potion
-		//   Hourglass
-		//   glove
-		//   ointment
+		// Goes into COMMON (Consumables)
+		//   Red Potion
+		//     count
+		//   Ointment
+		//     count
+		//   Glove
+		//     count
+		//   Hour Glass
+		//     count
 
+		// Add a row to the menu screen
+		patcher->patch(12, 0x8AAC, 1, { 0x10 });
+
+		// Copy existing menu text further in a free area, and add ours after
+		memcpy(ROM_LO(12, 0xAF4D), ROM_LO(12, 0x8873), 5 * 16);
+		memcpy(ROM_LO(12, 0xAF4D) + 5 * 16, "\x6""COMMON", 7);
+		memcpy(ROM_LO(12, 0xAF4D) + 6 * 16, ROM_LO(12, 0x88C3), 16);
+		patcher->patch(12, 0x8AB9, 1, { 0x4D });
+		patcher->patch(12, 0x8ABD, 1, { 0xAF });
+
+		// Same thing for the "no item/no weapon" text, but just we repeat "no item" for the common
+		auto no_item_addr = patcher->patch_new_code(12, {
+			OP_CPY_IMM(5 << 4),
+			OP_BNE(3),
+			OP_LDY_IMM(4 << 4),
+			OP_TYA(),
+			OP_JMP_ABS(0x8E9B),
+		});
+
+		patcher->patch(12, 0x8B3E, 0, { OP_JSR(no_item_addr)} );
+
+		// We have 7 submenus now
+		patcher->patch(12, 0x8A93, 1, { 0x07 });
+
+		auto addr = patcher->patch_new_code(12, {
+			OP_STX_ABS(0x0225),
+			OP_INX(),
+			OP_STX_ABS(0x0226),
+			OP_RTS(),
+		});
+		patcher->patch(12, 0x8AD7, 0, { OP_JSR(addr) });
+
+		// Player screen is now index 6
+		patcher->patch(12, 0x8AF3, 1, { 0x06 });
+
+		// Patch all the places we're looking up the number of item in a sub inventory
+		{
+			auto load_ax_addr = patcher->patch_new_code(12, {
+				OP_CPX_IMM(0x05),
+				OP_BEQ(4),
+
+				OP_LDA_ABSX(0x03C2),
+				OP_RTS(),
+
+				OP_LDA_IMM(0), // For now
+				OP_RTS(),
+			});
+
+			auto load_yx_addr = patcher->patch_new_code(12, {
+				OP_CPX_IMM(0x05),
+				OP_BEQ(4),
+
+				OP_LDY_ABSX(0x03C2),
+				OP_RTS(),
+
+				OP_LDY_IMM(0), // For now
+				OP_RTS(),
+			});
+
+			auto load_xy_addr = patcher->patch_new_code(12, {
+				OP_CPY_IMM(0x05),
+				OP_BEQ(4),
+
+				OP_LDX_ABSY(0x03C2),
+				OP_RTS(),
+
+				OP_LDX_IMM(0), // For now
+				OP_RTS(),
+			});
+
+			patcher->patch(12, 0x8431, 0, { OP_JSR(load_ax_addr) });
+			patcher->patch(12, 0x84D6, 0, { OP_JSR(load_yx_addr) });
+			patcher->patch(12, 0x8671, 0, { OP_JSR(load_yx_addr) });
+			patcher->patch(12, 0x8B17, 0, { OP_JSR(load_ax_addr) });
+			patcher->patch(12, 0x8D37, 0, { OP_JSR(load_xy_addr) });
+			patcher->patch(12, 0x9A99, 0, { OP_JSR(load_ax_addr) }); // I think that's sell, we won't support that
+		}
+	}
+
+	// Item inventory limit to 12
+	{
+		/*
 		// Max number of item
 		patcher->patch(12, 0x847D, 4, { 12 });
 
@@ -1167,7 +1313,7 @@ void AP::patch_items()
 
 		// Add to inventory
 		patcher->patch(15, 0xC8D0, 1, { 12 });
-
+		*/
 		// Make item inventory window bigger
 		//patcher->patch(12, 0x8AA2, 1, { 0x08 }); // Inventory screen y position
 		//patcher->patch(12, 0x8AFF, 1, { 0x04 }); // y position of items dialog

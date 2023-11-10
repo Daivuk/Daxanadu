@@ -72,14 +72,24 @@ void RAM::render()
         ImGui::Text("Magic: 0x%02X", (int)m_data[0x03C0]);
         ImGui::Text("Item: 0x%02X", (int)m_data[0x03C1]);
 
-        if (ImGui::TreeNode("Items:"))
+        if (ImGui::TreeNodeEx("Items:", ImGuiTreeNodeFlags_DefaultOpen))
         {
             for (int i = 0; i < (int)m_data[0x03C6]; ++i)
                 ImGui::Text("0x%02X", (int)m_data[0x03AD + i]);
             ImGui::TreePop();
         }
 
-        if (ImGui::TreeNodeEx("Active entities:", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::TreeNodeEx("Commons:", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (m_data[0x03B5 + i] == 0) break;
+                ImGui::Text("0x%02X  (%i)", (int)m_data[0x03B5 + i], (int)m_data[0x03B9 + i]);
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Active entities:"))
         {
             for (int i = 0; i < 8; ++i)
             {
