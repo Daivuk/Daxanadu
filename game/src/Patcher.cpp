@@ -18,11 +18,11 @@ static const int BANKS_EMPTY_SPACE[16] = {
     0x0000,
 
     0x0000,
-    0x8000, // Bank 9 not used at all
+    0x8000,
     0x0000,
     0x0000,
 
-    0xBE00,
+    0xAD8B,
     0x0000,
     0xBDB5,
     0xFCCE
@@ -41,7 +41,7 @@ static const int BANKS_EMPTY_SPACE_LIMIT[16] = {
     0x0000,
 
     0x0000,
-    0xFFFF,
+    0xBFFF,
     0x0000,
     0x0000,
 
@@ -88,6 +88,8 @@ Patcher::Patcher(uint8_t* rom)
     apply_xp_speed_setting_patch();
     apply_pendant_setting_patch();
     apply_sfx_patch();
+
+    print_usage();
 }
 
 
@@ -132,12 +134,7 @@ static void load_tile_from_png(const char* filename, uint8_t* out_data)
 
 void Patcher::patch(int addr, const std::vector<uint8_t>& code)
 {
-    for (int i = 0, end = (int)code.size(); i < end; ++i)
-    {
-        auto byte = code[i];
-        //if (byte == 0xFF) continue; // This means we skip over this instruction, we don't patch it
-        m_rom[addr + i] = byte;
-    }
+    memcpy(m_rom + addr, code.data(), code.size());
 }
 
 
@@ -173,6 +170,50 @@ int Patcher::patch_new_code(int bank, const std::vector<uint8_t>& code)
     m_next_banks_empty_space[bank] += (int)code.size();
 
     return addr;
+}
+
+
+void Patcher::advance_new_code(int bank, int size)
+{
+    if (m_next_banks_empty_space[bank] == 0 || BANKS_EMPTY_SPACE_LIMIT[bank] == 0)
+    {
+        onut::showMessageBox("ERROR", "Bank " + std::to_string(bank) + " not configured for new code");
+        OQuit();
+    }
+
+    auto addr = m_next_banks_empty_space[bank];
+    if (addr + size >= BANKS_EMPTY_SPACE_LIMIT[bank])
+    {
+        onut::showMessageBox("ERROR", "No more free space in bank " + std::to_string(bank));
+        OQuit();
+    }
+
+    m_next_banks_empty_space[bank] += size;
+}
+
+
+int Patcher::get_new_code_addr(int bank)
+{
+    return m_next_banks_empty_space[bank];
+}
+
+
+void Patcher::print_usage()
+{
+    printf("Bank free space usage:\n");
+    for (int i = 0; i < 16; ++i)
+    {
+        int total_space = BANKS_EMPTY_SPACE_LIMIT[i] - BANKS_EMPTY_SPACE[i];
+        if (total_space == 0)
+        {
+            //printf("  Bank %i: N/A\n", i);
+            continue;
+        }
+
+        int remaining_space = BANKS_EMPTY_SPACE_LIMIT[i] - m_next_banks_empty_space[i];
+        int percent_used = (total_space - remaining_space) * 100 / total_space;
+        printf("  Bank %i: %i%%, %i Bytes left\n", i, percent_used, remaining_space);
+    }
 }
 
 

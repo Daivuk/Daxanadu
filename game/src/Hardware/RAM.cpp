@@ -29,7 +29,7 @@ bool RAM::cpu_write(uint16_t addr, uint8_t data)
 {
     if (addr < 0x2000)
     {
-        //if (addr == 0x03B0)
+        //if (addr == 0x0220)
         //{
         //    __debugbreak();
         //}
@@ -53,6 +53,11 @@ bool RAM::cpu_read(uint16_t addr, uint8_t* out_data)
 {
     if (addr < 0x2000)
     {
+        //if (addr == 0x0220)
+        //{
+        //    __debugbreak();
+        //}
+
         *out_data = m_data[addr % 0x800];
         return true;
     }

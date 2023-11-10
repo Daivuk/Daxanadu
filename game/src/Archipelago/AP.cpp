@@ -76,6 +76,7 @@ void AP::connect()
 {
 	m_state = state_t::connecting;
 	patch_items();
+	m_info.patcher->print_usage();
 
 	AP_NetworkVersion version = {0, 4, 3};
 	AP_SetClientVersion(&version);
@@ -207,43 +208,6 @@ void AP::patch_items()
 				OP_JMP_ABS(update_sprite_no_sprite)
 			});
 		}
-
-		// --- IMPORTANT ---
-		// This needs to be first.
-		// We save some bank space on tables because we're alligned on page.
-
-		// Dialogs, Start at ID 0x98
-		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
-			patcher->patch_new_code(12, { 0x00, 0x01, (uint8_t)(0xC4 + i), 0x00 }); // 0x98
-
-		// We want to add dialogs for the new items. They are tightly packed into the
-		// bank 12. Modify the code to jump ahead further if message ID is too big
-		auto get_dialog_addr_addr = patcher->patch_new_code(12, {
-			OP_SEC(),
-			OP_SBC_IMM(0x98),
-			OP_BCC(9),
-
-			// Greater or equal to 0x98, we go somewhere else
-			OP_ASL_A(), OP_ASL_A(), // lo
-			OP_STA_ZPG(0xDB),
-			OP_LDA_IMM(0xBE), // hi
-			OP_STA_ZPG(0xDC),
-			OP_RTS(),
-
-			// Normal code
-			OP_LDA_ABSX(0x9F6B), // lo
-			OP_STA_ZPG(0xDB),
-			OP_LDA_ABSX(0xA003), // hi
-			OP_STA_ZPG(0xDC),
-			OP_RTS(),
-		});
-
-		patcher->patch(12, 0x824C, 0, {
-			OP_JSR(get_dialog_addr_addr),
-			OP_NOP(), OP_NOP(),
-			OP_NOP(), OP_NOP(), OP_NOP(),
-			OP_NOP(), OP_NOP(),
-		});
 
 		// The arrays for entity properties are tightly packed.
 		// We have to insert our own code a bit everywhere to return offsets to new tables.
@@ -902,6 +866,8 @@ void AP::patch_items()
 			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+
+			patcher->advance_new_code(9, (16 + 13) * 4 * 16);
 		}
 
 		// Touching an item entity
@@ -977,41 +943,56 @@ void AP::patch_items()
 	}
 #endif
 
-	// Prepare space in unused area for all the new item texts.
-	for (int i = 0; i < 16 * 32; i += 16)
+	// New items text and tiles
 	{
-		ROM_LO(12, 0xAE4D)[i] = 0x0D;
-		for (int j = 1; j < 16; ++j)
+		// Text lo addr byte needs to be 0x4D. We're wasting a few bytes (26)
+		auto text_addr = patcher->get_new_code_addr(12);
+		if ((text_addr & 0xFF) < 0x4D)
 		{
-			ROM_LO(12, 0xAE4D)[i + j] = 0x20;
+			auto new_code_addr = (text_addr & 0xFF00) | 0x4D;
+			patcher->advance_new_code(12, new_code_addr - text_addr);
+			text_addr = new_code_addr;
 		}
-	}
+		else if ((text_addr & 0xFF) > 0x4D)
+		{
+			auto new_code_addr = ((text_addr & 0xFF00) + 0x0100) | 0x4D;
+			patcher->advance_new_code(12, new_code_addr - text_addr);
+			text_addr = new_code_addr;
+		}
 
-	// Move old texts from second page of items into a new addr with empty space so we can jump higher up and use this space instead
-	memcpy(ROM_LO(12, 0xAE4D), ROM_LO(12, 0x9D4D), 16 * 6);
+		// Move old texts from second page of items into a new addr with empty space so we can jump higher up and use this space instead
+		memcpy(ROM_LO(12, text_addr), ROM_LO(12, 0x9D4D), 16 * 6);
+		patcher->advance_new_code(12, 6 * 16);
 
-	// Add new items (There are unused items in the game, but we will avoid them incase they might trigger buffs/nerfs we don't know about)
-#define ADD_ITEM(name, id, tile0, tile1, tile2, tile3) \
-	memcpy(ROM_LO(12, 0xAE4D) + (id - 0x90) * 16 + 1, name, strlen(name)); \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
-	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3
+		// Add new items (There are unused items in the game, but we will avoid them incase they might trigger buffs/nerfs we don't know about)
+	#define ADD_ITEM(name, id, tile0, tile1, tile2, tile3) \
+		{ \
+			auto item_text_addr = patcher->patch_new_code(12, { \
+				(uint8_t)strlen(name), 0x20, 0x20, 0x20, \
+				0x20, 0x20, 0x20, 0x20, \
+				0x20, 0x20, 0x20, 0x20, \
+				0x20, 0x20, 0x20, 0x20 \
+			}); \
+			memcpy(ROM_LO(12, item_text_addr + 1), name, strlen(name)); \
+			m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
+			m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
+			m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
+			m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3; \
+		}
 
-	ADD_ITEM("PROG SWORD", AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
-	ADD_ITEM("PROG ARMOR", AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
-	ADD_ITEM("PROG SHIELD", AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
-	ADD_ITEM("POISON", AP_ITEM_POISON, 0x30, 0x31, 0x32, 0x33);
-	ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
-	ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
-	ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
+		ADD_ITEM("PROG SWORD", AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
+		ADD_ITEM("PROG ARMOR", AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
+		ADD_ITEM("PROG SHIELD", AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
+		ADD_ITEM("POISON", AP_ITEM_POISON, 0x30, 0x31, 0x32, 0x33);
+		ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
+		ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
+		ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
 
-	// Write new code in bank12 that allows to jump further to index the new text
-	{
+		// Write new code in bank12 that allows to jump further to index the new text
 		auto addr = patcher->patch_new_code(12, {
 			OP_BCC(4),
 
-			OP_LDY_IMM(0xAE),
+			OP_LDY_IMM(HI(text_addr)),
 			OP_STY_ZPG(0xED),
 
 			OP_TAY(),
@@ -1023,7 +1004,48 @@ void AP::patch_items()
 		});
 	}
 
-	// 15:C8CD ; Description: Stores an item in the next free slot in the item directory
+	
+	// New item dialogs
+	{
+		// They need to be aligned on page, so we will waste some bytes here
+		auto dialogs_addr = patcher->get_new_code_addr(12);
+		auto aligned_addr = LO(dialogs_addr) ? ((dialogs_addr & 0xFF00) + 0x100) : dialogs_addr;
+		patcher->advance_new_code(12, aligned_addr - dialogs_addr);
+		dialogs_addr = aligned_addr;
+
+		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
+			patcher->patch_new_code(12, { 0x00, 0x01, (uint8_t)(0xC4 + i), 0x00 }); // 0x98
+
+		// We want to add dialogs for the new items. They are tightly packed into the
+		// bank 12. Modify the code to jump ahead further if message ID is too big
+		auto get_dialog_addr_addr = patcher->patch_new_code(12, {
+			OP_SEC(),
+			OP_SBC_IMM(0x98),
+			OP_BCC(9),
+
+			// Greater or equal to 0x98, we go somewhere else
+			OP_ASL_A(), OP_ASL_A(), // lo
+			OP_STA_ZPG(0xDB),
+			OP_LDA_IMM(HI(dialogs_addr)),
+			OP_STA_ZPG(0xDC),
+			OP_RTS(),
+
+			// Normal code
+			OP_LDA_ABSX(0x9F6B), // lo
+			OP_STA_ZPG(0xDB),
+			OP_LDA_ABSX(0xA003), // hi
+			OP_STA_ZPG(0xDC),
+			OP_RTS(),
+		});
+
+		patcher->patch(12, 0x824C, 0, {
+			OP_JSR(get_dialog_addr_addr),
+			OP_NOP(), OP_NOP(),
+			OP_NOP(), OP_NOP(), OP_NOP(),
+			OP_NOP(), OP_NOP(),
+		});
+	}
+
 
 	// Create a function that checks what inventory item is being added.
 	// So we can change it to something else, like if we are adding progressive sword, add
@@ -1063,26 +1085,6 @@ void AP::patch_items()
 			OP_RTS(), // A is now the item id to add
 		});
 
-//RAM:03AD ItemInventory:  .BYTE 0 ; (uninited)    ; DATA XREF: StoreInInventory+7w
-//RAM:03AE                 ; 0 .BYTE uninited & unexplored
-//RAM:03AF                 ; 0 .BYTE uninited & unexplored
-//RAM:03B0                 ; 0 .BYTE uninited & unexplored
-// 
-//RAM:03B1                 ; 0 .BYTE uninited & unexplored
-//RAM:03B2                 ; 0 .BYTE uninited & unexplored
-//RAM:03B3                 ; 0 .BYTE uninited & unexplored
-//RAM:03B4                 ; 0 .BYTE uninited & unexplored
-// 
-//RAM:03B5                 ; 0 .BYTE uninited & unexplored
-//RAM:03B6                 ; 0 .BYTE uninited & unexplored
-//RAM:03B7                 ; 0 .BYTE uninited & unexplored
-//RAM:03B8                 ; 0 .BYTE uninited & unexplored
-// 
-//RAM:03B9                 ; 0 .BYTE uninited & unexplored
-//RAM:03BA                 ; 0 .BYTE uninited & unexplored
-//RAM:03BB                 ; 0 .BYTE uninited & unexplored
-//RAM:03BC                 ; 0 .BYTE uninited & unexplored
-
 		auto add_new_common = patcher->patch_new_code(12, {
 			OP_LDX_IMM(0xFF),
 			OP_INX(),
@@ -1094,6 +1096,7 @@ void AP::patch_items()
 		});
 
 		auto add_common = patcher->patch_new_code(12, {
+			OP_AND_IMM(0x1F),
 			OP_LDX_IMM(3),
 			OP_CMP_ABSX(0x03B5),
 			OP_BEQ(6),
@@ -1156,6 +1159,7 @@ void AP::patch_items()
 		patcher->patch(12, 0xA1B3, 0, { AP_ITEM_SPRING_ELIXIR }); // Check if has
 		patcher->patch(12, 0xA1BC, 0, { AP_ITEM_SPRING_ELIXIR }); // Give
 
+#if 0	// I think it's better we keep it, for tracker purpose
 		// Remove item, but checks first if it's not selected, and remove it from selected
 		auto remove_item = patcher->patch_new_code(12, {
 			// Check if the item we remove is selected item
@@ -1173,6 +1177,7 @@ void AP::patch_items()
 			OP_JMP_ABS(0xC4BF), // Removes equip item
 		});
 		patcher->patch(12, 0x865A, 1, { PATCH_ADDR(remove_item) });
+#endif
 	}
 
 	// Don't remove keys when used
@@ -1198,10 +1203,8 @@ void AP::patch_items()
 		// Trigger a reuse timeout of 2mins
 	}
 
-	// New inventory categories
+	// New inventory category
 	{
-		memcpy(ROM_LO(12, 0xAE4D) + 0 * 16 + 1, "COMMON", strlen("COMMON"));
-
 		// Goes into ITEM (unique/persistent)
 		//   Key Jack
 		//   Key Queen
@@ -1225,12 +1228,16 @@ void AP::patch_items()
 		// Add a row to the menu screen
 		patcher->patch(12, 0x8AAC, 1, { 0x10 });
 
-		// Copy existing menu text further in a free area, and add ours after
-		memcpy(ROM_LO(12, 0xAF4D), ROM_LO(12, 0x8873), 5 * 16);
-		memcpy(ROM_LO(12, 0xAF4D) + 5 * 16, "\x6""COMMON", 7);
-		memcpy(ROM_LO(12, 0xAF4D) + 6 * 16, ROM_LO(12, 0x88C3), 16);
-		patcher->patch(12, 0x8AB9, 1, { 0x4D });
-		patcher->patch(12, 0x8ABD, 1, { 0xAF });
+		// Copy existing menu text further in a free area, and add COMMON in it
+		auto text_addr = patcher->get_new_code_addr(12);
+		memcpy(ROM_LO(12, text_addr), ROM_LO(12, 0x8873), 5 * 16);
+		memcpy(ROM_LO(12, text_addr) + 5 * 16, "\x6""COMMON""\x20\x20\x20\x20\x20\x20\x20\x20\x20", 16);
+		memcpy(ROM_LO(12, text_addr) + 6 * 16, ROM_LO(12, 0x88C3), 16);
+		patcher->advance_new_code(12, 7 * 16);
+
+		// Replace the addresses to point to this new text
+		patcher->patch(12, 0x8AB9, 1, { LO(text_addr) });
+		patcher->patch(12, 0x8ABD, 1, { HI(text_addr) });
 
 		// Same thing for the "no item/no weapon" text, but just we repeat "no item" for the common
 		auto no_item_addr = patcher->patch_new_code(12, {
@@ -1256,73 +1263,229 @@ void AP::patch_items()
 
 		// Player screen is now index 6
 		patcher->patch(12, 0x8AF3, 1, { 0x06 });
-
-		// Patch all the places we're looking up the number of item in a sub inventory
-		{
-			auto load_ax_addr = patcher->patch_new_code(12, {
-				OP_CPX_IMM(0x05),
-				OP_BEQ(4),
-
-				OP_LDA_ABSX(0x03C2),
-				OP_RTS(),
-
-				OP_LDA_IMM(0), // For now
-				OP_RTS(),
-			});
-
-			auto load_yx_addr = patcher->patch_new_code(12, {
-				OP_CPX_IMM(0x05),
-				OP_BEQ(4),
-
-				OP_LDY_ABSX(0x03C2),
-				OP_RTS(),
-
-				OP_LDY_IMM(0), // For now
-				OP_RTS(),
-			});
-
-			auto load_xy_addr = patcher->patch_new_code(12, {
-				OP_CPY_IMM(0x05),
-				OP_BEQ(4),
-
-				OP_LDX_ABSY(0x03C2),
-				OP_RTS(),
-
-				OP_LDX_IMM(0), // For now
-				OP_RTS(),
-			});
-
-			patcher->patch(12, 0x8431, 0, { OP_JSR(load_ax_addr) });
-			patcher->patch(12, 0x84D6, 0, { OP_JSR(load_yx_addr) });
-			patcher->patch(12, 0x8671, 0, { OP_JSR(load_yx_addr) });
-			patcher->patch(12, 0x8B17, 0, { OP_JSR(load_ax_addr) });
-			patcher->patch(12, 0x8D37, 0, { OP_JSR(load_xy_addr) });
-			patcher->patch(12, 0x9A99, 0, { OP_JSR(load_ax_addr) }); // I think that's sell, we won't support that
-		}
 	}
 
-	// Item inventory limit to 12
+	// Patch all the places we're looking up the number of item in a sub inventory
 	{
-		/*
-		// Max number of item
-		patcher->patch(12, 0x847D, 4, { 12 });
+		auto inv_size_table_addr = patcher->patch_new_code(12, {
+			4, 4, 4, 4, 8, 4
+		});
 
-		// Check at store
-		//patcher->patch(12, 0x846C, 1, { 6 }); // Where it displays "you cant carry more"
-		patcher->patch(12, 0x8405, 0, { OP_JMP_ABS(0x8439) });
+		patcher->patch(12, 0x8434, 1, { PATCH_ADDR(inv_size_table_addr) });
+		patcher->patch(12, 0x9B14, 1, { PATCH_ADDR(inv_size_table_addr) });
 
-		// Add to inventory
-		patcher->patch(15, 0xC8D0, 1, { 12 });
-		*/
-		// Make item inventory window bigger
-		//patcher->patch(12, 0x8AA2, 1, { 0x08 }); // Inventory screen y position
-		//patcher->patch(12, 0x8AFF, 1, { 0x04 }); // y position of items dialog
-		//patcher->patch(12, 0x8B09, 1, { 0x20 }); // height of items dialog
+		auto load_ax_addr = patcher->patch_new_code(12, {
+			OP_CPX_IMM(0x05),
+			OP_BEQ(4),
+			OP_LDA_ABSX(0x03C2),
+			OP_RTS(),
 
-		// Change the redraw area after it's closed
+			OP_LDY_IMM(0),
+			OP_LDA_ABSY(0x03B5),
+			OP_BEQ(5),
+			OP_INY(),
+			OP_CPY_IMM(4),
+			OP_BNE(0xF6),
+
+			OP_TYA(),
+			OP_RTS(),
+		});
+
+		auto load_yx_addr = patcher->patch_new_code(12, {
+			OP_CPX_IMM(0x05),
+			OP_BEQ(4),
+
+			OP_LDY_ABSX(0x03C2),
+			OP_RTS(),
+
+			OP_PHA(),
+
+			OP_LDY_IMM(0),
+			OP_LDA_ABSY(0x03B5),
+			OP_BEQ(5),
+			OP_INY(),
+			OP_CPY_IMM(4),
+			OP_BNE(0xF6),
+
+			OP_PLA(),
+			OP_RTS(),
+		});
+
+		auto load_xy_addr = patcher->patch_new_code(12, {
+			OP_CPY_IMM(0x05),
+			OP_BEQ(4),
+
+			OP_LDX_ABSY(0x03C2),
+			OP_RTS(),
+
+			OP_PHA(),
+
+			OP_LDX_IMM(0),
+			OP_LDA_ABSX(0x03B5),
+			OP_BEQ(5),
+			OP_INX(),
+			OP_CPX_IMM(4),
+			OP_BNE(0xF6),
+
+			OP_PLA(),
+			OP_RTS(),
+		});
+
+		patcher->patch(12, 0x8431, 0, { OP_JSR(load_ax_addr) }); // Check if should show "no items"
+		patcher->patch(12, 0x84D6, 0, { OP_JSR(load_yx_addr) });
+		patcher->patch(12, 0x8671, 0, { OP_JSR(load_yx_addr) });
+		patcher->patch(12, 0x8B17, 0, { OP_JSR(load_ax_addr) }); // How many items to draw
+		patcher->patch(12, 0x8D37, 0, { OP_JSR(load_xy_addr) });
+		patcher->patch(12, 0x9A99, 0, { OP_JSR(load_ax_addr) }); // Remove from inventory?
 	}
 
-	// Potion and Hourglass can stack (No limit. well... 255)
+	// Inventory offsets
+	{
+		auto los_addr = patcher->patch_new_code(12, {
+			0x9D, 0xA1, 0xA5, 0xA9, 0xAD, 0xB5
+		});
+		auto his_addr = patcher->patch_new_code(12, {
+			3, 3, 3, 3, 3, 3
+		});
+
+		patcher->patch(12, 0x84C4, 1, { PATCH_ADDR(los_addr) }); // This one is useles
+		patcher->patch(12, 0x84C9, 1, { PATCH_ADDR(his_addr) });
+
+		patcher->patch(12, 0x867E, 1, { PATCH_ADDR(los_addr) });
+		patcher->patch(12, 0x8683, 1, { PATCH_ADDR(his_addr) });
+
+		patcher->patch(12, 0x8B52, 1, { PATCH_ADDR(los_addr) });
+		patcher->patch(12, 0x8B57, 1, { PATCH_ADDR(his_addr) });
+
+		patcher->patch(12, 0x8D25, 1, { PATCH_ADDR(los_addr) });
+		patcher->patch(12, 0x8D2A, 1, { PATCH_ADDR(his_addr) });
+
+		patcher->patch(12, 0x9AA0, 1, { PATCH_ADDR(los_addr) });
+		patcher->patch(12, 0x9AA5, 1, { PATCH_ADDR(his_addr) });
+
+		patcher->patch(12, 0x9B07, 1, { PATCH_ADDR(los_addr) });
+		patcher->patch(12, 0x9B0C, 1, { PATCH_ADDR(his_addr) });
+	}
+
+	// Load item from common inventory
+	{
+		auto fix_item_id_addr = patcher->patch_new_code(12, {
+			OP_CMP_IMM(5),
+			OP_BNE(2),
+			OP_LDA_IMM(4),
+			OP_JMP_ABS(0xF78B), // Multiply by 32
+		});
+
+		patcher->patch(12, 0x8C19, 0, { OP_JSR(fix_item_id_addr) }); // When displaying in inventory
+		patcher->patch(12, 0x8BD9, 0, { OP_JSR(fix_item_id_addr) }); // When equipping
+	}
+
+	// Equip item
+	{
+		auto remove_common_item_addr = patcher->patch_new_code(12, {
+			OP_PHA(),
+			OP_AND_IMM(0x1F),
+			OP_LDX_IMM(0),
+
+			OP_CMP_ABSX(0x03B5),
+			OP_BEQ(5),
+			OP_INX(),
+			OP_CPX_IMM(4), // Shouldn't reach this
+			OP_BNE(0xF6), // -10
+
+			OP_DEC_ABSX(0x03B9),
+			OP_BNE(9 + 17),
+			OP_LDA_IMM(0),
+			OP_STA_ABSX(0x03B5),
+
+			// Shift following items into place
+			OP_CPX_IMM(3),
+			OP_BEQ(17),
+
+			OP_LDA_ABSX(0x03B5 + 1),
+			OP_STA_ABSX(0x03B5),
+			OP_LDA_ABSX(0x03B9 + 1),
+			OP_STA_ABSX(0x03B9),
+			OP_INX(),
+			OP_CPX_IMM(3),
+			OP_BNE(0xEF), // -17
+
+			OP_PLA(),
+			OP_RTS(), // Equip item
+		});
+
+		auto addr = patcher->patch_new_code(12, {
+			OP_PHA(),
+			OP_LDA_ABS(0x020E), // Contains inventory index (5 = common)
+			OP_CMP_IMM(5),
+			OP_BNE(4),
+			OP_PLA(),
+			OP_JMP_ABS(remove_common_item_addr),
+			OP_PLA(),
+			OP_JMP_ABS(0x9A6A), // Original code to remove items
+		});
+
+		// 0x020E contains 5 for common
+		patcher->patch(12, 0x8CB9, 0, { OP_JSR(addr) });
+	}
+
+	// Display count in common inventory
+	{
+		// 12:8C36 Display text
+		// 15:F804 Display letter
+		// 12:99F8 Draw shop items
+
+		// RAM:
+		//   21E = 5
+		//   x = list index
+		//   a = item id
+		//   $EA = x position
+		//   $EB = y position
+		//   $EE = 0 ?
+		//   y = 5 ?
+		// 
+		//  1600:
+		//   $EC = 40
+		//   $ED = 06
+
+		auto draw_item_text_addr = patcher->patch_new_code(12, {
+			OP_STX_ABS(0x020A), // Cache list index
+
+			OP_LDY_ABS(0x021E),
+			OP_CPY_IMM(5),
+			OP_BEQ(3),
+			OP_JMP_ABS(0x8C36), // Original code that draws the text
+
+			// Common inventory, draw the count
+			OP_JSR(0x8C36), // Draw item name
+			OP_LDX_ABS(0x020A), // List index
+			OP_LDY_ABSX(0x03B9), // Count
+			OP_CPY_IMM(1),
+			OP_BNE(1),
+			OP_RTS(), // Don't display count if 1
+
+			OP_STY_ZPG(0xEC),
+			OP_LDY_IMM(0x00), // Number hi
+			OP_STY_ZPG(0xED),
+			OP_LDY_IMM(0x00), // Dunno, it has to be 0
+			OP_STY_ZPG(0xEE),
+			OP_LDY_IMM(0x13), // X position
+			OP_STY_ZPG(0xEA),
+			OP_LDY_IMM(3), // Right-align spacing
+			OP_JSR(0xFA26), // Draw count
+
+			OP_RTS(),
+		});
+
+		patcher->patch(12, 0x8C2A, 0, { OP_JSR(draw_item_text_addr) });
+	}
+
+	// Use common item
+	{
+	}
+
+	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
+	// 12:8BED Clean dialog from screen when closing it.
 }
 
 

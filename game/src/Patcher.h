@@ -32,6 +32,7 @@
 #define OP_CMP_IMM(value) 0xC9, value
 #define OP_CMP_ABS(addr) 0xCD, PATCH_ADDR(addr)
 #define OP_CMP_ABSX(addr) 0xDD, PATCH_ADDR(addr)
+#define OP_CMP_ABSY(addr) 0xD9, PATCH_ADDR(addr)
 #define OP_CPX_IMM(value) 0xE0, value
 #define OP_CPY_IMM(value) 0xC0, value
 #define OP_BMI(rel) 0x30, rel
@@ -57,6 +58,9 @@
 #define OP_INX() 0xE8
 #define OP_INY() 0xC8
 #define OP_DEX() 0xCA
+#define OP_DEC_ZPG(addr) 0xC6, addr
+#define OP_DEC_ABSX(addr) 0xDE, PATCH_ADDR(addr)
+#define OP_INC_ABS(addr) 0xEE, PATCH_ADDR(addr)
 #define OP_INC_ABSX(addr) 0xFE, PATCH_ADDR(addr)
 #define OP_ORA_IMM(value) 0x09, value
 #define OP_ASL_A() 0x0A
@@ -107,6 +111,10 @@ public:
     void patch(int addr, const std::vector<uint8_t>& code);
     void patch(int bank, int addr, int offset, const std::vector<uint8_t>& code);
     int patch_new_code(int bank, const std::vector<uint8_t>& code);
+    void advance_new_code(int bank, int size);
+    int get_new_code_addr(int bank);
+
+    void print_usage();
 
 private:
     uint8_t* m_rom = nullptr;
