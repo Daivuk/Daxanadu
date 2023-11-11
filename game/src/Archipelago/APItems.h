@@ -51,7 +51,8 @@
 
 #define AP_ENTITY_AP 0x9D
 #define AP_ENTITY_AP_PROGRESSION 0x9E
-//#define AP_ENTITY_? 0x9F
+
+#define AP_ENTITY_NULL 0x9F
 
 #define EXTRA_ITEMS_COUNT 32
 

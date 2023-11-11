@@ -28,7 +28,7 @@
 #include <vector>
 
 
-static const int32_t STATE_VERSION = 3;
+static const int32_t STATE_VERSION = 4;
 static const int32_t MIN_STATE_VERSION = 1;
 
 
@@ -122,6 +122,7 @@ void Daxanadu::init()
         ap_info.rom = m_emulator->get_cart()->get_prg_rom();
         ap_info.rom_size = m_emulator->get_cart()->get_prg_rom_size();
         ap_info.patcher = m_patcher;
+        ap_info.external_interface = m_emulator->get_external_interface();
         m_ap = new AP(ap_info);
         m_ap->connection_success_delegate = [this]()
         {
@@ -296,6 +297,8 @@ void Daxanadu::update_volumes()
 void Daxanadu::serialize(FILE* f, int version) const
 {
     fwrite(&m_king_gave_money, 1, 1, f);
+    if (m_ap) m_ap->serialize(f, version);
+
 }
 
 
@@ -303,6 +306,7 @@ void Daxanadu::deserialize(FILE* f, int version)
 {
     if (version < 3) return;
     fread(&m_king_gave_money, 1, 1, f);
+    if (m_ap) m_ap->deserialize(f, version);
 }
 
 

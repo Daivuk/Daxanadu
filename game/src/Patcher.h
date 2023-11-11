@@ -16,6 +16,7 @@
 #define OP_LDA_ZPGX(addr) 0xB5, addr
 #define OP_LDA_ABSX(addr) 0xBD, PATCH_ADDR(addr)
 #define OP_LDA_ABSY(addr) 0xB9, PATCH_ADDR(addr)
+#define OP_LDA_INDY(addr) 0xB1, PATCH_ADDR(addr)
 #define OP_STA_ZPG(addr) 0x85, addr
 #define OP_STA_ABS(addr) 0x8D, PATCH_ADDR(addr)
 #define OP_STA_ABSX(addr) 0x9D, PATCH_ADDR(addr)

@@ -76,6 +76,7 @@ void AP::connect()
 {
 	m_state = state_t::connecting;
 	patch_items();
+	patch_cpp_hooks();
 	m_info.patcher->print_usage();
 
 	AP_NetworkVersion version = {0, 4, 3};
@@ -662,7 +663,7 @@ void AP::patch_items()
 				2, 0, 2, 2, 0, 1, // Tools
 				1, 0, 0, 0, 0, 3, // Consumables
 				0, 0, // AP
-				0, // ?
+				0, // NULL
 			};
 
 			// Only difference between different sprites is the palette
@@ -868,6 +869,25 @@ void AP::patch_items()
 			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+			
+			// AP
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+			
+			// AP Progression
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
+			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+			
+			// Null
+			uint8_t NULL_TILE[16] = {0};
+			copy_sprite(NULL_TILE, DST_TILE(), 0, false);
+			copy_sprite(NULL_TILE, DST_TILE(), 0, false);
+			copy_sprite(NULL_TILE, DST_TILE(), 0, false);
+			copy_sprite(NULL_TILE, DST_TILE(), 0, false);
 
 			patcher->advance_new_code(9, (16 + 13) * 4 * 16);
 		}
@@ -899,9 +919,16 @@ void AP::patch_items()
 				AP_ITEM_OINTMENT,
 				AP_ITEM_GLOVE,
 				0x8D, // Hour Glass
+
+				0xFF, 0xFF, // AP
+				0xFF, // NULL
 			});
 
 			auto touched_new_item_addr = patcher->patch_new_code(15, {
+				OP_CMP_IMM(0x9F),
+				OP_BNE(1),
+				OP_RTS(),
+
 				// Show dialog
 				OP_AND_IMM(0x1F),
 				OP_CLC(),
@@ -1484,9 +1511,6 @@ void AP::patch_items()
 
 	// Use common item
 	{
-		// 15:C49D Item activate callback table
-		// 15:C532 Red Potion
-
 		// Use ointment function
 		auto use_ointment_addr = patcher->patch_new_code(15, {
 			OP_JSR(0xC87A), // Touched Ointment
@@ -1529,6 +1553,144 @@ void AP::patch_items()
 
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
 	// 12:8BED Clean dialog from screen when closing it.
+}
+
+
+void AP::patch_cpp_hooks()
+{
+	auto patcher = m_info.patcher;
+	auto external_interface = m_info.external_interface;
+
+	// Location check in world
+	{
+		auto addr = patcher->patch_new_code(14, {
+			OP_PHA(),
+			OP_LDA_IMM(0x80), // C++ message id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x24), // World id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x63), // Screen id
+			OP_STA_ABS(0x6000),
+			OP_PLA(), // Entity id
+			OP_STA_ABS(0x6000),
+			OP_CMP_IMM(0x50),
+			OP_BEQ(3),
+			OP_JMP_ABS(0xC768), // Go back
+			OP_JMP_ABS(0xC752), // Pickup mattock
+		});
+
+		patcher->patch(14, 0xC764, 0, { OP_JMP_ABS(addr) });
+
+		external_interface->register_callback(0x80, [this, patcher](uint8_t world, uint8_t screen, uint8_t entity_id, uint8_t d)
+		{
+			if (entity_id == 0x9F)
+			{
+				// This is our NULL entity, that means the location is not there anymore. Ignore it!
+				return 0;
+			}
+
+			if (entity_id & 0b10000000)
+			{
+				// This is one of our new entities
+				entity_id &= 0b10011111;
+			}
+
+			// Find the location
+			int64_t loc_id = 0;
+			for (const auto& scout : m_location_scouts)
+			{
+				if (scout.loc->world == (int)world &&
+					scout.loc->screen == (int)screen)
+				{
+					const auto ap_item = get_ap_item(scout.item);
+					if (!ap_item) continue;
+					if (ap_item->entity_id == entity_id)
+					{
+						loc_id = scout.loc->id;
+						break;
+					}
+				}
+			}
+
+			if (loc_id == 0)
+			{
+				// Not found
+				printf("Location not found. World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+				return 0;
+			}
+
+			if (m_locations_checked.count(loc_id))
+			{
+				printf("Location already checked. World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+				return 0;
+			}
+
+			printf("Location checked! World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+			m_locations_checked.insert(loc_id);
+			patch_remove_check(loc_id);
+
+			// Do location check!
+			AP_SendItem(loc_id);
+			return 1;
+		}, 3);
+	}
+
+	// Location check in store
+}
+
+
+const ap_item_t* AP::get_ap_item(int64_t id)
+{
+	for (const auto& ap_item : AP_ITEMS)
+	{
+		if (ap_item.id == id)
+		{
+			return &ap_item;
+		}
+	}
+	return nullptr;
+}
+
+
+const ap_location_t* AP::get_ap_location(int64_t id)
+{
+	for (const auto& ap_loc : AP_LOCATIONS)
+	{
+		if (ap_loc.id == id)
+		{
+			return &ap_loc;
+		}
+	}
+	return nullptr;
+}
+
+
+void AP::patch_remove_check(int64_t loc_id)
+{
+	auto patcher = m_info.patcher;
+
+	const auto ap_loc = get_ap_location(loc_id);
+	if (!ap_loc) return;
+
+	switch (ap_loc->type)
+	{
+		case ap_location_type_t::world:
+		case ap_location_type_t::hidden:
+		case ap_location_type_t::boss_reward:
+		{
+			m_info.rom[ap_loc->addr] = AP_ENTITY_NULL;
+			break;
+		}
+	}
+}
+
+
+void AP::patch_remove_checks()
+{
+	for (auto loc_id : m_locations_checked)
+	{
+		patch_remove_check(loc_id);
+	}
 }
 
 
@@ -1782,4 +1944,35 @@ void AP::patch_locations()
 
 void AP::render()
 {
+}
+
+
+void AP::serialize(FILE* f, int version) const
+{
+	uint32_t count = (uint32_t)m_locations_checked.size();
+	fwrite(&count, 1, 4, f);
+
+	for (auto loc_id : m_locations_checked)
+	{
+		fwrite(&loc_id, 1, sizeof(int64_t), f);
+	}
+}
+
+
+void AP::deserialize(FILE* f, int version)
+{
+	m_locations_checked.clear();
+	if (version < 4) return;
+
+	uint32_t count;
+	fread(&count, 1, 4, f);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		int64_t loc_id;
+		fread(&loc_id, 1, sizeof(int64_t), f);
+		m_locations_checked.insert(loc_id);
+	}
+
+	patch_remove_checks();
 }

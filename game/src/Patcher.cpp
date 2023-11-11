@@ -257,6 +257,11 @@ void Patcher::apply_new_strings()
         "I'm holding""\xFE""Ointment.", // DE
         "I'm holding""\xFE""Glove.", // DF
         "I'm holding""\xFE""Hour Glass.", // E0
+
+        "Sent AP.", // E1
+        "Sent AP""\xFE""Progressive.", // E2
+
+        "I AM""\xFE""ERROR.", // E3
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;
