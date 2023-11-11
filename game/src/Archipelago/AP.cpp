@@ -151,7 +151,9 @@ static void copy_sprite(uint8_t* src, uint8_t* dst, int flip /*1=h,2=v*/, bool i
 void AP::patch_items()
 {
 #define BANK_ADDR_LO(bank, addr) (bank * 0x4000 + (addr - 0x8000))
+#define BANK_ADDR_HI(bank, addr) (bank * 0x4000 + (addr - 0xC000))
 #define ROM_LO(bank, addr) (m_info.rom + BANK_ADDR_LO(bank, addr))
+#define ROM_HI(bank, addr) (m_info.rom + BANK_ADDR_HI(bank, addr))
 #define BANK_OFFSET(bank, offset) (bank * 0x4000 + offset)
 #define ROM_OFFSET_LO(bank, offset) (m_info.rom + BANK_ADDR_LO(bank, (offset) + 0x8000))
 #define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
@@ -1482,6 +1484,47 @@ void AP::patch_items()
 
 	// Use common item
 	{
+		// 15:C49D Item activate callback table
+		// 15:C532 Red Potion
+
+		// Use ointment function
+		auto use_ointment_addr = patcher->patch_new_code(15, {
+			OP_JSR(0xC87A), // Touched Ointment
+			OP_JSR(0xC4BF), // Remove Selected Item
+			OP_RTS(),
+		});
+
+		// Use glove function
+		auto use_glove_addr = patcher->patch_new_code(15, {
+			OP_JSR(0xC7CF), // Touched Glove
+			OP_JSR(0xC4BF), // Remove Selected Item
+			OP_RTS(),
+		});
+
+		// Copy item callback table and add our new item handlers
+		auto addr = patcher->get_new_code_addr(15);
+		memcpy(ROM_HI(15, addr), ROM_HI(15, 0xC49D), 17 * 2);
+		patcher->advance_new_code(15, 17 * 2);
+
+		// 0xC49B means they don't do anything
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Black potion
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Elixir
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Pendant
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Black Onyx
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Fire Crystal
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Progressive Sword
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Progressive Armor
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Progressive Shield
+		patcher->patch_new_code(15, { PATCH_ADDR(0xC49B) }); // Poison
+		patcher->patch_new_code(15, { PATCH_ADDR(use_ointment_addr - 1) }); // Ointment
+		patcher->patch_new_code(15, { PATCH_ADDR(use_glove_addr - 1) }); // Glove
+
+		// Allow for the new items
+		patcher->patch(15, 0xC490, 1, { 0x22 + 11 * 2 });
+
+		// Point to the new table
+		patcher->patch(15, 0xC494, 1, { PATCH_ADDR(addr + 1) });
+		patcher->patch(15, 0xC498, 1, { PATCH_ADDR(addr) });
 	}
 
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
