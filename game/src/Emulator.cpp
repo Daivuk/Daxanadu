@@ -11,6 +11,7 @@
 
 #include <onut/Input.h>
 #include <onut/Renderer.h>
+#include <onut/Settings.h>
 
 
 static const int CPU_CLOCK_SPEED = 1789773; // hz
@@ -75,6 +76,8 @@ void Emulator::reset()
 
 void Emulator::update(float dt)
 {
+    bool fast_cpu = oSettings->getUserSetting("fast_cpu") == "1";
+
     auto now = std::chrono::high_resolution_clock::now();
     std::chrono::nanoseconds time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_last_frame_time);
     m_last_frame_time = now;
@@ -89,7 +92,7 @@ void Emulator::update(float dt)
         m_tick_progress--;
 
         // Tick CPU
-        if (m_pputick == 3)
+        if (m_pputick == (fast_cpu ? 1 : 3))
         {
             m_cpu->tick();
             m_pputick = 0;

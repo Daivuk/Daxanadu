@@ -8,6 +8,7 @@
 
 
 OForwardDeclare(Sound);
+OForwardDeclare(SoundInstance);
 class AP;
 class Emulator;
 class MenuManager;
@@ -52,6 +53,7 @@ private:
     NewGameInputContext* m_new_game_input_context = nullptr;
     RoomWatcher* m_room_watcher = nullptr;
     OSoundRef m_sounds[28];
+    OSoundInstanceRef m_active_sound;
     float m_sfx_volume = 1.0f;
     float m_music_volume = 1.0f;
     AP* m_ap = nullptr;

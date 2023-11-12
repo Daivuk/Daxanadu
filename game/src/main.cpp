@@ -44,6 +44,7 @@ void initSettings()
     oSettings->setUserSettingDefault("ap_address", "archipelago.gg:38281");
     oSettings->setUserSettingDefault("ap_slot", "John Doe");
     oSettings->setUserSettingDefault("ap_password", "");
+    oSettings->setUserSettingDefault("fast_cpu", "0");
 }
 
 

@@ -251,7 +251,13 @@ void Daxanadu::init()
     {
         a--;
         if (a < 28)
-            m_sounds[a]->play(m_sfx_volume);
+        {
+            if (m_active_sound)
+                m_active_sound->stop();
+            m_active_sound = m_sounds[a]->createInstance();
+            m_active_sound->setVolume(m_sfx_volume);
+            m_active_sound->play();
+        }
         return 0;
     }, 1);
 

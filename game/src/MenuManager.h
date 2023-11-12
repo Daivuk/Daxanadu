@@ -185,6 +185,8 @@ private:
     void load_xp_speed(menu_option_t* option);
     void on_pendant(menu_option_t* option);
     void load_pendant(menu_option_t* option);
+    void on_fast_cpu(menu_option_t* option);
+    void load_fast_cpu(menu_option_t* option);
 
     menu_manager_info_t m_info;
     std::vector<state_t> m_menu_stack;

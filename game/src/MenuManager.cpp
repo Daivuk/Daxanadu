@@ -115,7 +115,7 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
         { "ITEM ROOM COUNTER", { "YES", "NO" }, option_t::choice, BIND(load_secret_items_counter), BIND(on_secret_items_counter), 0 },
         { "XP AFFECTS WINGBOOTS", { "YES", "NO" }, option_t::choice, BIND(load_xp_timeouts), BIND(on_xp_timeouts), 0 },
         { "XP AFFECTS SPEED", { "YES", "NO" }, option_t::choice, BIND(load_xp_speed), BIND(on_xp_speed), 0 },
-        { "FIX PENDANT", { "NO", "YES" }, option_t::choice, BIND(load_pendant), BIND(on_pendant), 0 },
+        { "FAST CPU", { "NO", "YES" }, option_t::choice, BIND(load_fast_cpu), BIND(on_fast_cpu), 0 },
     };
     m_menus[(int)state_t::gameplay_menu].x = 1;
     m_menus[(int)state_t::gameplay_menu].y = 0;
@@ -1099,4 +1099,16 @@ void MenuManager::on_pendant(menu_option_t* option)
 void MenuManager::load_pendant(menu_option_t* option)
 {
     option->choice = get_user_setting("pendant", 0);
+}
+
+
+void MenuManager::on_fast_cpu(menu_option_t* option)
+{
+    oSettings->setUserSetting("fast_cpu", std::to_string(option->choice));
+}
+
+
+void MenuManager::load_fast_cpu(menu_option_t* option)
+{
+    option->choice = get_user_setting("fast_cpu", 0);
 }

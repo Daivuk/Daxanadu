@@ -1578,6 +1578,11 @@ void AP::patch_items()
 		patcher->patch(12, 0x9A5C, 0, { OP_JSR(addr) });
 	}
 
+	// No more "can't carry anymore", all inventories should handle max
+	{
+		patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
+	}
+
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
 	// 12:8BED Clean dialog from screen when closing it.
 }
@@ -1811,9 +1816,13 @@ void AP::patch_remove_check(int64_t loc_id)
 	{
 		case ap_location_type_t::shop:
 		{
-			m_info.rom[ap_loc->addr] = AP_ITEM_NULL;
-			m_info.rom[ap_loc->addr + 1] = 0xFF; // Price
-			m_info.rom[ap_loc->addr + 2] = 0xFF;
+			// Don't remove if it's RED POTION. We let the player buy more.
+			if (m_info.rom[ap_loc->addr] != 0x90)
+			{
+				m_info.rom[ap_loc->addr] = AP_ITEM_NULL;
+				m_info.rom[ap_loc->addr + 1] = 0xFF; // Price
+				m_info.rom[ap_loc->addr + 2] = 0xFF;
+			}
 			break;
 		}
 		case ap_location_type_t::give:
