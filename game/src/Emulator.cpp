@@ -102,6 +102,8 @@ void Emulator::update(float dt)
         m_ppu->tick();
         m_pputick++;
     }
+
+    m_ram->update(dt);
 }
 
 

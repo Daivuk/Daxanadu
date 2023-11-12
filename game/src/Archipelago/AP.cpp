@@ -1307,7 +1307,7 @@ void AP::patch_items()
 	// Patch all the places we're looking up the number of item in a sub inventory
 	{
 		auto inv_size_table_addr = patcher->patch_new_code(12, {
-			4, 4, 4, 4, 8, 4
+			4, 4, 4, 4, 8, 127
 		});
 
 		patcher->patch(12, 0x8434, 1, { PATCH_ADDR(inv_size_table_addr) });
@@ -1433,13 +1433,13 @@ void AP::patch_items()
 			OP_BNE(0xF6), // -10
 
 			OP_DEC_ABSX(0x03B9),
-			OP_BNE(9 + 17),
+			OP_BNE(9 + 27),
 			OP_LDA_IMM(0),
 			OP_STA_ABSX(0x03B5),
 
 			// Shift following items into place
 			OP_CPX_IMM(3),
-			OP_BEQ(17),
+			OP_BEQ(27),
 
 			OP_LDA_ABSX(0x03B5 + 1),
 			OP_STA_ABSX(0x03B5),
@@ -1448,6 +1448,12 @@ void AP::patch_items()
 			OP_INX(),
 			OP_CPX_IMM(3),
 			OP_BNE(0xEF), // -17
+
+			// Put 0 in last item
+			OP_LDA_IMM(0x00),
+			OP_STA_ABS(0x03B5 + 3),
+			OP_LDA_IMM(0),
+			OP_STA_ABS(0x03B9 + 3),
 
 			OP_PLA(),
 			OP_RTS(), // Equip item
@@ -1578,10 +1584,10 @@ void AP::patch_items()
 		patcher->patch(12, 0x9A5C, 0, { OP_JSR(addr) });
 	}
 
-	// No more "can't carry anymore", all inventories should handle max
-	{
-		patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
-	}
+	// No more "can't carry anymore", all inventories should handle max (does this corrupt stuff?)
+	//{
+	//	patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
+	//}
 
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
 	// 12:8BED Clean dialog from screen when closing it.
