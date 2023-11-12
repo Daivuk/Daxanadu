@@ -1115,6 +1115,12 @@ static void load_chunk_metadata(FILE* f, cart_chunk_t& chunk, int chunk_id)
     fseek(f, base_offset + meta_pointer, SEEK_SET);
     fread(meta_pointers, 2, META_PTR_COUNT, f);
 
+    static uint16_t max_offset = 0;
+    for (int i = 0; i < META_PTR_COUNT; ++i)
+    {
+        max_offset = std::max(max_offset, meta_pointers[i]);
+    }
+
     int block_count = meta_pointers[META_TSA_TR_PTR] - meta_pointers[META_TSA_TL_PTR];
     int door_count = (meta_pointers[META_DOOR_DESTINATION_TABLE_PTR] - meta_pointers[META_DOOR_LOCATION_DATA_PTR]) / 4;
 

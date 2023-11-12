@@ -9,13 +9,18 @@
 struct AP_NetworkItem;
 struct ap_location_t;
 struct ap_item_t;
-class Patcher;
+class APTracker;
 class ExternalInterface;
+class Patcher;
+class RAM;
+class TileDrawer;
 
 
 struct ap_info_t
 {
     uint8_t* rom = nullptr;
+    RAM* ram = nullptr;
+    TileDrawer* tile_drawer = nullptr;
     size_t rom_size = 0;
     std::string address;
     std::string slot_name;
@@ -74,6 +79,13 @@ private:
     void patch_cpp_hooks();
     void patch_remove_checks();
     void patch_remove_check(int64_t loc_id);
+    void update_progressive_sword_sprites();
+    void update_progressive_armor_sprites();
+    void update_progressive_shield_sprites();
+
+    int get_progressive_sword_level();
+    int get_progressive_armor_level();
+    int get_progressive_shield_level();
 
     static const ap_item_t* get_ap_item(int64_t id);
     static const ap_location_t* get_ap_location(int64_t id);
@@ -83,4 +95,5 @@ private:
     std::string m_save_dir_name;
     std::vector<ap_location_scout_t> m_location_scouts;
     std::set<int64_t> m_locations_checked;
+    APTracker* m_tracker = nullptr;
 };

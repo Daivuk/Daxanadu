@@ -25,6 +25,7 @@ public:
     void update(float dt);
     
     uint8_t get(uint16_t addr) const { return m_data[addr]; }
+    uint8_t operator[](uint16_t addr) const { return m_data[addr]; }
 
 private:
     uint8_t m_data[0x800];

@@ -1,14 +1,38 @@
 #include "AP.h"
 #include "APItems.h"
 #include "APLocations.h"
+#include "APTracker.h"
 #include "ExternalInterface.h"
 #include "Patcher.h"
+#include "RAM.h"
 #include "version.h"
 
 #include "Archipelago.h"
 
 #include <onut/Files.h>
 #include <onut/Maths.h>
+#include <onut/Settings.h>
+
+
+#define BANK_ADDR_LO(bank, addr) (bank * 0x4000 + (addr - 0x8000))
+#define BANK_ADDR_HI(bank, addr) (bank * 0x4000 + (addr - 0xC000))
+#define ROM_LO(bank, addr) (m_info.rom + BANK_ADDR_LO(bank, addr))
+#define ROM_HI(bank, addr) (m_info.rom + BANK_ADDR_HI(bank, addr))
+#define BANK_OFFSET(bank, offset) (bank * 0x4000 + offset)
+#define ROM_OFFSET_LO(bank, offset) (m_info.rom + BANK_ADDR_LO(bank, (offset) + 0x8000))
+#define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
+#define SPRITE_ADDR(rom_addr, index) (m_info.rom + rom_addr - 0x10 + index * 16)
+#define LO(addr) (uint8_t)(addr & 0xFF)
+#define HI(addr) (uint8_t)((addr >> 8) & 0xFF)
+#define SRC_TILE(addr, id) m_info.rom + (addr - 0x10) + id * 16
+#define DST_TILE_ID(id) ROM_OFFSET_LO(9, TILES_OFFSET + (id) * 16)
+
+
+static const int HEADER_SIZE = 8;
+static const int FRAME_OFFSETS_TABLE_OFFSET = HEADER_SIZE;
+static const int FRAMES_OFFSET = FRAME_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
+static const int TILE_OFFSETS_TABLE_OFFSET = FRAMES_OFFSET + EXTRA_ITEMS_COUNT * 12;
+static const int TILES_OFFSET = TILE_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
 
 
 static AP* g_ap = nullptr;
@@ -60,6 +84,7 @@ AP::AP(const ap_info_t& info)
     : m_info(info)
 {
 	g_ap = this;
+	m_tracker = new APTracker(m_info.rom, m_info.ram, m_info.tile_drawer);
 }
 
 
@@ -68,6 +93,7 @@ AP::~AP()
 	connection_success_delegate = nullptr;
 	connection_failed_delegate = nullptr;
 	AP_Shutdown();
+	delete m_tracker;
 	g_ap = nullptr;
 }
 
@@ -149,19 +175,153 @@ static void copy_sprite(uint8_t* src, uint8_t* dst, int flip /*1=h,2=v*/, bool i
 }
 
 
+int AP::get_progressive_sword_level()
+{
+	const auto& ram = *m_info.ram;
+
+	int level = 0;
+	level += (int)ram[0x03C2]; // inv count
+	if (ram[0x03BD] != 0xFF) level++; // Equipped
+
+	return level;
+}
+
+
+int AP::get_progressive_armor_level()
+{
+	const auto& ram = *m_info.ram;
+
+	int level = 0;
+	level += (int)ram[0x03C3]; // inv count
+	if (ram[0x03BE] != 0xFF) level++; // Equipped
+
+	return level;
+}
+
+
+int AP::get_progressive_shield_level()
+{
+	const auto& ram = *m_info.ram;
+
+	int level = 0;
+	level += (int)ram[0x03C4]; // inv count
+	if (ram[0x03BF] != 0xFF) level++; // Equipped
+
+	return level;
+}
+		
+
+#define SET_ITEM_TILES(id, tile0, tile1, tile2, tile3) \
+{ \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 0] = tile0; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 1] = tile1; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 2] = tile2; \
+	m_info.rom[0x0002B53C - 6 * 4 + (id - 0x90) * 4 + 3] = tile3; \
+}
+
+
+void AP::update_progressive_sword_sprites()
+{
+	switch (get_progressive_sword_level())
+	{
+		case 0: // Hand Dagger
+			copy_sprite(TILE_ADDR(0x4A), DST_TILE_ID(60), 0, false);
+			copy_sprite(TILE_ADDR(0x4B), DST_TILE_ID(61), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
+			copy_sprite(TILE_ADDR(0x4C), DST_TILE_ID(63), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x4A, 0x4B, 0x8F, 0x4C);
+			break;
+		case 1: // Long Sword
+			copy_sprite(TILE_ADDR(0x47), DST_TILE_ID(60), 0, false);
+			copy_sprite(TILE_ADDR(0x48), DST_TILE_ID(61), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
+			copy_sprite(TILE_ADDR(0x49), DST_TILE_ID(63), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x47, 0x48, 0x8F, 0x49);
+			break;
+		case 2: // Giant Sword
+			copy_sprite(TILE_ADDR(0x44), DST_TILE_ID(60), 0, false);
+			copy_sprite(TILE_ADDR(0x45), DST_TILE_ID(61), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
+			copy_sprite(TILE_ADDR(0x46), DST_TILE_ID(63), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x44, 0x45, 0x8F, 0x46);
+			break;
+		case 3: // Dragon Slayer
+			copy_sprite(SRC_TILE(0x0001D006, 0), DST_TILE_ID(60), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 1), DST_TILE_ID(61), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 2), DST_TILE_ID(62), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 3), DST_TILE_ID(63), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
+			break;
+	}
+}
+
+void AP::update_progressive_armor_sprites()
+{
+	switch (get_progressive_armor_level())
+	{
+		case 1: // Studded Mail
+			copy_sprite(TILE_ADDR(0x55), DST_TILE_ID(64), 0, false);
+			copy_sprite(TILE_ADDR(0x56), DST_TILE_ID(65), 0, false);
+			copy_sprite(TILE_ADDR(0x57), DST_TILE_ID(66), 0, false);
+			copy_sprite(TILE_ADDR(0x58), DST_TILE_ID(67), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x55, 0x56, 0x57, 0x58);
+			break;
+		case 2: // Full Plate
+			copy_sprite(TILE_ADDR(0x59), DST_TILE_ID(64), 0, false);
+			copy_sprite(TILE_ADDR(0x5A), DST_TILE_ID(65), 0, false);
+			copy_sprite(TILE_ADDR(0x5B), DST_TILE_ID(66), 0, false);
+			copy_sprite(TILE_ADDR(0x5C), DST_TILE_ID(67), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x59, 0x5A, 0x5B, 0x5C);
+			break;
+		case 3: // Battle Suit
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(64), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(65), 1, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(66), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(67), 1, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
+			break;
+	}
+}
+
+
+void AP::update_progressive_shield_sprites()
+{
+	switch (get_progressive_shield_level())
+	{
+		case 0: // Small Shield
+			copy_sprite(TILE_ADDR(0x61), DST_TILE_ID(68), 0, true);
+			copy_sprite(TILE_ADDR(0x62), DST_TILE_ID(69), 0, true);
+			copy_sprite(TILE_ADDR(0x63), DST_TILE_ID(70), 0, true);
+			copy_sprite(TILE_ADDR(0x64), DST_TILE_ID(72), 0, true);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x61, 0x62, 0x63, 0x64);
+			break;
+		case 1: // Large Shield
+			copy_sprite(TILE_ADDR(0x65), DST_TILE_ID(68), 0, true);
+			copy_sprite(TILE_ADDR(0x66), DST_TILE_ID(69), 0, true);
+			copy_sprite(TILE_ADDR(0x67), DST_TILE_ID(70), 0, true);
+			copy_sprite(TILE_ADDR(0x68), DST_TILE_ID(72), 0, true);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x65, 0x66, 0x67, 0x68);
+			break;
+		case 2: // Magic Shield
+			copy_sprite(TILE_ADDR(0x69), DST_TILE_ID(68), 0, true);
+			copy_sprite(TILE_ADDR(0x6A), DST_TILE_ID(69), 0, true);
+			copy_sprite(TILE_ADDR(0x6B), DST_TILE_ID(70), 0, true);
+			copy_sprite(TILE_ADDR(0x6C), DST_TILE_ID(72), 0, true);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
+			break;
+		case 3: // Battle Helmet
+			copy_sprite(SRC_TILE(0x0001CFC6, 0), DST_TILE_ID(68), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 1), DST_TILE_ID(69), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 2), DST_TILE_ID(70), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 3), DST_TILE_ID(72), 0, false);
+			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
+			break;
+	}
+}
+
+
 void AP::patch_items()
 {
-#define BANK_ADDR_LO(bank, addr) (bank * 0x4000 + (addr - 0x8000))
-#define BANK_ADDR_HI(bank, addr) (bank * 0x4000 + (addr - 0xC000))
-#define ROM_LO(bank, addr) (m_info.rom + BANK_ADDR_LO(bank, addr))
-#define ROM_HI(bank, addr) (m_info.rom + BANK_ADDR_HI(bank, addr))
-#define BANK_OFFSET(bank, offset) (bank * 0x4000 + offset)
-#define ROM_OFFSET_LO(bank, offset) (m_info.rom + BANK_ADDR_LO(bank, (offset) + 0x8000))
-#define TILE_ADDR(index) (m_info.rom + 0x00028500 + index * 16)
-#define SPRITE_ADDR(rom_addr, index) (m_info.rom + rom_addr - 0x10 + index * 16)
-#define LO(addr) (uint8_t)(addr & 0xFF)
-#define HI(addr) (uint8_t)((addr >> 8) & 0xFF)
-
 	auto patcher = m_info.patcher;
 
 	// Replace Crystal with spring elixir
@@ -638,12 +798,6 @@ void AP::patch_items()
 
 		// Bank 9, the sprite definitions and tiles
 		{
-			const int HEADER_SIZE = 8;
-			const int FRAME_OFFSETS_TABLE_OFFSET = HEADER_SIZE;
-			const int FRAMES_OFFSET = FRAME_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
-			const int TILE_OFFSETS_TABLE_OFFSET = FRAMES_OFFSET + EXTRA_ITEMS_COUNT * 12;
-			const int TILES_OFFSET = TILE_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
-
 			// Frame addr table at the start of the bank 9 (Bank 9 is empty, we put our new sprites in there)
 			patcher->patch_new_code(9, {
 				PATCH_ADDR(TILE_OFFSETS_TABLE_OFFSET),
@@ -693,8 +847,7 @@ void AP::patch_items()
 			}
 
 			int tile_id = 0;
-#define DST_TILE() ROM_OFFSET_LO(9, TILES_OFFSET + tile_id++ * 16)
-#define SRC_TILE(addr, id) m_info.rom + (addr - 0x10) + id * 16
+#define DST_TILE() DST_TILE_ID(tile_id++)
 
 			// Ring of elf
 			copy_sprite(TILE_ADDR(0x06), DST_TILE(), 0, true);
@@ -1584,10 +1737,43 @@ void AP::patch_items()
 		patcher->patch(12, 0x9A5C, 0, { OP_JSR(addr) });
 	}
 
+	// Was this corrupting everything? I set the common item max at 127
 	// No more "can't carry anymore", all inventories should handle max (does this corrupt stuff?)
 	//{
 	//	patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
 	//}
+
+	// King should give money even if not at zero, once.
+	oSettings->setUserSetting("king_golds", "1");
+	patcher->apply_king_golds_setting_patch();
+
+	// Add door to Eolis.
+	{
+		// 3:885D Door locations addr
+		// 3:8882 Door destination addr
+		// 3:8413 Meta pointers
+
+		// Move old door array to a new "hopefully" empty. Bank 3 is pretty tight with data.
+		// According to Vagla's document, there is nothing after 0x0000E2??.
+		// I did my own investigation and it seems right. Max offset = $2236.
+		// So... round it up!
+		// There seems to be legit data in that spot, but unsure what it is.
+		// Gargabe? ROM garbage is usually 0xFF
+		int new_offset = 0x3000;
+		int new_addr = BANK_OFFSET(3, new_offset);
+		memcpy(m_info.rom + new_addr, m_info.rom + 0x0000C85D, 9 * 4);
+
+		// Add our new door
+		m_info.rom[new_addr + 9 * 4 + 0] = 0x00; // Screen 0
+		m_info.rom[new_addr + 9 * 4 + 1] = 0xA0; // x = 0, y = 10
+		m_info.rom[new_addr + 9 * 4 + 2] = 0xFE; // Travel to previous world (Eolis)
+		m_info.rom[new_addr + 9 * 4 + 3] = 0x9C; // Dest x = 12, y = 9
+		m_info.rom[new_addr + 9 * 4 + 4] = 0xFF; // Series of door locations need to end with $FF
+
+		// Change the meta pointer offset to point to this new location
+		m_info.rom[0x0000C413 + 6] = LO(new_offset);
+		m_info.rom[0x0000C413 + 7] = HI(new_offset);
+	}
 
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
 	// 12:8BED Clean dialog from screen when closing it.
@@ -1666,6 +1852,9 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
+			update_progressive_sword_sprites();
+			update_progressive_armor_sprites();
+			update_progressive_shield_sprites();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -1721,6 +1910,9 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i, Shop Index %i, Item 0x%02X\n", (int)world, (int)screen, (int)shop_index, (int)item_id);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
+			update_progressive_sword_sprites();
+			update_progressive_armor_sprites();
+			update_progressive_shield_sprites();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -1776,6 +1968,9 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i\n", (int)world, (int)screen);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
+			update_progressive_sword_sprites();
+			update_progressive_armor_sprites();
+			update_progressive_shield_sprites();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -1853,6 +2048,10 @@ void AP::patch_remove_checks()
 	{
 		patch_remove_check(loc_id);
 	}
+
+	update_progressive_sword_sprites();
+	update_progressive_armor_sprites();
+	update_progressive_shield_sprites();
 }
 
 
@@ -2038,6 +2237,8 @@ void AP::update(float dt)
 			break;
 		}
 	}
+
+	m_tracker->update(dt);
 }
 
 
@@ -2106,6 +2307,7 @@ void AP::patch_locations()
 
 void AP::render()
 {
+	m_tracker->render();
 }
 
 

@@ -1251,6 +1251,12 @@ void renderUI()
                                 draw_list->AddImage((ImTextureID)&tileset->tiles_data[block.bottom_right - offset].texture, {pos.x + 16, pos.y + 16}, {pos.x + 32, pos.y + 32});
                             }
                             ImGui::Dummy({33, 33});
+                            if (ImGui::IsItemHovered())
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::Text("Properties: 0x%02X", block.properties);
+                                ImGui::EndTooltip();
+                            }
 
                             ++col;
                             if (col == 16) col = 0;

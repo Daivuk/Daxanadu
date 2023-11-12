@@ -17,7 +17,7 @@ public:
 
     void draw_ui_frame(int x, int y, int w, int h, bool only_background = false);
     void draw_ui_frame_fine(int x, int y, int w, int h, bool only_background = false);
-    void draw_text(int x, int y, const char* text);
+    void draw_text(int x, int y, const char* text, const Color& tint = Color::White);
     void draw_cursor(int x, int y);
 
 private:

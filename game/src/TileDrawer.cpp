@@ -168,9 +168,9 @@ void TileDrawer::draw_ui_frame_fine(int x, int y, int w, int h, bool only_backgr
 }
 
 
-void TileDrawer::draw_text(int x, int y, const char* text)
+void TileDrawer::draw_text(int x, int y, const char* text, const Color& tint)
 {
-    Color color = Color::White;
+    Color color = tint;
     int start_x = x;
     while (char c = *text++)
     {
@@ -199,6 +199,7 @@ void TileDrawer::draw_text(int x, int y, const char* text)
             else if (c == '1') color = m_ppu->get_color(0x15);
             else if (c == '2') color = m_ppu->get_color(0x19);
             else if (c == '3') color = Color::White;
+            color *= tint;
             continue;
         }
         else if (c == '.')

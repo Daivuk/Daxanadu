@@ -121,6 +121,8 @@ void Daxanadu::init()
         ap_info.password = oSettings->getUserSetting("ap_password");
         ap_info.rom = m_emulator->get_cart()->get_prg_rom();
         ap_info.rom_size = m_emulator->get_cart()->get_prg_rom_size();
+        ap_info.ram = m_emulator->get_ram();
+        ap_info.tile_drawer = m_tile_drawer;
         ap_info.patcher = m_patcher;
         ap_info.external_interface = m_emulator->get_external_interface();
         m_ap = new AP(ap_info);
