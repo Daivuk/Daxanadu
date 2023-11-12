@@ -43,29 +43,34 @@ struct ap_location_t
     ap_location_type_t type = ap_location_type_t::unknown;
     int item_id = -1;
     int addr = -1;
-    int giver_cond_addr = -1;
+    union
+    {
+        int giver_cond_addr = -1;
+        int store_item_list_addr;
+    };
+    int shop_index = -1;
 };
 
 
 static ap_location_t AP_LOCATIONS[] = {
     // Eolis
     { 400100, WORLD_SHOPS, 2, "Eolis Guru", ap_location_type_t::give, 0x80, 0x000320C4, 0x000320BE },
-    { 400101, WORLD_SHOPS, 3, "Eolis Key Jack", ap_location_type_t::shop, 0x87, 0x0003257A },
-    { 400102, WORLD_SHOPS, 4, "Eolis Hand Dagger", ap_location_type_t::shop, 0x00, 0x0003242E },
-    { 400103, WORLD_SHOPS, 4, "Eolis Red Potion", ap_location_type_t::shop, 0x90, 0x00032431 },
-    { 400104, WORLD_SHOPS, 4, "Eolis Elixir", ap_location_type_t::shop, 0x92, 0x00032434 },
-    { 400105, WORLD_SHOPS, 4, "Eolis Deluge", ap_location_type_t::shop, 0x60, 0x00032437 },
+    { 400101, WORLD_SHOPS, 3, "Eolis Key Jack", ap_location_type_t::shop, 0x87, 0x0003257A, 0x00032508, 0 },
+    { 400102, WORLD_SHOPS, 4, "Eolis Hand Dagger", ap_location_type_t::shop, 0x00, 0x0003242E, 0x00032386, 0 },
+    { 400103, WORLD_SHOPS, 4, "Eolis Red Potion", ap_location_type_t::shop, 0x90, 0x00032431, 0x00032386, 1 },
+    { 400104, WORLD_SHOPS, 4, "Eolis Elixir", ap_location_type_t::shop, 0x92, 0x00032434, 0x00032386, 2 },
+    { 400105, WORLD_SHOPS, 4, "Eolis Deluge", ap_location_type_t::shop, 0x60, 0x00032437, 0x00032386, 3 },
 
     // Path to Apolune
-    { 400106, WORLD_SHOPS, 20, "Path to Apolune Magic Shield", ap_location_type_t::shop, 0x42, 0x00032448 },
-    { 400107, WORLD_SHOPS, 20, "Path to Apolune Death", ap_location_type_t::shop, 0x63, 0x0003244B },
+    { 400106, WORLD_SHOPS, 20, "Path to Apolune Magic Shield", ap_location_type_t::shop, 0x42, 0x00032448, 0x000323AA, 0 },
+    { 400107, WORLD_SHOPS, 20, "Path to Apolune Death", ap_location_type_t::shop, 0x63, 0x0003244B, 0x000323AA, 1 },
 
     // Apolune
-    { 400108, WORLD_SHOPS, 8, "Apolune Small Shield", ap_location_type_t::shop, 0x40, 0x0003243B },
-    { 400109, WORLD_SHOPS, 8, "Apolune Hand Dagger", ap_location_type_t::shop, 0x00, 0x0003243E },
-    { 400110, WORLD_SHOPS, 8, "Apolune Deluge", ap_location_type_t::shop, 0x60, 0x00032441 },
-    { 400111, WORLD_SHOPS, 8, "Apolune Red Potion", ap_location_type_t::shop, 0x90, 0x00032444 },
-    { 400112, WORLD_SHOPS, 9, "Apolune Key Jack", ap_location_type_t::shop, 0x87, 0x0003257E },
+    { 400108, WORLD_SHOPS, 8, "Apolune Small Shield", ap_location_type_t::shop, 0x40, 0x0003243B, 0x00032398, 0 },
+    { 400109, WORLD_SHOPS, 8, "Apolune Hand Dagger", ap_location_type_t::shop, 0x00, 0x0003243E, 0x00032398, 1 },
+    { 400110, WORLD_SHOPS, 8, "Apolune Deluge", ap_location_type_t::shop, 0x60, 0x00032441, 0x00032398, 2 },
+    { 400111, WORLD_SHOPS, 8, "Apolune Red Potion", ap_location_type_t::shop, 0x90, 0x00032444, 0x00032398, 3 },
+    { 400112, WORLD_SHOPS, 9, "Apolune Key Jack", ap_location_type_t::shop, 0x87, 0x0003257E, 0x0003251A, 0 },
 
     // Tower of Trunk
     { 400113, WORLD_TRUNK, 14, "Tower of Trunk Hidden Mattock", ap_location_type_t::hidden, 0x50, 0x0002C337 },
@@ -77,13 +82,13 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400117, WORLD_TRUNK, 24, "Path to Forepaw Glove", ap_location_type_t::world, 0x48, 0x0002C381 },
 
     // Forepaw
-    { 400118, WORLD_SHOPS, 15, "Forepaw Long Sword", ap_location_type_t::shop, 0x01, 0x0003244F },
-    { 400119, WORLD_SHOPS, 15, "Forepaw Studded Mail", ap_location_type_t::shop, 0x21, 0x00032452 },
-    { 400120, WORLD_SHOPS, 15, "Forepaw Small Shield", ap_location_type_t::shop, 0x40, 0x00032455 },
-    { 400121, WORLD_SHOPS, 15, "Forepaw Red Potion", ap_location_type_t::shop, 0x90, 0x00032458 },
-    { 400122, WORLD_SHOPS, 15, "Forepaw Wingboots", ap_location_type_t::shop, 0x8F, 0x0003245B },
-    { 400123, WORLD_SHOPS, 19, "Forepaw Key Jack", ap_location_type_t::shop, 0x87, 0x00032582 },
-    { 400124, WORLD_SHOPS, 19, "Forepaw Key Queen", ap_location_type_t::shop, 0x86, 0x00032585 },
+    { 400118, WORLD_SHOPS, 15, "Forepaw Long Sword", ap_location_type_t::shop, 0x01, 0x0003244F, 0x000323BC, 0 },
+    { 400119, WORLD_SHOPS, 15, "Forepaw Studded Mail", ap_location_type_t::shop, 0x21, 0x00032452, 0x000323BC, 1 },
+    { 400120, WORLD_SHOPS, 15, "Forepaw Small Shield", ap_location_type_t::shop, 0x40, 0x00032455, 0x000323BC, 2 },
+    { 400121, WORLD_SHOPS, 15, "Forepaw Red Potion", ap_location_type_t::shop, 0x90, 0x00032458, 0x000323BC, 3 },
+    { 400122, WORLD_SHOPS, 15, "Forepaw Wingboots", ap_location_type_t::shop, 0x8F, 0x0003245B, 0x000323BC, 4 },
+    { 400123, WORLD_SHOPS, 19, "Forepaw Key Jack", ap_location_type_t::shop, 0x87, 0x00032582, 0x0003252C, 0 },
+    { 400124, WORLD_SHOPS, 19, "Forepaw Key Queen", ap_location_type_t::shop, 0x86, 0x00032585, 0x0003252C, 1 },
 
     // Trunk
     { 400125, WORLD_TRUNK, 29, "Trunk Hidden Ointment", ap_location_type_t::hidden, 0x60, 0x0002C397 },
@@ -112,18 +117,18 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400140, WORLD_MIST, 77, "Tower of Red Potion", ap_location_type_t::world, 0x4B, 0x0002C724 },
 
     // Mascon
-    { 400141, WORLD_SHOPS, 24, "Mascon Large Shield", ap_location_type_t::shop, 0x41, 0x0003245F },
-    { 400142, WORLD_SHOPS, 24, "Mascon Thunder", ap_location_type_t::shop, 0x61, 0x00032462 },
-    { 400143, WORLD_SHOPS, 24, "Mascon Mattock", ap_location_type_t::shop, 0x89, 0x00032465 },
-    { 400144, WORLD_SHOPS, 24, "Mascon Red Potion", ap_location_type_t::shop, 0x90, 0x00032468 },
-    { 400145, WORLD_SHOPS, 25, "Mascon Key Jack", ap_location_type_t::shop, 0x87, 0x00032589 },
-    { 400146, WORLD_SHOPS, 25, "Mascon Key Queen", ap_location_type_t::shop, 0x86, 0x0003258C },
+    { 400141, WORLD_SHOPS, 24, "Mascon Large Shield", ap_location_type_t::shop, 0x41, 0x0003245F, 0x000323CE, 0 },
+    { 400142, WORLD_SHOPS, 24, "Mascon Thunder", ap_location_type_t::shop, 0x61, 0x00032462, 0x000323CE, 1 },
+    { 400143, WORLD_SHOPS, 24, "Mascon Mattock", ap_location_type_t::shop, 0x89, 0x00032465, 0x000323CE, 2 },
+    { 400144, WORLD_SHOPS, 24, "Mascon Red Potion", ap_location_type_t::shop, 0x90, 0x00032468, 0x000323CE, 3 },
+    { 400145, WORLD_SHOPS, 25, "Mascon Key Jack", ap_location_type_t::shop, 0x87, 0x00032589, 0x0003253E, 0 },
+    { 400146, WORLD_SHOPS, 25, "Mascon Key Queen", ap_location_type_t::shop, 0x86, 0x0003258C, 0x0003253E, 1 },
 
     // Path to Victim
-    { 400147, WORLD_SHOPS, 32, "Misty Shop Death", ap_location_type_t::shop, 0x63, 0x0003246C },
-    { 400148, WORLD_SHOPS, 32, "Misty Shop Hourglass", ap_location_type_t::shop, 0x8D, 0x0003246F },
-    { 400149, WORLD_SHOPS, 32, "Misty Shop Elixir", ap_location_type_t::shop, 0x92, 0x00032472 },
-    { 400150, WORLD_SHOPS, 32, "Misty Shop Red Potion", ap_location_type_t::shop, 0x90, 0x00032475 },
+    { 400147, WORLD_SHOPS, 32, "Misty Shop Death", ap_location_type_t::shop, 0x63, 0x0003246C, 0x000323E0, 0 },
+    { 400148, WORLD_SHOPS, 32, "Misty Shop Hourglass", ap_location_type_t::shop, 0x8D, 0x0003246F, 0x000323E0, 1 },
+    { 400149, WORLD_SHOPS, 32, "Misty Shop Elixir", ap_location_type_t::shop, 0x92, 0x00032472, 0x000323E0, 2 },
+    { 400150, WORLD_SHOPS, 32, "Misty Shop Red Potion", ap_location_type_t::shop, 0x90, 0x00032475, 0x000323E0, 3 },
     { 400151, WORLD_MIST, 31, "Misty Doctor Office", ap_location_type_t::hidden, 0x55, 0x0002CBB4 },
 
     // Tower of Suffer
@@ -132,11 +137,11 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400154, WORLD_MIST, 52, "Tower of Suffer Pendant", ap_location_type_t::boss_reward, 0xA4, 0x0002C67E },
 
     // Victim
-    { 400155, WORLD_SHOPS, 69, "Victim Full Plate", ap_location_type_t::shop, 0x22, 0x00032479 },
-    { 400156, WORLD_SHOPS, 69, "Victim Mattock", ap_location_type_t::shop, 0x89, 0x0003247C },
-    { 400157, WORLD_SHOPS, 69, "Victim Red Potion", ap_location_type_t::shop, 0x90, 0x0003247F },
-    { 400158, WORLD_SHOPS, 39, "Victim Key King", ap_location_type_t::shop, 0x85, 0x00032590 },
-    { 400159, WORLD_SHOPS, 39, "Victim Key Queen", ap_location_type_t::shop, 0x86, 0x00032593 },
+    { 400155, WORLD_SHOPS, 69, "Victim Full Plate", ap_location_type_t::shop, 0x22, 0x00032479, 0x000323F2, 0 },
+    { 400156, WORLD_SHOPS, 69, "Victim Mattock", ap_location_type_t::shop, 0x89, 0x0003247C, 0x000323F2, 1 },
+    { 400157, WORLD_SHOPS, 69, "Victim Red Potion", ap_location_type_t::shop, 0x90, 0x0003247F, 0x000323F2, 2 },
+    { 400158, WORLD_SHOPS, 39, "Victim Key King", ap_location_type_t::shop, 0x85, 0x00032590, 0x00032550, 0 },
+    { 400159, WORLD_SHOPS, 39, "Victim Key Queen", ap_location_type_t::shop, 0x86, 0x00032593, 0x00032550, 1 },
     { 400160, WORLD_SHOPS, 40, "Victim Tavern", ap_location_type_t::give, 0x22, 0x00032261, 0x0003225B },
 
     // Mist
@@ -163,10 +168,10 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400173, WORLD_BRANCHES, 7, "Helm Branch Battle Helmet", ap_location_type_t::boss_reward, 0x59, 0x0002C7C2 },
 
     // Conflate
-    { 400174, WORLD_SHOPS, 45, "Conflate Giant Blade", ap_location_type_t::shop, 0x02, 0x00032483 },
-    { 400175, WORLD_SHOPS, 45, "Conflate Magic Shield", ap_location_type_t::shop, 0x42, 0x00032486 },
-    { 400176, WORLD_SHOPS, 45, "Conflate Wingboots", ap_location_type_t::shop, 0x8F, 0x00032489 },
-    { 400177, WORLD_SHOPS, 45, "Conflate Red Potion", ap_location_type_t::shop, 0x90, 0x0003248C },
+    { 400174, WORLD_SHOPS, 45, "Conflate Giant Blade", ap_location_type_t::shop, 0x02, 0x00032483, 0x00032404, 0 },
+    { 400175, WORLD_SHOPS, 45, "Conflate Magic Shield", ap_location_type_t::shop, 0x42, 0x00032486, 0x00032404, 1 },
+    { 400176, WORLD_SHOPS, 45, "Conflate Wingboots", ap_location_type_t::shop, 0x8F, 0x00032489, 0x00032404, 2 },
+    { 400177, WORLD_SHOPS, 45, "Conflate Red Potion", ap_location_type_t::shop, 0x90, 0x0003248C, 0x00032404, 3 },
     { 400178, WORLD_SHOPS, 43, "Conflate Guru", ap_location_type_t::give, 0x82, 0x0003263B, 0x00032635 },
 
     // Branches
@@ -184,20 +189,20 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400188, WORLD_BRANCHES, 29, "Path to Daybreak Battle Suit", ap_location_type_t::boss_reward, 0x58, 0x0002C850 },
 
     // Daybreak
-    { 400189, WORLD_SHOPS, 48, "Daybreak Tilte", ap_location_type_t::shop, 0x64, 0x00032490 },
-    { 400190, WORLD_SHOPS, 48, "Daybreak Giant Blade", ap_location_type_t::shop, 0x02, 0x00032493 },
-    { 400191, WORLD_SHOPS, 48, "Daybreak Red Potion", ap_location_type_t::shop, 0x90, 0x00032496 },
-    { 400192, WORLD_SHOPS, 47, "Daybreak Key King", ap_location_type_t::shop, 0x85, 0x00032597 },
-    { 400193, WORLD_SHOPS, 47, "Daybreak Key Queen", ap_location_type_t::shop, 0x86, 0x0003259A },
+    { 400189, WORLD_SHOPS, 48, "Daybreak Tilte", ap_location_type_t::shop, 0x64, 0x00032490, 0x00032416, 0 },
+    { 400190, WORLD_SHOPS, 48, "Daybreak Giant Blade", ap_location_type_t::shop, 0x02, 0x00032493, 0x00032416, 1 },
+    { 400191, WORLD_SHOPS, 48, "Daybreak Red Potion", ap_location_type_t::shop, 0x90, 0x00032496, 0x00032416, 2 },
+    { 400192, WORLD_SHOPS, 47, "Daybreak Key King", ap_location_type_t::shop, 0x85, 0x00032597, 0x00032562, 0 },
+    { 400193, WORLD_SHOPS, 47, "Daybreak Key Queen", ap_location_type_t::shop, 0x86, 0x0003259A, 0x00032562, 1 },
 
     // Dartmoor Castle
     { 400194, WORLD_DARTMOOR, 4, "Dartmoor Castle Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C8FC },
     { 400195, WORLD_SHOPS, 55, "Dartmoor Castle Hidden Red Potion", ap_location_type_t::hidden, 0x5D, 0x0002CC40 },
 
     // Dartmoor
-    { 400196, WORLD_SHOPS, 65, "Dartmoor Giant Blade", ap_location_type_t::shop, 0x02, 0x0003249A },
-    { 400197, WORLD_SHOPS, 65, "Dartmoor Red Potion", ap_location_type_t::shop, 0x90, 0x0003249D },
-    { 400198, WORLD_SHOPS, 64, "Dartmoor Key King", ap_location_type_t::shop, 0x85, 0x0003259E },
+    { 400196, WORLD_SHOPS, 65, "Dartmoor Giant Blade", ap_location_type_t::shop, 0x02, 0x0003249A, 0x00032428, 0 },
+    { 400197, WORLD_SHOPS, 65, "Dartmoor Red Potion", ap_location_type_t::shop, 0x90, 0x0003249D, 0x00032428, 1 },
+    { 400198, WORLD_SHOPS, 64, "Dartmoor Key King", ap_location_type_t::shop, 0x85, 0x0003259E, 0x00032574, 0 },
 
     // Fraternal Castle
     { 400199, WORLD_DARTMOOR, 26, "Fraternal Castle Hidden Ointment", ap_location_type_t::hidden, 0x60, 0x0002C996 },

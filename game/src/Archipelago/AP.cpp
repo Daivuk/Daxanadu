@@ -419,7 +419,7 @@ void AP::patch_items()
 				OP_BPL(19),
 				
 				OP_AND_IMM(0x7F),
-				OP_JSR(0xF785), // Divide by 32
+				OP_JSR(0xF785), // Divide by 320
 				OP_TAX(),
 				OP_LDA_ABSX(entity_type_lookup_lo_addr),
 				OP_STA_ABSY(0x0354),
@@ -1016,6 +1016,7 @@ void AP::patch_items()
 		ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
 		ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
 		ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
+		ADD_ITEM("SOLD OUT", AP_ITEM_NULL, 0x8F, 0x8F, 0x8F, 0x8F);
 
 		// Write new code in bank12 that allows to jump further to index the new text
 		auto addr = patcher->patch_new_code(12, {
@@ -1141,11 +1142,20 @@ void AP::patch_items()
 			OP_RTS(), // TODO
 		});
 
+		auto add_null = patcher->patch_new_code(12, {
+			OP_RTS(), // TODO
+		});
+
 		auto give_item = patcher->patch_new_code(12, {
 			// Check if it's poison. We hurt player, we don't add to inventory
 			OP_CMP_IMM(AP_ITEM_POISON),
 			OP_BNE(3),
 			OP_JMP_ABS(add_poison),
+
+			// Check if it's NULL. We ignore and do nothing
+			OP_CMP_IMM(AP_ITEM_NULL),
+			OP_BNE(3),
+			OP_JMP_ABS(add_null),
 
 			// Check if our item is common
 			OP_CMP_IMM(0x90), // Red Potion
@@ -1551,6 +1561,23 @@ void AP::patch_items()
 		patcher->patch(15, 0xC498, 1, { PATCH_ADDR(addr) });
 	}
 
+	// Don't show price in store if item is NULL
+	{
+		//  1600:
+		//   $EC = 40
+		//   $ED = 06
+		// 12:9A5C  <- calls to display price
+
+		auto addr = patcher->patch_new_code(12, {
+			OP_LDA_ZPG(0xED), // Hi byte of price
+			OP_BMI(3), // Price too high, it's a NULL item
+			OP_JMP_ABS(0xFA26), // Draw price
+			OP_RTS(),
+		});
+		
+		patcher->patch(12, 0x9A5C, 0, { OP_JSR(addr) });
+	}
+
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
 	// 12:8BED Clean dialog from screen when closing it.
 }
@@ -1581,7 +1608,7 @@ void AP::patch_cpp_hooks()
 
 		patcher->patch(14, 0xC764, 0, { OP_JMP_ABS(addr) });
 
-		external_interface->register_callback(0x80, [this, patcher](uint8_t world, uint8_t screen, uint8_t entity_id, uint8_t d)
+		external_interface->register_callback(0x80, [this](uint8_t world, uint8_t screen, uint8_t entity_id, uint8_t d)
 		{
 			if (entity_id == 0x9F)
 			{
@@ -1636,6 +1663,114 @@ void AP::patch_cpp_hooks()
 	}
 
 	// Location check in store
+	{
+		auto addr = patcher->patch_new_code(12, {
+			OP_LDA_IMM(0x81), // C++ message id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x24), // World id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x63), // Screen id
+			OP_STA_ABS(0x6000),
+			OP_STX_ABS(0x6000), // Shop index
+			OP_LDA_ABSX(0x0220), // Item Id (Do we care?)
+			OP_STA_ABS(0x6000),
+			OP_RTS(),
+		});
+
+		patcher->patch(12, 0x845A, 0, { OP_JSR(addr) });
+
+		external_interface->register_callback(0x81, [this](uint8_t world, uint8_t screen, uint8_t shop_index, uint8_t item_id)
+		{
+			// Find the location
+			int64_t loc_id = 0;
+			for (const auto& scout : m_location_scouts)
+			{
+				if (scout.loc->world == (int)world &&
+					scout.loc->screen == (int)screen &&
+					scout.loc->shop_index == shop_index)
+				{
+					loc_id = scout.loc->id;
+					break;
+				}
+			}
+
+			if (loc_id == 0)
+			{
+				// Not found
+				printf("Shop location not found. World %i, Screen %i, Shop Index %i, Item 0x%02X\n", (int)world, (int)screen, (int)shop_index, (int)item_id);
+				return 0;
+			}
+
+			if (m_locations_checked.count(loc_id))
+			{
+				printf("Location already checked. World %i, Screen %i, Shop Index %i, Item 0x%02X\n", (int)world, (int)screen, (int)shop_index, (int)item_id);
+				return 0;
+			}
+
+			printf("Location checked! World %i, Screen %i, Shop Index %i, Item 0x%02X\n", (int)world, (int)screen, (int)shop_index, (int)item_id);
+			m_locations_checked.insert(loc_id);
+			patch_remove_check(loc_id);
+
+			// Do location check!
+			AP_SendItem(loc_id);
+			return 1;
+		}, 4);
+	}
+
+	// Location check NPC giving
+	{
+		auto addr = patcher->patch_new_code(12, {
+			OP_PHA(),
+
+			OP_LDA_IMM(0x82), // C++ message id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x24), // World id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x63), // Screen id
+			OP_STA_ABS(0x6000),
+			
+			OP_PLA(),
+			OP_JMP_ABS(0x9AF7), // Give Item
+		});
+
+		patcher->patch(12, 0x83A4, 0, { OP_JSR(addr) });
+
+		external_interface->register_callback(0x82, [this](uint8_t world, uint8_t screen, uint8_t c, uint8_t d)
+		{
+			// Find the location
+			int64_t loc_id = 0;
+			for (const auto& scout : m_location_scouts)
+			{
+				if (scout.loc->world == (int)world &&
+					scout.loc->screen == (int)screen)
+				{
+					loc_id = scout.loc->id;
+					break;
+				}
+			}
+
+			if (loc_id == 0)
+			{
+				// Not found
+				printf("Shop location not found. World %i, Screen %i\n", (int)world, (int)screen);
+				return 0;
+			}
+
+			if (m_locations_checked.count(loc_id))
+			{
+				printf("Location already checked. World %i, Screen %i\n", (int)world, (int)screen);
+				return 0;
+			}
+
+			printf("Location checked! World %i, Screen %i\n", (int)world, (int)screen);
+			m_locations_checked.insert(loc_id);
+			patch_remove_check(loc_id);
+
+			// Do location check!
+			AP_SendItem(loc_id);
+			return 1;
+		}, 2);
+	}
 }
 
 
@@ -1674,6 +1809,18 @@ void AP::patch_remove_check(int64_t loc_id)
 
 	switch (ap_loc->type)
 	{
+		case ap_location_type_t::shop:
+		{
+			m_info.rom[ap_loc->addr] = AP_ITEM_NULL;
+			m_info.rom[ap_loc->addr + 1] = 0xFF; // Price
+			m_info.rom[ap_loc->addr + 2] = 0xFF;
+			break;
+		}
+		case ap_location_type_t::give:
+		{
+			m_info.rom[ap_loc->addr] = AP_ITEM_NULL;
+			break;
+		}
 		case ap_location_type_t::world:
 		case ap_location_type_t::hidden:
 		case ap_location_type_t::boss_reward:

@@ -12,6 +12,7 @@
 #define AP_ITEM_OINTMENT 0x9A
 #define AP_ITEM_GLOVE 0x9B
 #define AP_ITEM_SPRING_ELIXIR 0x9C
+#define AP_ITEM_NULL 0x9D
 
 // Start the new entities at 0x80. This way we can just test for N flag.
 #define AP_ENTITY_RING_OF_ELF 0x80
