@@ -93,6 +93,7 @@ public:
     void apply_xp_wingboots_patch();            // Save original values for wingboot timeouts
     void apply_xp_speed_patch();                // Save original values for xp speed increase
     void apply_sfx_patch();
+    void apply_i_am_error_patch();
 
     // Setting patches are re-applied when needed
     void apply_dialog_speed_setting_patch();    // Text dialog scrolls faster

@@ -88,6 +88,7 @@ Patcher::Patcher(uint8_t* rom)
     apply_xp_speed_setting_patch();
     apply_pendant_setting_patch();
     apply_sfx_patch();
+    apply_i_am_error_patch();
 
     print_usage();
 }
@@ -261,7 +262,7 @@ void Patcher::apply_new_strings()
         "Sent AP.", // E1
         "Sent AP""\xFE""Progressive.", // E2
 
-        "I AM""\xFE""ERROR.", // E3
+        "I AM""\xFE"" ""\xFE""ERROR.", // E3
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;
@@ -1085,4 +1086,10 @@ void Patcher::apply_sfx_patch()
         PATCH_ADDR(0x6000),
         0x60, // RTS
     });
+}
+
+
+void Patcher::apply_i_am_error_patch()
+{
+    patch(12, 0xA2E4, 0, { 0x00, 0x03, 0xE3, 0x00 });
 }
