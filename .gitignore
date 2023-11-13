@@ -13,6 +13,7 @@ imgui.ini
 
 # Saves
 game/save_states/*.sav
+AP_*/
 
 # Release staging folder
 release/

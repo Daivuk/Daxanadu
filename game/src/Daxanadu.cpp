@@ -29,7 +29,7 @@
 #include <vector>
 
 
-static const int32_t STATE_VERSION = 5;
+static const int32_t STATE_VERSION = 6;
 static const int32_t MIN_STATE_VERSION = 1;
 
 
@@ -156,6 +156,14 @@ void Daxanadu::init()
         m_ap->connection_success_delegate = [this]()
         {
             m_menu_manager->hide();
+
+            auto filename = m_ap->get_dir_name() + "/state_0.sav";
+            if (onut::fileExists(filename))
+            {
+                load_state(0);
+                return;
+            }
+
             // Change mapping to a new game context mapping that will always return "start" pressed
             m_emulator->get_ram()->cpu_write(0x800, 2); // Input context flag
             m_emulator->get_controller()->set_input_context(m_new_game_input_context);
@@ -178,6 +186,7 @@ void Daxanadu::init()
             return 0;
         }
 
+        m_saved_while_medidating = 1;
         save_state(0);
         m_patcher->apply_progress_saved();
         return 0;
@@ -343,6 +352,8 @@ void Daxanadu::update_volumes()
 void Daxanadu::serialize(FILE* f, int version) const
 {
     fwrite(&m_king_gave_money, 1, 1, f);
+    fwrite(&m_saved_while_medidating, 1, 1, f);
+
     if (m_ap) m_ap->serialize(f, version);
 }
 
@@ -351,6 +362,12 @@ void Daxanadu::deserialize(FILE* f, int version)
 {
     if (version < 3) return;
     fread(&m_king_gave_money, 1, 1, f);
+    if (version >= 6)
+    {
+        fread(&m_saved_while_medidating, 1, 1, f);
+        m_loading_continue_state = m_saved_while_medidating ? true : false;
+    }
+
     if (m_ap) m_ap->deserialize(f, version);
 }
 
@@ -418,9 +435,8 @@ void Daxanadu::load_state(int slot, const std::string& filename)
     deserialize(f, version);
     fclose(f);
 
-    if (slot == 0)
+    if (m_loading_continue_state)
     {
-        m_loading_continue_state = true;
         m_patcher->apply_welcome_back();
     }
 
