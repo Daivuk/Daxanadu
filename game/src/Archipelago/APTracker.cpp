@@ -303,6 +303,7 @@ void APTracker::update(float dt)
     m_states[(int)item_t::black_onyx] = ram[0x042C] & 0x01;
     m_states[(int)item_t::pendant] = ram[0x042C] & 0x02;
     m_states[(int)item_t::magical_rod] = ram[0x042C] & 0x04;
+    m_states[(int)item_t::spring_elixir] |= m_ram->get(0x042D) & 0x01; // Check if spring is activated
     m_states[(int)item_t::demons_ring] = ram[0x042C] & 0x10;
     m_states[(int)item_t::ring_of_dworf] = ram[0x042C] & 0x20;
     m_states[(int)item_t::ring_of_ruby] = ram[0x042C] & 0x40;

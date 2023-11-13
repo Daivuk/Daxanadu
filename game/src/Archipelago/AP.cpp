@@ -1365,7 +1365,7 @@ void AP::patch_items()
 		patcher->patch(12, 0xA1B3, 0, { AP_ITEM_SPRING_ELIXIR }); // Check if has
 		patcher->patch(12, 0xA1BC, 0, { AP_ITEM_SPRING_ELIXIR }); // Give
 
-#if 0	// I think it's better we keep it, for tracker purpose
+#if 1	// I think it's better we keep it, for tracker purpose (Ok, tracker can check if we have this spring!)
 		// Remove item, but checks first if it's not selected, and remove it from selected
 		auto remove_item = patcher->patch_new_code(12, {
 			// Check if the item we remove is selected item
