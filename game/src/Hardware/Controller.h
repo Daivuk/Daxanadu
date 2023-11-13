@@ -18,6 +18,7 @@ public:
     bool cpu_read(uint16_t addr, uint8_t* out_data) override;
 
     void set_input_context(InputContext* input_context);
+    const InputContext* get_input_context() const { return m_input_context; }
     uint8_t read_inputs(int controller_id);
 
 private:

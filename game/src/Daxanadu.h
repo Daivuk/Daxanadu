@@ -57,6 +57,7 @@ private:
     float m_sfx_volume = 1.0f;
     float m_music_volume = 1.0f;
     AP* m_ap = nullptr;
+    bool m_need_reset = false;
 
     // Extra Daxanadu ram "registers"
     uint8_t m_king_gave_money = 0;

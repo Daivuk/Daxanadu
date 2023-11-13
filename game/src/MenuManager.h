@@ -51,6 +51,7 @@ public:
     std::function<void()> save_delegate;
     std::function<void()> dismissed_pause_menu_delegate;
     std::function<void()> play_ap_delegate;
+    std::function<void()> dismissed_ap_error;
 
 private:
     enum class option_t
@@ -135,6 +136,7 @@ private:
     void load_ap_password(menu_option_t* option);
     void on_ap_connect(menu_option_t* option);
     void on_generic_ok(menu_option_t* option);
+    void on_ap_fail_ok(menu_option_t* option);
 
     void on_gameplay(menu_option_t* option);
     void on_audio(menu_option_t* option);

@@ -59,6 +59,7 @@ public:
     void update(float dt);
     void render();
     state_t get_state() const { return m_state; }
+    const std::string& get_dir_name() const { return m_save_dir_name; }
 
     std::function<void()> connection_success_delegate;
     std::function<void()> connection_failed_delegate;

@@ -59,6 +59,7 @@ void Daxanadu::init()
     m_room_watcher = nullptr;
     m_active_sound = nullptr;
     m_ap = nullptr;
+    m_need_reset = false;
     m_king_gave_money = 0;
 
     // Allocate emulator
@@ -130,6 +131,13 @@ void Daxanadu::init()
         m_menu_manager->hide();
         m_emulator->get_ram()->cpu_write(0x800, 2); // Input context flag
         m_emulator->get_controller()->set_input_context(m_new_game_input_context); // New game context just shoots "starts" continuously so it will resume the game
+    };
+
+    m_menu_manager->dismissed_ap_error = [this]()
+    {
+        m_emulator->get_ram()->cpu_write(0x800, 0xFF); // Input context flag
+        m_emulator->get_controller()->set_input_context(nullptr); // We will reset cart next frame, make sure no inputs interfere
+        m_need_reset = true;
     };
 
     m_menu_manager->play_ap_delegate = [this]()
@@ -260,6 +268,11 @@ void Daxanadu::init()
     // Show inventory
     m_emulator->get_external_interface()->register_callback(0x08, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
+        if (m_emulator->get_controller()->get_input_context() == m_new_game_input_context)
+        {
+            // Ignore. Sometimes this is triggered and it's causing issue. We want for "hide inventory" event.
+            return 0;
+        }
         m_emulator->get_ram()->cpu_write(0x800, 1); // Input context flag
         m_emulator->get_controller()->set_input_context(m_menu_input_context);
         return 0;
@@ -345,6 +358,15 @@ void Daxanadu::deserialize(FILE* f, int version)
 void Daxanadu::save_state(int slot)
 {
     auto filename = "save_states/state_" + std::to_string(slot) + ".sav";
+    if (m_ap)
+    {
+        filename = m_ap->get_dir_name() + "/state_" + std::to_string(slot) + ".sav";
+    }
+    else if (!onut::fileExists("save_states"))
+	{
+		printf("  save_states/ Doesn't exist, creating...\n");
+		onut::createFolder("save_states");
+	}
 
     FILE* f = fopen(filename.c_str(), "wb");
     if (!f)
@@ -365,6 +387,10 @@ void Daxanadu::save_state(int slot)
 void Daxanadu::load_state(int slot)
 {
     auto filename = "save_states/state_" + std::to_string(slot) + ".sav";
+    if (m_ap)
+    {
+        filename = m_ap->get_dir_name() + "/state_" + std::to_string(slot) + ".sav";
+    }
     load_state(slot, filename);
 }
 
@@ -407,6 +433,13 @@ void Daxanadu::load_state(int slot, const std::string& filename)
 
 void Daxanadu::update(float dt)
 {
+    // Reset everything
+    if (OInputJustPressed(OKeyF5) || m_need_reset)
+    {
+        cleanup();
+        init();
+    }
+
     if (m_ap)
     {
         m_ap->update(dt);
@@ -441,13 +474,6 @@ void Daxanadu::update(float dt)
     if (OInputJustPressed(OKey0))
     {
         load_state(0);
-    }
-
-    // Reset everything
-    if (OInputJustPressed(OKeyF5))
-    {
-        cleanup();
-        init();
     }
 
     m_emulator->update(dt);

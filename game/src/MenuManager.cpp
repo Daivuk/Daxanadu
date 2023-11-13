@@ -234,7 +234,7 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
         { "FAILED TO CONNECT", {}, option_t::skip },
         { " TO ARCHIPELAGO", {}, option_t::skip },
         { "", {}, option_t::skip },
-        { "       OK", {}, option_t::action, nullptr, BIND(on_generic_ok) },
+        { "       OK", {}, option_t::action, nullptr, BIND(on_ap_fail_ok) },
     };
     m_menus[(int)state_t::ap_failed_menu].x = 5;
     m_menus[(int)state_t::ap_failed_menu].y = 8;
@@ -846,6 +846,13 @@ void MenuManager::on_reset_defaults(menu_option_t* option)
 void MenuManager::on_generic_ok(menu_option_t* option)
 {
     m_menu_stack.pop_back();
+}
+
+
+void MenuManager::on_ap_fail_ok(menu_option_t* option)
+{
+    m_menu_stack.pop_back();
+    if (dismissed_ap_error) dismissed_ap_error();
 }
 
 
