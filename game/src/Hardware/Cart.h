@@ -4,6 +4,8 @@
 #include "PPUPeripheral.h"
 
 #include <stdio.h>
+#include <functional>
+#include <vector>
 
 
 class Mapper;
@@ -28,6 +30,9 @@ public:
     uint8_t* get_prg_rom() const { return m_prg_rom; }
     size_t get_prg_rom_size() const { return m_prg_rom_size; }
 
+    void register_write_callback(const std::function<void(int)>& callback, int addr);
+    void register_read_callback(const std::function<void(int)>& callback, int addr);
+
 private:
     uint8_t* m_prg_rom = nullptr;
     uint8_t* m_chr_rom = nullptr;
@@ -36,4 +41,7 @@ private:
     size_t m_chr_rom_size = 0;
 
     Mapper* m_mapper = nullptr;
+
+    std::vector<std::pair<int, std::function<void(int)>>> m_write_callbacks;
+    std::vector<std::pair<int, std::function<void(int)>>> m_read_callbacks;
 };

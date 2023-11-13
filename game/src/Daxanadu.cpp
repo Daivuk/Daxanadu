@@ -153,6 +153,9 @@ void Daxanadu::init()
         ap_info.tile_drawer = m_tile_drawer;
         ap_info.patcher = m_patcher;
         ap_info.external_interface = m_emulator->get_external_interface();
+        ap_info.cpu_bus = m_emulator->get_cpu_bus();
+        ap_info.cart = m_emulator->get_cart();
+        ap_info.cpu = m_emulator->get_cpu();
         m_ap = new AP(ap_info);
         m_ap->connection_success_delegate = [this]()
         {

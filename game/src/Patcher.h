@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cinttypes>
+#include <string>
 #include <vector>
 
 
@@ -94,6 +95,7 @@ public:
     void apply_xp_speed_patch();                // Save original values for xp speed increase
     void apply_sfx_patch();
     void apply_i_am_error_patch();
+    void patch_ap_message(const std::string& msg);
 
     // Setting patches are re-applied when needed
     void apply_dialog_speed_setting_patch();    // Text dialog scrolls faster
@@ -133,4 +135,5 @@ private:
     std::vector<uint8_t> m_reset_gold_xp_original_code;
     std::vector<uint8_t> m_xp_wingboots_values;
     std::vector<uint8_t> m_xp_speed_values;
+    int m_ap_message_addr = 0;
 };

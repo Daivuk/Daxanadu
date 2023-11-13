@@ -10,6 +10,9 @@ struct AP_NetworkItem;
 struct ap_location_t;
 struct ap_item_t;
 class APTracker;
+class Cart;
+class CPU;
+class CPUBUS;
 class ExternalInterface;
 class Patcher;
 class RAM;
@@ -20,6 +23,9 @@ struct ap_info_t
 {
     uint8_t* rom = nullptr;
     RAM* ram = nullptr;
+    CPUBUS* cpu_bus = nullptr;
+    CPU* cpu = nullptr;
+    Cart* cart = nullptr;
     TileDrawer* tile_drawer = nullptr;
     size_t rom_size = 0;
     std::string address;
@@ -38,6 +44,8 @@ struct ap_location_scout_t
     int flags;
     std::string player_name;
     std::string item_name;
+    std::string dialog_player_name;
+    std::string item_player_name;
 };
 
 
@@ -65,7 +73,7 @@ public:
     std::function<void()> connection_failed_delegate;
 
     void on_item_clear();
-    void on_item_received(int64_t item_id, bool notify_player);
+    void on_item_received(int64_t item_id, int player_id, bool notify_player);
     void on_location_received(int64_t loc_id);
     void on_location_info(const std::vector<AP_NetworkItem>& loc_infos);
 

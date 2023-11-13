@@ -259,10 +259,12 @@ void Patcher::apply_new_strings()
         "I'm holding""\xFE""Glove.", // DF
         "I'm holding""\xFE""Hour Glass.", // E0
 
-        "Sent AP.", // E1
-        "Sent AP""\xFE""Progressive.", // E2
+        "Sent AP.", // E1 Unused
+        "Sent AP""\xFE""Progressive.", // E2 Unused
 
         "I AM""\xFE"" ""\xFE""ERROR.", // E3
+
+        "" // E4 This has to be the last one
     };
 
     int addr = 13 * 0x4000 + 0xB45B - 0x8000;
@@ -270,8 +272,16 @@ void Patcher::apply_new_strings()
     {
         memcpy(&m_rom[addr], string.c_str(), string.size());
         m_rom[addr + (int)string.size()] = 0xFF; // end of string
+        m_ap_message_addr = addr;
         addr += (int)string.size() + 1;
     }
+}
+
+
+void Patcher::patch_ap_message(const std::string& msg)
+{
+    memcpy(&m_rom[m_ap_message_addr], msg.c_str(), (int)msg.size());
+    m_rom[m_ap_message_addr + (int)msg.size()] = 0xFF; // end of string
 }
 
 

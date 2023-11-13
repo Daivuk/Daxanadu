@@ -208,6 +208,19 @@ bool Cart::cpu_write(uint16_t addr, uint8_t data)
 
 extern Daxanadu* daxanadu;
 
+
+void Cart::register_write_callback(const std::function<void(int)>& callback, int addr)
+{
+    m_write_callbacks.push_back({ addr, callback });
+}
+
+
+void Cart::register_read_callback(const std::function<void(int)>& callback, int addr)
+{
+    m_read_callbacks.push_back({ addr, callback });
+}
+
+
 bool Cart::cpu_read(uint16_t addr, uint8_t* out_data)
 {
     uint32_t mapped_addr;
@@ -230,6 +243,11 @@ bool Cart::cpu_read(uint16_t addr, uint8_t* out_data)
         //        __debugbreak();
         //    }
         //}
+
+        for (const auto& read_callback : m_read_callbacks)
+            if (read_callback.first == (int)mapped_addr)
+                read_callback.second((int)mapped_addr);
+
         *out_data = m_prg_rom[mapped_addr];
         return true;
     }
@@ -243,6 +261,10 @@ bool Cart::ppu_write(uint16_t addr, uint8_t data)
     uint32_t mapped_addr;
     if (m_mapper->map_ppu_write(addr, &mapped_addr, data))
     {
+        for (const auto& write_callback : m_write_callbacks)
+            if (write_callback.first == (int)mapped_addr)
+                write_callback.second((int)mapped_addr);
+
         // CHR_RAM
         m_chr_rom[addr] = data;
         return true;

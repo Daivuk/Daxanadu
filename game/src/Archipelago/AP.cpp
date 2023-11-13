@@ -2,6 +2,9 @@
 #include "APItems.h"
 #include "APLocations.h"
 #include "APTracker.h"
+#include "Cart.h"
+#include "CPU.h"
+#include "CPUBUS.h"
 #include "ExternalInterface.h"
 #include "Patcher.h"
 #include "RAM.h"
@@ -64,9 +67,9 @@ static void f_itemclr()
 }
 
 
-static void f_itemrecv(int64_t item_id, bool notify_player)
+static void f_itemrecv(int64_t item_id, int player_id, bool notify_player)
 {
-	if (g_ap) g_ap->on_item_received(item_id, notify_player);
+	if (g_ap) g_ap->on_item_received(item_id, player_id, notify_player);
 }
 
 
@@ -393,7 +396,7 @@ void AP::patch_items()
 	copy_sprite(ap_tile_data + 3 * 16, TILE_ADDR(0x21), 0, false);
 			
 	// Replace empty tiles at the end of tileset with AP Progression (Hopefully not used)
-	load_tiles_from_png("assets/images/ap_inv.png", ap_tile_data);
+	load_tiles_from_png("assets/images/ap_prog_inv.png", ap_tile_data);
 	copy_sprite(ap_tile_data + 0 * 16, TILE_ADDR(0x8B), 0, false);
 	copy_sprite(ap_tile_data + 1 * 16, TILE_ADDR(0x8C), 0, false);
 	copy_sprite(ap_tile_data + 2 * 16, TILE_ADDR(0x8D), 0, false);
@@ -1122,7 +1125,7 @@ void AP::patch_items()
 			copy_sprite(ap_tile_data + 3 * 16, DST_TILE(), 0, false);
 			
 			// AP Progression
-			load_tiles_from_png("assets/images/ap_world.png", ap_tile_data);
+			load_tiles_from_png("assets/images/ap_prog_world.png", ap_tile_data);
 			copy_sprite(ap_tile_data + 0 * 16, DST_TILE(), 0, false);
 			copy_sprite(ap_tile_data + 1 * 16, DST_TILE(), 0, false);
 			copy_sprite(ap_tile_data + 2 * 16, DST_TILE(), 0, false);
@@ -1236,9 +1239,78 @@ void AP::patch_items()
 		ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
 		ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
 		ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
+		auto ap_text_addr = patcher->get_new_code_addr(12);
 		ADD_ITEM("AP", AP_ITEM_AP, 0x1E, 0x1F, 0x20, 0x21);
+		auto ap_prog_text_addr = patcher->get_new_code_addr(12);
 		ADD_ITEM("AP PROG", AP_ITEM_AP_PROGRESSION, 0x8B, 0x8C, 0x8D, 0x8E);
 		ADD_ITEM("SOLD OUT", AP_ITEM_NULL, 0x8F, 0x8F, 0x8F, 0x8F);
+
+		auto read_callback = [this](int addr)
+		{
+			// Get current world / screen that will help us find the location
+			auto world_id = m_info.ram->get(0x24);
+			auto screen_id = m_info.ram->get(0x63);
+			auto shop_index = m_info.ram->get(0x1EF + 5); // Find the shop index in the stack... very hacky!
+
+			// Find location
+			const ap_location_t* location = nullptr;
+			for (const auto& loc : AP_LOCATIONS)
+			{
+				if (loc.world == world_id &&
+					loc.screen == screen_id)
+				{
+					if (loc.type == ap_location_type_t::shop)
+					{
+						if (loc.shop_index == shop_index)
+						{
+							location = &loc;
+							break;
+						}
+					}
+				}
+			}
+			if (!location)
+			{
+				printf("Location not found");
+				return;
+			}
+
+			// Find associated scout
+			const ap_location_scout_t* scout = nullptr;
+			for (const auto& s : m_location_scouts)
+			{
+				if (s.loc == location)
+				{
+					scout = &s;
+					break;
+				}
+			}
+			if (!scout)
+			{
+				printf("Scout not found");
+				return;
+			}
+
+			memset(m_info.rom + addr, 0x20, 16);
+			m_info.rom[addr] = (uint8_t)scout->item_player_name.size();
+			memcpy(m_info.rom + addr + 1, scout->item_player_name.c_str(), scout->item_player_name.size());
+		};
+
+		m_info.cart->register_read_callback(read_callback, BANK_ADDR_LO(12, ap_text_addr));
+		m_info.cart->register_read_callback(read_callback, BANK_ADDR_LO(12, ap_prog_text_addr));
+
+		//DEVIL'S ADVOCADO
+		//Command Control (E1M4) - Yellow keycard
+
+		//DEVILS ADVOCADO
+		//Command Control E1M4 Yellow keycard
+
+		//DEVILS ADVOCA
+
+		//COMMAND CONTR
+		//DEVILS 
+
+		// Read hack on 
 
 		// Write new code in bank12 that allows to jump further to index the new text
 		auto addr = patcher->patch_new_code(12, {
@@ -2218,7 +2290,7 @@ void AP::on_item_clear()
 }
 
 
-void AP::on_item_received(int64_t item_id, bool notify_player)
+void AP::on_item_received(int64_t item_id, int player_id, bool notify_player)
 {
 	if (m_item_received_current_count < m_item_received_count)
 	{
@@ -2230,18 +2302,7 @@ void AP::on_item_received(int64_t item_id, bool notify_player)
 		++m_item_received_current_count;
 		++m_item_received_count;
 
-		// Give the item, but ignore it if it's my own check
-		bool is_my_check = false;
-		for (const auto& scout : m_location_scouts)
-		{
-			if (scout.item == item_id)
-			{
-				is_my_check = true;
-				break;
-			}
-		}
-
-		if (!is_my_check)
+		if (player_id != AP_GetPlayerID())
 		{
 			for (const auto& ap_item : AP_ITEMS)
 			{
@@ -2271,6 +2332,7 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 		scout_loc.item_name = loc_info.item_name;
 		scout_loc.player = loc_info.player;
 		scout_loc.player_name = loc_info.player_name;
+
 		for (auto& ap_location : AP_LOCATIONS)
 		{
 			if (ap_location.id == loc_info.location)
@@ -2279,11 +2341,33 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 				break;
 			}
 		}
+
 		if (!scout_loc.loc)
 		{
 			// Show some error or something
 			__debugbreak();
 		}
+
+		// Bake player name so it can be used in UI
+		for (int i = 0, len = (int)scout_loc.player_name.size(); i < len; ++i)
+		{
+			auto c = scout_loc.player_name[i];
+			auto C = std::toupper(c);
+
+			if (C == ' ' || (C >= 'A' && C <= 'Z') || (C >= '0' && C <= '9'))
+			{
+				scout_loc.item_player_name.push_back(C);
+			}
+
+			if (c == ' ' || c == '.' || c == '?' || c == ',' ||
+				(c >= 'a' && c <= 'z') ||
+				(c >= 'A' && c <= 'Z') ||
+				(c >= '0' && c <= '9'))
+			{
+				scout_loc.dialog_player_name.push_back(c);
+			}
+		}
+
 		m_location_scouts.push_back(scout_loc);
 	}
 }
@@ -2351,7 +2435,7 @@ void AP::update(float dt)
 					{
 						location_scouts.push_back(location.id);
 					}
-					printf("APDOOM: Scouting for %i locations...\n", (int)location_scouts.size());
+					printf("Scouting for %i locations...\n", (int)location_scouts.size());
 					AP_SendLocationScouts(location_scouts, 0);
 					break;
 				}

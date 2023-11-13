@@ -521,13 +521,13 @@ static void load_spritesets(FILE* f)
         cart.spritesets.push_back(tileset);
     }
 
-    //// Health bar
-    //{
-    //    cart_tileset_t tileset;
-    //    tileset.offset = 0;
-    //    tileset.tiles_data = load_tileset(f, 0x0003F800 + 16 * 16 * 3 + 4 * 16 + 6, 7);
-    //    cart.spritesets.push_back(tileset);
-    //}
+    // Health bar
+    {
+        cart_tileset_t tileset;
+        tileset.offset = 0;
+        tileset.tiles_data = load_tileset(f, 0x0003F800 + 16 * 16 * 3 + 4 * 16 + 6, 7);
+        cart.spritesets.push_back(tileset);
+    }
 
     // Animation frames
     {
