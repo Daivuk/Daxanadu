@@ -96,4 +96,5 @@ private:
     std::vector<ap_location_scout_t> m_location_scouts;
     std::set<int64_t> m_locations_checked;
     APTracker* m_tracker = nullptr;
+    std::vector<uint8_t> m_queued_items;
 };

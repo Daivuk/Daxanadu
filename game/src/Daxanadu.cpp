@@ -11,6 +11,7 @@
 #include "NewGameInputContext.h"
 #include "Patcher.h"
 #include "PPU.h"
+#include "RAM.h"
 #include "RoomWatcher.h"
 #include "SoundRenderer.h"
 #include "TileDrawer.h"
@@ -28,7 +29,7 @@
 #include <vector>
 
 
-static const int32_t STATE_VERSION = 4;
+static const int32_t STATE_VERSION = 5;
 static const int32_t MIN_STATE_VERSION = 1;
 
 
@@ -51,6 +52,7 @@ void Daxanadu::init()
     m_menu_input_context = new MenuInputContext(m_gameplay_input_context);
     m_new_game_input_context = new NewGameInputContext();
     m_emulator = new Emulator();
+    m_emulator->get_ram()->cpu_write(0x800, 0xFF); // Input context flag
     m_emulator->get_controller()->set_input_context(nullptr);
 
     // Create sounds
@@ -84,6 +86,7 @@ void Daxanadu::init()
     m_menu_manager->new_game_delegate = [this]()
     {
         // Change mapping to a new game context mapping that will always return "start" pressed
+        m_emulator->get_ram()->cpu_write(0x800, 2); // Input context flag
         m_emulator->get_controller()->set_input_context(m_new_game_input_context);
     };
 
@@ -110,6 +113,7 @@ void Daxanadu::init()
     m_menu_manager->dismissed_pause_menu_delegate = [this]()
     {
         m_menu_manager->hide();
+        m_emulator->get_ram()->cpu_write(0x800, 2); // Input context flag
         m_emulator->get_controller()->set_input_context(m_new_game_input_context); // New game context just shoots "starts" continuously so it will resume the game
     };
 
@@ -130,6 +134,7 @@ void Daxanadu::init()
         {
             m_menu_manager->hide();
             // Change mapping to a new game context mapping that will always return "start" pressed
+            m_emulator->get_ram()->cpu_write(0x800, 2); // Input context flag
             m_emulator->get_controller()->set_input_context(m_new_game_input_context);
         };
         m_ap->connection_failed_delegate = [this]()
@@ -214,6 +219,7 @@ void Daxanadu::init()
     m_emulator->get_external_interface()->register_callback(0x05, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
         m_menu_manager->hide();
+        m_emulator->get_ram()->cpu_write(0x800, 0); // Input context flag
         m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
         return 0;
     }, 0);
@@ -222,6 +228,7 @@ void Daxanadu::init()
     m_emulator->get_external_interface()->register_callback(0x06, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
         m_menu_manager->show_in_game_menu();
+        m_emulator->get_ram()->cpu_write(0x800, 0xFF); // Input context flag
         m_emulator->get_controller()->set_input_context(nullptr);
         return 0;
     }, 0);
@@ -230,6 +237,7 @@ void Daxanadu::init()
     m_emulator->get_external_interface()->register_callback(0x07, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
         m_menu_manager->hide();
+        m_emulator->get_ram()->cpu_write(0x800, 0); // Input context flag
         m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
         return 0;
     }, 0);
@@ -237,6 +245,7 @@ void Daxanadu::init()
     // Show inventory
     m_emulator->get_external_interface()->register_callback(0x08, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
+        m_emulator->get_ram()->cpu_write(0x800, 1); // Input context flag
         m_emulator->get_controller()->set_input_context(m_menu_input_context);
         return 0;
     }, 0);
@@ -244,6 +253,7 @@ void Daxanadu::init()
     // Hide inventory
     m_emulator->get_external_interface()->register_callback(0x09, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
+        m_emulator->get_ram()->cpu_write(0x800, 0); // Input context flag
         m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
         return 0;
     }, 0);
@@ -376,6 +386,7 @@ void Daxanadu::load_state(int slot, const std::string& filename)
 
     OLog("State " + std::to_string(slot) + " loaded");
     m_menu_manager->hide();
+    m_emulator->get_ram()->cpu_write(0x800, 0); // Input context flag
     m_emulator->get_controller()->set_input_context(m_gameplay_input_context);
 }
 

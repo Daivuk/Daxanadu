@@ -29,6 +29,7 @@
 #define OP_LDX_ABSY(addr) 0xBE, PATCH_ADDR(addr)
 #define OP_LDX_IMM(value) 0xA2, value
 #define OP_STX_ABS(addr) 0x8E, PATCH_ADDR(addr)
+#define OP_STX_ZPG(addr) 0x86, addr
 #define OP_AND_IMM(value) 0x29, value
 #define OP_CMP_IMM(value) 0xC9, value
 #define OP_CMP_ABS(addr) 0xCD, PATCH_ADDR(addr)

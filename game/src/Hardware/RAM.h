@@ -28,7 +28,7 @@ public:
     uint8_t operator[](uint16_t addr) const { return m_data[addr]; }
 
 private:
-    uint8_t m_data[0x800];
+    uint8_t m_data[0x2000];
 #if SHOW_RAM
     float m_usage[0x2000];
     float m_time_passed = 0.0f;

@@ -21,15 +21,26 @@ APTracker::APTracker(uint8_t* rom, RAM* ram, TileDrawer* tile_drawer)
         m_states[i] = false;
     }
 
-    // Load palette from the ROM file
-    uint8_t colors[192];
-    uint8_t indexed_palette[4];
+    // Load palettes from the ROM file
     uint8_t palette[4 * 3];
+    uint8_t entity_palette[4 * 3];
+    uint8_t colors[192];
     load_colors(colors);
-    memcpy(indexed_palette, &rom[0x0002C000 + 12], 4);
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 3; ++j)
-            palette[i * 3 + j] = colors[indexed_palette[i] * 3 + j];
+
+    {
+        uint8_t indexed_palette[4];
+        memcpy(indexed_palette, &rom[0x0002C000 + 12], 4);
+        for (int i = 0; i < 4; ++i)
+            for (int j = 0; j < 3; ++j)
+                palette[i * 3 + j] = colors[indexed_palette[i] * 3 + j];
+    }
+    {
+        uint8_t indexed_palette[4];
+        memcpy(indexed_palette, &rom[0x0002C000 + 28 * 16 + 2 * 4], 4);
+        for (int i = 0; i < 4; ++i)
+            for (int j = 0; j < 3; ++j)
+                entity_palette[i * 3 + j] = colors[indexed_palette[i] * 3 + j];
+    }
 
     // Create tracker spritesheet
     uint8_t* image_data = new uint8_t[(4 * 8) * (16 * 16 * 4)];
@@ -67,8 +78,22 @@ APTracker::APTracker(uint8_t* rom, RAM* ram, TileDrawer* tile_drawer)
     bake((int)item_t::demons_ring, image_data, palette, 0x04, 0x05, 0x0C, 0x0D);
     bake((int)item_t::spring_elixir, image_data, palette, 0x34, 0x35, 0x36, 0x37, true);
     bake((int)item_t::pendant, image_data, palette, 0x38, 0x39, 0x3A, 0x3B);
-
     m_sprite_sheet = OTexture::createFromData(image_data, { 4 * 16, 8 * 16 }, false);
+
+    bake_spring(0, image_data, entity_palette, 0x00, false);
+    bake_spring(1, image_data, entity_palette, 0x01, false);
+    bake_spring(2, image_data, entity_palette, 0x01, true);
+    bake_spring(3, image_data, entity_palette, 0x00, true);
+    bake_spring(4, image_data, entity_palette, 0x02, false);
+    bake_spring(5, image_data, entity_palette, 0x03, false);
+    bake_spring(6, image_data, entity_palette, 0x03, true);
+    bake_spring(7, image_data, entity_palette, 0x02, true);
+    bake_spring(8, image_data, entity_palette, 0x04, false);
+    bake_spring(9, image_data, entity_palette, 0x05, false);
+    bake_spring(10, image_data, entity_palette, 0x05, true);
+    bake_spring(11, image_data, entity_palette, 0x04, true);
+    m_spring_texture = OTexture::createFromData(image_data, { 4 * 8, 3 * 8 }, false);
+
     delete[] image_data;
 }
 
@@ -114,6 +139,37 @@ void APTracker::bake(int dst_id, uint8_t* dst_image, uint8_t* palette, uint8_t t
                 dst_image[dst_k + 2] = palette[col * 3 + 2];
                 dst_image[dst_k + 3] = 255;
             }
+        }
+    }
+}
+
+
+void APTracker::bake_spring(int dst_id, uint8_t* dst_image, uint8_t* palette, uint8_t tile, bool flip_h)
+{
+    int dst_x = (dst_id % 4) * 8;
+    int dst_y = (dst_id / 4) * 8;
+
+    const uint8_t* src = m_rom + 0x0001CE36 + tile * 16;
+
+    for (int y = 0; y < 8; ++y)
+    {
+        int dst_y_k = (dst_y + y) * (4 * 8 * 4);
+
+        for (int x = 0; x < 8; ++x)
+        {
+            int inv_x = 7 - x;
+            if (flip_h) inv_x = x;
+
+            int b1 = (src[y] >> inv_x) & 1;
+            int b2 = (src[y + 8] >> inv_x) & 1;
+            int col = (b1) | (b2 << 1);
+
+            int dst_k = dst_y_k + ((dst_x + x) * 4);
+
+            dst_image[dst_k + 0] = palette[col * 3 + 0];
+            dst_image[dst_k + 1] = palette[col * 3 + 1];
+            dst_image[dst_k + 2] = palette[col * 3 + 2];
+            dst_image[dst_k + 3] = 255;
         }
     }
 }
@@ -258,7 +314,9 @@ void APTracker::render()
 {
     auto res = OScreenf;
     float scale = std::floorf(res.y / (float)PPU::SCREEN_H);
+    float scale2 = std::ceilf(scale * 0.5f);
 
+#if !SHOW_RAM
     oSpriteBatch->begin();
     {
         float tracker_x = res.x * 0.5f + (float)PPU::SCREEN_W * 0.5f * scale + scale * 16.0f;
@@ -266,7 +324,7 @@ void APTracker::render()
 
         // Background, grayed out
         oSpriteBatch->drawRect(m_sprite_sheet,
-                               Rect(tracker_x, tracker_y, 4.0f * 16.0f * scale, 8.0f * 16.0f * scale),
+                               Rect(tracker_x, tracker_y, 4.0f * 16.0f * scale, 16.0f * 8.0f * scale + 24.0f * scale2),
                                Color::Black);
         oSpriteBatch->drawRect(m_sprite_sheet,
                                Rect(tracker_x, tracker_y, 4.0f * 16.0f * scale, 8.0f * 16.0f * scale),
@@ -286,10 +344,21 @@ void APTracker::render()
                 Vector4((float)x / 4.0f, (float)y / 8.0f,
                         (float)(x + 1) / 4.0f, (float)(y + 1) / 8.0f));
         }
+
+        // Springs
+        uint8_t bits = m_ram->get(0x042D);
+        float spring_spacing = std::floorf(((4.0f * 16.0f * scale) - (3.0f * 4.0f * 8.0f * scale2)) / 3.0f);
+        for (int i = 0; i < 3; ++i)
+        {
+            oSpriteBatch->drawRect(m_spring_texture,
+                                   Rect(tracker_x + (float)i * (4 * 8 * scale2 + spring_spacing), tracker_y + 8 * 16 * scale, 4 * 8 * scale2, 3 * 8 * scale2),
+                                   (bits & (1 << i)) ? Color::White : Color(0.25f));
+        }
     }
     oSpriteBatch->end();
+#endif
 
-    // Titles
+    // Titles and springs
     {
         float tracker_x = res.x * 0.5f - (float)PPU::SCREEN_W * 0.5f * scale;
         float tracker_y = res.y * 0.5f - (float)(PPU::SCREEN_H - 16) * 0.5f * scale;
@@ -300,14 +369,14 @@ void APTracker::render()
 
         // Black frame behind
         oSpriteBatch->drawRect(m_sprite_sheet,
-                               Rect(-19 * 8, 0, 16 * 8, 31 * 8),
+                               Rect(-18 * 8, 0, 15 * 8, 33 * 8),
                                Color::Black);
 
         int current_title = (int)m_ram->get(0x0437);
-        int x = -16;
+        int x = -15;
         int y = 1;
         Color disabled_tint(0.25f, 0.25f, 0.25f, 1.0f);
-        for (int i = 0; i < 15; ++i)
+        for (int i = 0; i <= 15; ++i)
         {
             char text[20];
             int len = (int)m_rom[0x00030943 + i * 16];
@@ -319,7 +388,7 @@ void APTracker::render()
             y += 2;
         }
 
-        m_tile_drawer->draw_cursor(-18, 1 + current_title * 2);
+        m_tile_drawer->draw_cursor(-17, 1 + current_title * 2);
         oSpriteBatch->end();
     }
 }

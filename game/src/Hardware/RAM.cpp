@@ -20,13 +20,16 @@ RAM::RAM()
 
 void RAM::serialize(FILE* f, int version) const
 {
-    fwrite(m_data, 1, 0x800, f);
+    fwrite(m_data, 1, 0x2000, f);
 }
 
 
 void RAM::deserialize(FILE* f, int version)
 {
-    fread(m_data, 1, 0x800, f);
+    if (version < 5)
+        fread(m_data, 1, 0x800, f);
+    else
+        fread(m_data, 1, 0x2000, f);
 }
 
 
@@ -38,8 +41,10 @@ bool RAM::cpu_write(uint16_t addr, uint8_t data)
         //{
         //    __debugbreak();
         //}
-
-        m_data[addr % 0x800] = data;
+        
+        // We don't need to mirror, Faxanadu never writes out of range.
+        // So we can expand our ram for other usage
+        m_data[addr/* % 0x800*/] = data;
 
         //int behaviour_addr = ((int)m_data[0x035C + 7] << 8) | m_data[0x0354 + 7];
         //if (behaviour_addr == 0xAE12)
@@ -67,7 +72,9 @@ bool RAM::cpu_read(uint16_t addr, uint8_t* out_data)
         //    __debugbreak();
         //}
 
-        *out_data = m_data[addr % 0x800];
+        // We don't need to mirror, Faxanadu never writes out of range.
+        // So we can expand our ram for other usage
+        *out_data = m_data[addr/* % 0x800*/];
         return true;
     }
 
@@ -106,6 +113,10 @@ void RAM::render()
 #if defined(_DEBUG)
     if (ImGui::Begin("RAM"))
     {
+        ImGui::Text("Quests: 0x%02X", (int)m_data[0x042D]);
+        ImGui::Text("Input Context: 0x%02X", (int)m_data[0x0800]);
+
+        ImGui::Separator();
         ImGui::Text("Weapon: 0x%02X", (int)m_data[0x03BD]);
         ImGui::Text("Armor: 0x%02X", (int)m_data[0x03BE]);
         ImGui::Text("Shield: 0x%02X", (int)m_data[0x03BF]);

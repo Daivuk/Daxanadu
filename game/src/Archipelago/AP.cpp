@@ -225,31 +225,31 @@ void AP::update_progressive_sword_sprites()
 	switch (get_progressive_sword_level())
 	{
 		case 0: // Hand Dagger
-			copy_sprite(TILE_ADDR(0x4A), DST_TILE_ID(60), 0, false);
-			copy_sprite(TILE_ADDR(0x4B), DST_TILE_ID(61), 0, false);
-			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
-			copy_sprite(TILE_ADDR(0x4C), DST_TILE_ID(63), 0, false);
+			copy_sprite(TILE_ADDR(0x4A), DST_TILE_ID(56), 0, false);
+			copy_sprite(TILE_ADDR(0x4B), DST_TILE_ID(57), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(58), 0, false);
+			copy_sprite(TILE_ADDR(0x4C), DST_TILE_ID(59), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x4A, 0x4B, 0x8F, 0x4C);
 			break;
 		case 1: // Long Sword
-			copy_sprite(TILE_ADDR(0x47), DST_TILE_ID(60), 0, false);
-			copy_sprite(TILE_ADDR(0x48), DST_TILE_ID(61), 0, false);
-			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
-			copy_sprite(TILE_ADDR(0x49), DST_TILE_ID(63), 0, false);
+			copy_sprite(TILE_ADDR(0x47), DST_TILE_ID(56), 0, false);
+			copy_sprite(TILE_ADDR(0x48), DST_TILE_ID(57), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(58), 0, false);
+			copy_sprite(TILE_ADDR(0x49), DST_TILE_ID(59), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x47, 0x48, 0x8F, 0x49);
 			break;
 		case 2: // Giant Sword
-			copy_sprite(TILE_ADDR(0x44), DST_TILE_ID(60), 0, false);
-			copy_sprite(TILE_ADDR(0x45), DST_TILE_ID(61), 0, false);
-			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(62), 0, false);
-			copy_sprite(TILE_ADDR(0x46), DST_TILE_ID(63), 0, false);
+			copy_sprite(TILE_ADDR(0x44), DST_TILE_ID(56), 0, false);
+			copy_sprite(TILE_ADDR(0x45), DST_TILE_ID(57), 0, false);
+			copy_sprite(TILE_ADDR(0x8F), DST_TILE_ID(58), 0, false);
+			copy_sprite(TILE_ADDR(0x46), DST_TILE_ID(59), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x44, 0x45, 0x8F, 0x46);
 			break;
 		case 3: // Dragon Slayer
-			copy_sprite(SRC_TILE(0x0001D006, 0), DST_TILE_ID(60), 0, false);
-			copy_sprite(SRC_TILE(0x0001D006, 1), DST_TILE_ID(61), 0, false);
-			copy_sprite(SRC_TILE(0x0001D006, 2), DST_TILE_ID(62), 0, false);
-			copy_sprite(SRC_TILE(0x0001D006, 3), DST_TILE_ID(63), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 0), DST_TILE_ID(56), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 1), DST_TILE_ID(57), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 2), DST_TILE_ID(58), 0, false);
+			copy_sprite(SRC_TILE(0x0001D006, 3), DST_TILE_ID(59), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SWORD, 0x4D, 0x4E, 0x4F, 0x50);
 			break;
 	}
@@ -260,24 +260,24 @@ void AP::update_progressive_armor_sprites()
 	switch (get_progressive_armor_level())
 	{
 		case 1: // Studded Mail
-			copy_sprite(TILE_ADDR(0x55), DST_TILE_ID(64), 0, false);
-			copy_sprite(TILE_ADDR(0x56), DST_TILE_ID(65), 0, false);
-			copy_sprite(TILE_ADDR(0x57), DST_TILE_ID(66), 0, false);
-			copy_sprite(TILE_ADDR(0x58), DST_TILE_ID(67), 0, false);
+			copy_sprite(TILE_ADDR(0x55), DST_TILE_ID(60), 0, false);
+			copy_sprite(TILE_ADDR(0x56), DST_TILE_ID(61), 0, false);
+			copy_sprite(TILE_ADDR(0x57), DST_TILE_ID(62), 0, false);
+			copy_sprite(TILE_ADDR(0x58), DST_TILE_ID(63), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x55, 0x56, 0x57, 0x58);
 			break;
 		case 2: // Full Plate
-			copy_sprite(TILE_ADDR(0x59), DST_TILE_ID(64), 0, false);
-			copy_sprite(TILE_ADDR(0x5A), DST_TILE_ID(65), 0, false);
-			copy_sprite(TILE_ADDR(0x5B), DST_TILE_ID(66), 0, false);
-			copy_sprite(TILE_ADDR(0x5C), DST_TILE_ID(67), 0, false);
+			copy_sprite(TILE_ADDR(0x59), DST_TILE_ID(60), 0, false);
+			copy_sprite(TILE_ADDR(0x5A), DST_TILE_ID(61), 0, false);
+			copy_sprite(TILE_ADDR(0x5B), DST_TILE_ID(62), 0, false);
+			copy_sprite(TILE_ADDR(0x5C), DST_TILE_ID(63), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x59, 0x5A, 0x5B, 0x5C);
 			break;
 		case 3: // Battle Suit
-			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(64), 0, false);
-			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(65), 1, false);
-			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(66), 0, false);
-			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(67), 1, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(60), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 0), DST_TILE_ID(61), 1, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(62), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFA6, 1), DST_TILE_ID(63), 1, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_ARMOR, 0x5D, 0x5E, 0x5F, 0x60);
 			break;
 	}
@@ -289,31 +289,31 @@ void AP::update_progressive_shield_sprites()
 	switch (get_progressive_shield_level())
 	{
 		case 0: // Small Shield
-			copy_sprite(TILE_ADDR(0x61), DST_TILE_ID(68), 0, true);
-			copy_sprite(TILE_ADDR(0x62), DST_TILE_ID(69), 0, true);
-			copy_sprite(TILE_ADDR(0x63), DST_TILE_ID(70), 0, true);
-			copy_sprite(TILE_ADDR(0x64), DST_TILE_ID(72), 0, true);
+			copy_sprite(TILE_ADDR(0x61), DST_TILE_ID(64), 0, true);
+			copy_sprite(TILE_ADDR(0x62), DST_TILE_ID(65), 0, true);
+			copy_sprite(TILE_ADDR(0x63), DST_TILE_ID(66), 0, true);
+			copy_sprite(TILE_ADDR(0x64), DST_TILE_ID(67), 0, true);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x61, 0x62, 0x63, 0x64);
 			break;
 		case 1: // Large Shield
-			copy_sprite(TILE_ADDR(0x65), DST_TILE_ID(68), 0, true);
-			copy_sprite(TILE_ADDR(0x66), DST_TILE_ID(69), 0, true);
-			copy_sprite(TILE_ADDR(0x67), DST_TILE_ID(70), 0, true);
-			copy_sprite(TILE_ADDR(0x68), DST_TILE_ID(72), 0, true);
+			copy_sprite(TILE_ADDR(0x65), DST_TILE_ID(64), 0, true);
+			copy_sprite(TILE_ADDR(0x66), DST_TILE_ID(65), 0, true);
+			copy_sprite(TILE_ADDR(0x67), DST_TILE_ID(66), 0, true);
+			copy_sprite(TILE_ADDR(0x68), DST_TILE_ID(67), 0, true);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x65, 0x66, 0x67, 0x68);
 			break;
 		case 2: // Magic Shield
-			copy_sprite(TILE_ADDR(0x69), DST_TILE_ID(68), 0, true);
-			copy_sprite(TILE_ADDR(0x6A), DST_TILE_ID(69), 0, true);
-			copy_sprite(TILE_ADDR(0x6B), DST_TILE_ID(70), 0, true);
-			copy_sprite(TILE_ADDR(0x6C), DST_TILE_ID(72), 0, true);
+			copy_sprite(TILE_ADDR(0x69), DST_TILE_ID(64), 0, true);
+			copy_sprite(TILE_ADDR(0x6A), DST_TILE_ID(65), 0, true);
+			copy_sprite(TILE_ADDR(0x6B), DST_TILE_ID(66), 0, true);
+			copy_sprite(TILE_ADDR(0x6C), DST_TILE_ID(67), 0, true);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
 			break;
 		case 3: // Battle Helmet
-			copy_sprite(SRC_TILE(0x0001CFC6, 0), DST_TILE_ID(68), 0, false);
-			copy_sprite(SRC_TILE(0x0001CFC6, 1), DST_TILE_ID(69), 0, false);
-			copy_sprite(SRC_TILE(0x0001CFC6, 2), DST_TILE_ID(70), 0, false);
-			copy_sprite(SRC_TILE(0x0001CFC6, 3), DST_TILE_ID(72), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 0), DST_TILE_ID(64), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 1), DST_TILE_ID(65), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 2), DST_TILE_ID(66), 0, false);
+			copy_sprite(SRC_TILE(0x0001CFC6, 3), DST_TILE_ID(67), 0, false);
 			SET_ITEM_TILES(AP_ITEM_PROGRESSIVE_SHIELD, 0x69, 0x6A, 0x6B, 0x6C);
 			break;
 	}
@@ -1082,8 +1082,12 @@ void AP::patch_items()
 				OP_BNE(1),
 				OP_RTS(),
 
-				// Show dialog
+				// Don't show dialog or play sound if it's poison. It will have it's own dialog later
 				OP_AND_IMM(0x1F),
+				OP_CMP_IMM(AP_ENTITY_POISON & 0x7F),
+				OP_BEQ(14),
+
+				// Show dialog
 				OP_CLC(),
 				OP_ADC_IMM(0x98),
 				OP_JSR(0xF859),
@@ -1292,11 +1296,21 @@ void AP::patch_items()
 		});
 
 		auto add_poison = patcher->patch_new_code(12, {
-			OP_RTS(), // TODO
+			OP_LDX_ABS(0x0800), // Input context. 0 = gameplay
+			OP_BEQ(9),
+
+			// Queue it C++ side. Then it will trigger when no dialog are active
+			OP_LDX_IMM(0x83), // C++ Queue item
+			OP_STX_ABS(0x6000),
+			OP_STA_ABS(0x6000),
+			OP_RTS(),
+
+			OP_JSR(0xC83C), // Touched poison subroutine
+			OP_RTS(),
 		});
 
 		auto add_null = patcher->patch_new_code(12, {
-			OP_RTS(), // TODO
+			OP_RTS(), // NULL item do nothing
 		});
 
 		auto give_item = patcher->patch_new_code(12, {
@@ -1460,9 +1474,9 @@ void AP::patch_items()
 	// Patch all the places we're looking up the number of item in a sub inventory
 	{
 		auto inv_size_table_addr = patcher->patch_new_code(12, {
-			4, 4, 4, 4, 8, 127
+			4, 4, 4, 4, 127, 127
 		});
-
+		
 		patcher->patch(12, 0x8434, 1, { PATCH_ADDR(inv_size_table_addr) });
 		patcher->patch(12, 0x9B14, 1, { PATCH_ADDR(inv_size_table_addr) });
 
@@ -1518,12 +1532,12 @@ void AP::patch_items()
 			OP_INX(),
 			OP_CPX_IMM(4),
 			OP_BNE(0xF6),
-
+			
 			OP_PLA(),
 			OP_RTS(),
 		});
 
-		patcher->patch(12, 0x8431, 0, { OP_JSR(load_ax_addr) }); // Check if should show "no items"
+		patcher->patch(12, 0x8431, 0, { OP_JSR(load_ax_addr) }); // Check if should show "no items" (hum no? That's shop)
 		patcher->patch(12, 0x84D6, 0, { OP_JSR(load_yx_addr) });
 		patcher->patch(12, 0x8671, 0, { OP_JSR(load_yx_addr) });
 		patcher->patch(12, 0x8B17, 0, { OP_JSR(load_ax_addr) }); // How many items to draw
@@ -1738,7 +1752,7 @@ void AP::patch_items()
 	}
 
 	// Was this corrupting everything? I set the common item max at 127
-	// No more "can't carry anymore", all inventories should handle max (does this corrupt stuff?)
+	// No more "can't carry anymore", all inventories should handle max (does thifs corrupt stuff?)
 	//{
 	//	patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
 	//}
@@ -1773,6 +1787,55 @@ void AP::patch_items()
 		// Change the meta pointer offset to point to this new location
 		m_info.rom[0x0000C413 + 6] = LO(new_offset);
 		m_info.rom[0x0000C413 + 7] = HI(new_offset);
+	}
+
+	// Queue / Dequeue items
+	{
+		m_info.external_interface->register_callback(0x83, [this](uint8_t item, uint8_t b, uint8_t c, uint8_t d)
+		{
+			m_queued_items.push_back(item);
+			return 1;
+		}, 1);
+
+		m_info.external_interface->register_callback(0x84, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+		{
+			if (m_queued_items.empty()) return 0xFF;
+			uint8_t item_id = m_queued_items.front();
+			m_queued_items.erase(m_queued_items.begin());
+			return item_id;
+		}, 0);
+
+		auto addr = patcher->patch_new_code(15, {
+			OP_JSR(0xE016), // Check if should show inventory
+			OP_LDA_ABS(0x0800), // Input context flag
+			OP_BEQ(1),
+			OP_RTS(),
+
+			// Dequeue item
+			OP_LDA_IMM(0x84),
+			OP_STA_ABS(0x6000),
+			OP_LDA_ABS(0x6000),
+			OP_CMP_IMM(0xFF),
+			OP_BNE(1),
+			OP_RTS(),
+
+			// Give the item
+			OP_TAX(),
+			OP_LDA_ABS(0x0100), // Current bank
+			OP_PHA(),
+			OP_TXA(),
+			OP_PHA(),
+			OP_LDX_IMM(12), OP_JSR(0xCC1A), // Switch bank 12
+			OP_PLA(),
+			OP_JSR(0x9AF7), // Give item
+			OP_PLA(),
+			OP_TAX(),
+			OP_JSR(0xCC1A), // Switch bank back
+
+			OP_RTS(),
+		});
+
+		patcher->patch(15, 0xDB6E, 0, { OP_JSR(addr) });
 	}
 
 	// 15:C8CD Description: Stores an item in the next free slot in the item directory.
@@ -2313,12 +2376,18 @@ void AP::render()
 
 void AP::serialize(FILE* f, int version) const
 {
-	uint32_t count = (uint32_t)m_locations_checked.size();
-	fwrite(&count, 1, 4, f);
-
-	for (auto loc_id : m_locations_checked)
 	{
-		fwrite(&loc_id, 1, sizeof(int64_t), f);
+		uint32_t count = (uint32_t)m_locations_checked.size();
+		fwrite(&count, 1, 4, f);
+		for (auto loc_id : m_locations_checked)
+		{
+			fwrite(&loc_id, 1, sizeof(int64_t), f);
+		}
+	}
+	{
+		uint32_t count = (uint32_t)m_queued_items.size();
+		fwrite(&count, 1, 4, f);
+		fwrite(m_queued_items.data(), 1, m_queued_items.size(), f);
 	}
 }
 
@@ -2326,17 +2395,28 @@ void AP::serialize(FILE* f, int version) const
 void AP::deserialize(FILE* f, int version)
 {
 	m_locations_checked.clear();
-	if (version < 4) return;
+	m_queued_items.clear();
 
-	uint32_t count;
-	fread(&count, 1, 4, f);
-
-	for (uint32_t i = 0; i < count; ++i)
+	if (version >= 4)
 	{
-		int64_t loc_id;
-		fread(&loc_id, 1, sizeof(int64_t), f);
-		m_locations_checked.insert(loc_id);
+		uint32_t count;
+		fread(&count, 1, 4, f);
+
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			int64_t loc_id;
+			fread(&loc_id, 1, sizeof(int64_t), f);
+			m_locations_checked.insert(loc_id);
+		}
+
+		patch_remove_checks();
 	}
 
-	patch_remove_checks();
+	if (version >= 5)
+	{
+		uint32_t count;
+		fread(&count, 1, 4, f);
+		m_queued_items.resize(count);
+		fread(m_queued_items.data(), 1, count, f);
+	}
 }

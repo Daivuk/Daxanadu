@@ -57,11 +57,14 @@ public:
 private:
     void load_colors(uint8_t* colors);
     void bake(int dst_id, uint8_t* dst_image, uint8_t* palette, uint8_t tile0, uint8_t tile1, uint8_t tile2, uint8_t tile3, bool flip_green_red = false);
+    void bake_spring(int dst_id, uint8_t* dst_image, uint8_t* palette, uint8_t tile, bool flip_h);
     void set_item_tracked(uint8_t item_id);
 
     uint8_t* m_rom = nullptr;
     RAM* m_ram = nullptr;
     OTextureRef m_sprite_sheet;
+    OTextureRef m_spring_texture;
     bool m_states[(int)item_t::COUNT] = {false};
+    bool m_spring_states[3] = {false};
     TileDrawer* m_tile_drawer = nullptr;
 };
