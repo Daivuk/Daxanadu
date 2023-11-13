@@ -47,6 +47,21 @@ Daxanadu::~Daxanadu()
 
 void Daxanadu::init()
 {
+    // Reinitialize variables
+    m_emulator = nullptr;
+    m_patcher = nullptr;
+    m_menu_manager = nullptr;
+    m_tile_drawer = nullptr;
+    m_loading_continue_state = false;
+    m_gameplay_input_context = nullptr;
+    m_menu_input_context = nullptr;
+    m_new_game_input_context = nullptr;
+    m_room_watcher = nullptr;
+    m_active_sound = nullptr;
+    m_ap = nullptr;
+    m_king_gave_money = 0;
+
+    // Allocate emulator
     m_loading_continue_state = false;
     m_gameplay_input_context = new GameplayInputContext();
     m_menu_input_context = new MenuInputContext(m_gameplay_input_context);
@@ -316,7 +331,6 @@ void Daxanadu::serialize(FILE* f, int version) const
 {
     fwrite(&m_king_gave_money, 1, 1, f);
     if (m_ap) m_ap->serialize(f, version);
-
 }
 
 
