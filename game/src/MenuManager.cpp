@@ -719,10 +719,10 @@ void MenuManager::on_ap_address(menu_option_t* option)
 void MenuManager::on_ap_slot(menu_option_t* option)
 {
     auto slot = oSettings->getUserSetting("ap_slot");
-    //auto prev_music_volume = m_info.apu->get_volume();
-    //m_info.apu->set_volume(0.0f);
+    auto prev_music_volume = m_info.apu->get_volume();
+    m_info.apu->set_volume(0.0f);
     auto new_slot = tinyfd_inputBox("Archipelago Address", "Enter the Archipelago slot name. This correspond to the player name.", slot.c_str());
-    //m_info.apu->set_volume(prev_music_volume);
+    m_info.apu->set_volume(prev_music_volume);
     if (!new_slot) return; // Canceled
     oSettings->setUserSetting("ap_slot", new_slot);
     load_ap_slot(&m_menus[(int)state_t::ap_connect_menu].options[3]);
