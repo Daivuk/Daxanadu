@@ -12,6 +12,7 @@
 
 OForwardDeclare(Sound)
 OForwardDeclare(SoundInstance)
+class APU;
 class GameplayInputContext;
 class MenuInputContext;
 class Patcher;
@@ -22,6 +23,7 @@ struct menu_manager_info_t
 {
     TileDrawer* tile_drawer = nullptr;
     Patcher* patcher = nullptr;
+    APU* apu = nullptr;
     GameplayInputContext* gameplay_input_context = nullptr;
     MenuInputContext* menu_input_context = nullptr;
     OSoundRef action_sfx;

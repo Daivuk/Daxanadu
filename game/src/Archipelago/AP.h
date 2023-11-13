@@ -98,4 +98,6 @@ private:
     std::set<int64_t> m_locations_checked;
     APTracker* m_tracker = nullptr;
     std::vector<uint8_t> m_queued_items;
+    int32_t m_item_received_count = 0;
+    int32_t m_item_received_current_count = 0;
 };

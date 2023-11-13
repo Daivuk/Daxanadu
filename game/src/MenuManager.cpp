@@ -1,4 +1,5 @@
 #include "MenuManager.h"
+#include "APU.h"
 #include "GameplayInputContext.h"
 #include "MenuInputContext.h"
 #include "Patcher.h"
@@ -705,7 +706,10 @@ void MenuManager::on_quit(menu_option_t* option)
 void MenuManager::on_ap_address(menu_option_t* option)
 {
     auto address = oSettings->getUserSetting("ap_address");
+    auto prev_music_volume = m_info.apu->get_volume();
+    m_info.apu->set_volume(0.0f);
     auto new_address = tinyfd_inputBox("Archipelago Address", "Enter the Archipelago address. Followed by a colon then the port. i.e.: archipelago.gg:38281", address.c_str());
+    m_info.apu->set_volume(prev_music_volume);
     if (!new_address) return; // Canceled
     oSettings->setUserSetting("ap_address", new_address);
     load_ap_address(&m_menus[(int)state_t::ap_connect_menu].options[1]);
@@ -715,7 +719,10 @@ void MenuManager::on_ap_address(menu_option_t* option)
 void MenuManager::on_ap_slot(menu_option_t* option)
 {
     auto slot = oSettings->getUserSetting("ap_slot");
+    //auto prev_music_volume = m_info.apu->get_volume();
+    //m_info.apu->set_volume(0.0f);
     auto new_slot = tinyfd_inputBox("Archipelago Address", "Enter the Archipelago slot name. This correspond to the player name.", slot.c_str());
+    //m_info.apu->set_volume(prev_music_volume);
     if (!new_slot) return; // Canceled
     oSettings->setUserSetting("ap_slot", new_slot);
     load_ap_slot(&m_menus[(int)state_t::ap_connect_menu].options[3]);
@@ -725,7 +732,10 @@ void MenuManager::on_ap_slot(menu_option_t* option)
 void MenuManager::on_ap_password(menu_option_t* option)
 {
     auto password = oSettings->getUserSetting("ap_password");
+    auto prev_music_volume = m_info.apu->get_volume();
+    m_info.apu->set_volume(0.0f);
     auto new_password = tinyfd_inputBox("Archipelago Address", "Enter the password.", nullptr);
+    m_info.apu->set_volume(prev_music_volume);
     if (!new_password) return; // Canceled
     oSettings->setUserSetting("ap_password", new_password);
     load_ap_password(&m_menus[(int)state_t::ap_connect_menu].options[5]);

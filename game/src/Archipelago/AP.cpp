@@ -10,7 +10,9 @@
 #include "Archipelago.h"
 
 #include <onut/Files.h>
+#include <onut/Images.h>
 #include <onut/Maths.h>
+#include <onut/onut.h>
 #include <onut/Settings.h>
 
 
@@ -77,6 +79,45 @@ static void f_locrecv(int64_t loc_id)
 static void f_locinfo(std::vector<AP_NetworkItem> loc_infos)
 {
 	if (g_ap) g_ap->on_location_info(loc_infos);
+}
+
+
+// Found in Patcher.cpp
+static void load_tiles_from_png(const char* filename, uint8_t* out_data)
+{
+    Point size;
+    auto png_data = onut::loadPNG(filename, size);
+    if (size.x != 16 || size.y != 16)
+    {
+        onut::showMessageBox("ERROR", "(0x80000008) Corrupted or missing tile file: " + std::string(filename));
+        OQuit();
+    }
+
+#define LOAD_TILE(src_x, src_y) \
+    for (int y = 0; y < 8; ++y) \
+    { \
+        uint8_t plane0 = dst_data[y]; \
+        uint8_t plane1 = dst_data[y + 8]; \
+        for (int x = 0; x < 8; ++x) \
+        { \
+            uint32_t col32 = *reinterpret_cast<uint32_t*>(&png_data[(src_y + y) * 16 * 4 + (src_x + x) * 4]); \
+            int b0 = (col32 & 0x000000FF) ? 1 : 0; \
+            int b1 = (col32 & 0x0000FF00) ? 1 : 0; \
+            plane0 = (plane0 & ~(1 << (7 - x))) | (b0 << (7 - x)); \
+            plane1 = (plane1 & ~(1 << (7 - x))) | (b1 << (7 - x)); \
+        } \
+        dst_data[y] = plane0; \
+        dst_data[y + 8] = plane1; \
+    }
+
+	auto dst_data = out_data + 0;
+	LOAD_TILE(0, 0);
+	dst_data = out_data + 16;
+	LOAD_TILE(8, 0);
+	dst_data = out_data + 32;
+	LOAD_TILE(0, 8);
+	dst_data = out_data + 48;
+	LOAD_TILE(8, 8);
 }
 
 
@@ -341,6 +382,54 @@ void AP::patch_items()
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x00), TILE_ADDR(0x41), 1, false);
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x42), 0, false);
 	copy_sprite(SPRITE_ADDR(0x0001CE06, 0x01), TILE_ADDR(0x43), 1, false);
+	
+	uint8_t ap_tile_data[4 * 16];
+			
+	// Replace Book with AP
+	load_tiles_from_png("assets/images/ap_inv.png", ap_tile_data);
+	copy_sprite(ap_tile_data + 0 * 16, TILE_ADDR(0x1E), 0, false);
+	copy_sprite(ap_tile_data + 1 * 16, TILE_ADDR(0x1F), 0, false);
+	copy_sprite(ap_tile_data + 2 * 16, TILE_ADDR(0x20), 0, false);
+	copy_sprite(ap_tile_data + 3 * 16, TILE_ADDR(0x21), 0, false);
+			
+	// Replace empty tiles at the end of tileset with AP Progression (Hopefully not used)
+	load_tiles_from_png("assets/images/ap_inv.png", ap_tile_data);
+	copy_sprite(ap_tile_data + 0 * 16, TILE_ADDR(0x8B), 0, false);
+	copy_sprite(ap_tile_data + 1 * 16, TILE_ADDR(0x8C), 0, false);
+	copy_sprite(ap_tile_data + 2 * 16, TILE_ADDR(0x8D), 0, false);
+	copy_sprite(ap_tile_data + 3 * 16, TILE_ADDR(0x8E), 0, false);
+
+	std::vector<uint8_t> entity_to_item_table = {
+		0x80, 0x81, 0x82, 0x83, // Rings
+		0x87, 0x86, 0x85, 0x84, 0x88, // Keys
+		0x60, 0x61, 0x62, 0x63, 0x64, // Magics
+
+		// Progressives
+		AP_ITEM_PROGRESSIVE_SWORD,
+		AP_ITEM_PROGRESSIVE_ARMOR,
+		AP_ITEM_PROGRESSIVE_SHIELD,
+
+		// Tools
+		AP_ITEM_SPRING_ELIXIR,
+		0x89, // Mattock
+		0x8F, // Wing boots
+		0x94, // Black Onyx
+		0x8A, // Magical Rod
+		0x93, // Pendant
+
+		// Consumables
+		0x90, // Red Potion
+		0x92, // Elixir
+		AP_ITEM_POISON,
+		AP_ITEM_OINTMENT,
+		AP_ITEM_GLOVE,
+		0x8D, // Hour Glass
+
+		0xFF, 0xFF, // AP
+		0xFF, // NULL
+	};
+
+	auto entity_to_item_table_addr = patcher->patch_new_code(15, entity_to_item_table);
 
 	// World items
 #if 1
@@ -1022,18 +1111,22 @@ void AP::patch_items()
 			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
 			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+
+			uint8_t ap_tile_data[4 * 16];
 			
 			// AP
-			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 0, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+			load_tiles_from_png("assets/images/ap_world.png", ap_tile_data);
+			copy_sprite(ap_tile_data + 0 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 1 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 2 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 3 * 16, DST_TILE(), 0, false);
 			
 			// AP Progression
-			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 0, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 0), DST_TILE(), 1, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 0, false);
-			copy_sprite(SRC_TILE(0x0001CF46, 1), DST_TILE(), 1, false);
+			load_tiles_from_png("assets/images/ap_world.png", ap_tile_data);
+			copy_sprite(ap_tile_data + 0 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 1 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 2 * 16, DST_TILE(), 0, false);
+			copy_sprite(ap_tile_data + 3 * 16, DST_TILE(), 0, false);
 			
 			// Null
 			uint8_t NULL_TILE[16] = {0};
@@ -1047,36 +1140,6 @@ void AP::patch_items()
 
 		// Touching an item entity
 		{
-			auto entity_to_item_table_addr = patcher->patch_new_code(15, {
-				0x80, 0x81, 0x82, 0x83, // Rings
-				0x87, 0x86, 0x85, 0x84, 0x88, // Keys
-				0x60, 0x61, 0x62, 0x63, 0x64, // Magics
-
-				// Progressives
-				AP_ITEM_PROGRESSIVE_SWORD,
-				AP_ITEM_PROGRESSIVE_ARMOR,
-				AP_ITEM_PROGRESSIVE_SHIELD,
-
-				// Tools
-				AP_ITEM_SPRING_ELIXIR,
-				0x89, // Mattock
-				0x8F, // Wing boots
-				0x94, // Black Onyx
-				0x8A, // Magical Rod
-				0x93, // Pendant
-
-				// Consumables
-				0x90, // Red Potion
-				0x92, // Elixir
-				AP_ITEM_POISON,
-				AP_ITEM_OINTMENT,
-				AP_ITEM_GLOVE,
-				0x8D, // Hour Glass
-
-				0xFF, 0xFF, // AP
-				0xFF, // NULL
-			});
-
 			auto touched_new_item_addr = patcher->patch_new_code(15, {
 				OP_CMP_IMM(0x9F),
 				OP_BNE(1),
@@ -1173,6 +1236,8 @@ void AP::patch_items()
 		ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
 		ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
 		ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
+		ADD_ITEM("AP", AP_ITEM_AP, 0x1E, 0x1F, 0x20, 0x21);
+		ADD_ITEM("AP PROG", AP_ITEM_AP_PROGRESSION, 0x8B, 0x8C, 0x8D, 0x8E);
 		ADD_ITEM("SOLD OUT", AP_ITEM_NULL, 0x8F, 0x8F, 0x8F, 0x8F);
 
 		// Write new code in bank12 that allows to jump further to index the new text
@@ -1313,6 +1378,10 @@ void AP::patch_items()
 			OP_RTS(), // NULL item do nothing
 		});
 
+		auto add_ap = patcher->patch_new_code(12, {
+			OP_RTS(), // AP item do nothing, the check is already done separately
+		});
+
 		auto give_item = patcher->patch_new_code(12, {
 			// Check if it's poison. We hurt player, we don't add to inventory
 			OP_CMP_IMM(AP_ITEM_POISON),
@@ -1323,6 +1392,14 @@ void AP::patch_items()
 			OP_CMP_IMM(AP_ITEM_NULL),
 			OP_BNE(3),
 			OP_JMP_ABS(add_null),
+
+			// Touched ap item
+			OP_CMP_IMM(AP_ITEM_AP),
+			OP_BNE(3),
+			OP_JMP_ABS(add_ap),
+			OP_CMP_IMM(AP_ITEM_AP_PROGRESSION),
+			OP_BNE(3),
+			OP_JMP_ABS(add_ap),
 
 			// Check if our item is common
 			OP_CMP_IMM(0x90), // Red Potion
@@ -1819,6 +1896,24 @@ void AP::patch_items()
 			OP_BNE(1),
 			OP_RTS(),
 
+			// Show dialog if not poison
+			OP_CMP_IMM(AP_ITEM_POISON),
+			OP_BEQ(10 + 10),
+
+			// Show dialog. We need to find the matching entity for the item id.
+			OP_LDX_IMM(0xFF),
+			OP_INX(),
+			OP_CMP_ABSX(entity_to_item_table_addr),
+			OP_BNE(0xFA),
+			OP_PHA(),
+			OP_TXA(),
+
+			OP_CLC(),
+			OP_ADC_IMM(0x98),
+			OP_JSR(0xF859),
+			0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
+			OP_PLA(),
+
 			// Give the item
 			OP_TAX(),
 			OP_LDA_ABS(0x0100), // Current bank
@@ -2125,6 +2220,39 @@ void AP::on_item_clear()
 
 void AP::on_item_received(int64_t item_id, bool notify_player)
 {
+	if (m_item_received_current_count < m_item_received_count)
+	{
+		// Don't do anything, we already got this item
+		++m_item_received_current_count;
+	}
+	else
+	{
+		++m_item_received_current_count;
+		++m_item_received_count;
+
+		// Give the item, but ignore it if it's my own check
+		bool is_my_check = false;
+		for (const auto& scout : m_location_scouts)
+		{
+			if (scout.item == item_id)
+			{
+				is_my_check = true;
+				break;
+			}
+		}
+
+		if (!is_my_check)
+		{
+			for (const auto& ap_item : AP_ITEMS)
+			{
+				if (ap_item.id == item_id)
+				{
+					m_queued_items.push_back(ap_item.item_id);
+					break;
+				}
+			}
+		}
+	}
 }
 
 
@@ -2307,27 +2435,26 @@ void AP::update(float dt)
 
 void AP::patch_locations()
 {
-	//return;
 	for (const auto& scout : m_location_scouts)
 	{
-		//if (scout.loc->id == 400192)
-		//{
-		//	__debugbreak();
-		//}
-
 		ap_item_t* ap_item = nullptr;
-		for (auto& item : AP_ITEMS)
+		if (scout.player == AP_GetPlayerID())
 		{
-			if (item.id == scout.item)
+			// Local item
+			for (auto& item : AP_ITEMS)
 			{
-				ap_item = &item;
-				break;
+				if (item.id == scout.item)
+				{
+					ap_item = &item;
+					break;
+				}
 			}
 		}
+
 		if (!ap_item)
 		{
 			// Show AP item
-			continue;
+			ap_item = &AP_AP_ITEMS[scout.flags & 1];
 		}
 
 		switch (scout.loc->type)
@@ -2389,6 +2516,7 @@ void AP::serialize(FILE* f, int version) const
 		fwrite(&count, 1, 4, f);
 		fwrite(m_queued_items.data(), 1, m_queued_items.size(), f);
 	}
+	fwrite(&m_item_received_count, 1, 4, f);
 }
 
 
@@ -2418,5 +2546,10 @@ void AP::deserialize(FILE* f, int version)
 		fread(&count, 1, 4, f);
 		m_queued_items.resize(count);
 		fread(m_queued_items.data(), 1, count, f);
+	}
+
+	if (version >= 7)
+	{
+		fread(&m_item_received_count, 1, 4, f);
 	}
 }

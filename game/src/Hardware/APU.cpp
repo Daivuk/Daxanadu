@@ -725,6 +725,19 @@ void APU::set_volume(float volume)
 }
 
 
+float APU::get_volume() const
+{
+    return m_audio_stream->get_volume();
+}
+
+
+float APUAudioStream::get_volume()
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+    return m_volume;
+}
+
+
 void APUAudioStream::set_volume(float volume)
 {
     std::unique_lock<std::mutex> lock(m_mutex);

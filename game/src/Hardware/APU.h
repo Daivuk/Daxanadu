@@ -23,6 +23,7 @@ public:
     void serialize(FILE* f, int version) const;
     void deserialize(FILE* f, int version);
 
+    float get_volume() const;
     void set_volume(float volume);
 
 private:
@@ -45,6 +46,7 @@ public:
     void serialize(FILE* f, int version);
     void deserialize(FILE* f, int version);
 
+    float get_volume();
     void set_volume(float volume);
 
 private:

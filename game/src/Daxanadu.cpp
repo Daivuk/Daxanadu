@@ -29,7 +29,7 @@
 #include <vector>
 
 
-static const int32_t STATE_VERSION = 6;
+static const int32_t STATE_VERSION = 7;
 static const int32_t MIN_STATE_VERSION = 1;
 
 
@@ -83,6 +83,7 @@ void Daxanadu::init()
     m_tile_drawer = new TileDrawer(m_emulator->get_cart()->get_prg_rom(), m_emulator->get_ppu());
 
     menu_manager_info_t menu_manager_info;
+    menu_manager_info.apu = m_emulator->get_apu();
     menu_manager_info.tile_drawer = m_tile_drawer;
     menu_manager_info.patcher = m_patcher;
     menu_manager_info.gameplay_input_context = m_gameplay_input_context;

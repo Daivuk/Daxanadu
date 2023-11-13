@@ -12,7 +12,9 @@
 #define AP_ITEM_OINTMENT 0x9A
 #define AP_ITEM_GLOVE 0x9B
 #define AP_ITEM_SPRING_ELIXIR 0x9C
-#define AP_ITEM_NULL 0x9D
+#define AP_ITEM_AP 0x9D
+#define AP_ITEM_AP_PROGRESSION 0x9E
+#define AP_ITEM_NULL 0x9F
 
 // Start the new entities at 0x80. This way we can just test for N flag.
 #define AP_ENTITY_RING_OF_ELF 0x80
@@ -103,4 +105,9 @@ static ap_item_t AP_ITEMS[] = {
     { 400030, "Ointment", AP_ITEM_OINTMENT, AP_ENTITY_OINTMENT /*0x4E*/, AP_ENTITY_OINTMENT + 32 /*0x4E*/, AP_ENTITY_OINTMENT + 64 /*0x4E*/ },
     { 400031, "Poison", AP_ITEM_POISON, AP_ENTITY_POISON /*0x4C*/, AP_ENTITY_POISON + 32 /*0x5E*/, AP_ENTITY_POISON + 64 /*0x4C*/ },
     { 400032, "Killed Evil One", 0x00, 0xFF, 0xFF, 0xFF },
+};
+
+static ap_item_t AP_AP_ITEMS[] = {
+    { 0, "AP", AP_ITEM_AP, AP_ENTITY_AP, AP_ENTITY_AP + 32, AP_ENTITY_AP + 64 },
+    { 1, "AP Progression", AP_ITEM_AP_PROGRESSION, AP_ENTITY_AP_PROGRESSION, AP_ENTITY_AP_PROGRESSION + 32, AP_ENTITY_AP_PROGRESSION + 64 },
 };
