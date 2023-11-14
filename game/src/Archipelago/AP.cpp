@@ -2420,7 +2420,7 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 		}
 
 		// Bake player name so it can be used in UI
-		for (int i = 0, len = (int)scout_loc.player_name.size(); i < len && i < (int)scout_loc.item_player_name.size(); ++i)
+		for (int i = 0, len = (int)scout_loc.player_name.size(); i < len && (int)scout_loc.item_player_name.size() < 13; ++i)
 		{
 			auto c = scout_loc.player_name[i];
 			auto C = std::toupper(c);
