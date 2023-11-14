@@ -17,6 +17,7 @@
 #include <onut/Maths.h>
 #include <onut/onut.h>
 #include <onut/Settings.h>
+#include <onut/Strings.h>
 
 
 #define BANK_ADDR_LO(bank, addr) (bank * 0x4000 + (addr - 0x8000))
@@ -1141,6 +1142,53 @@ void AP::patch_items()
 			patcher->advance_new_code(9, (16 + 13) * 4 * 16);
 		}
 
+		m_info.external_interface->register_callback(0x85, [patcher, this](uint8_t item, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+		{
+			// Get current world / screen that will help us find the location
+			auto world_id = m_info.ram->get(0x24);
+			auto screen_id = m_info.ram->get(0x63);
+
+			// Find location
+			const ap_location_t* location = nullptr;
+			for (const auto& loc : AP_LOCATIONS)
+			{
+				if (loc.world == world_id &&
+					loc.screen == screen_id)
+				{
+					if (loc.type == ap_location_type_t::hidden ||
+						loc.type == ap_location_type_t::world ||
+						loc.type == ap_location_type_t::boss_reward)
+					{
+						location = &loc;
+					}
+				}
+			}
+			if (!location)
+			{
+				printf("Location not found");
+				return 0;
+			}
+
+			// Find associated scout
+			const ap_location_scout_t* scout = nullptr;
+			for (const auto& s : m_location_scouts)
+			{
+				if (s.loc == location)
+				{
+					scout = &s;
+					break;
+				}
+			}
+			if (!scout)
+			{
+				printf("Scout not found");
+				return 0;
+			}
+
+			patcher->patch_ap_message(scout->dialog);
+			return 0;
+		}, 0);
+
 		// Touching an item entity
 		{
 			auto touched_new_item_addr = patcher->patch_new_code(15, {
@@ -1151,7 +1199,16 @@ void AP::patch_items()
 				// Don't show dialog or play sound if it's poison. It will have it's own dialog later
 				OP_AND_IMM(0x1F),
 				OP_CMP_IMM(AP_ENTITY_POISON & 0x7F),
-				OP_BEQ(14),
+				OP_BEQ(10 + 15 + 5),
+
+				// Change item id for dialog if AP
+				OP_CMP_IMM(AP_ENTITY_AP & 0x7F),
+				OP_BEQ(4),
+				OP_CMP_IMM(AP_ENTITY_AP_PROGRESSION & 0x7F),
+				OP_BNE(7),
+				OP_LDA_IMM(0x85),
+				OP_STA_ABS(0x6000),
+				OP_LDA_IMM(EXTRA_ITEMS_COUNT),
 
 				// Show dialog
 				OP_CLC(),
@@ -1250,7 +1307,7 @@ void AP::patch_items()
 			// Get current world / screen that will help us find the location
 			auto world_id = m_info.ram->get(0x24);
 			auto screen_id = m_info.ram->get(0x63);
-			auto shop_index = m_info.ram->get(0x1EF + 5); // Find the shop index in the stack... very hacky!
+			auto shop_index = m_info.ram->get(0x1F4); // Find the shop index in the stack... very hacky!
 
 			// Find location
 			const ap_location_t* location = nullptr;
@@ -1266,6 +1323,11 @@ void AP::patch_items()
 							location = &loc;
 							break;
 						}
+					}
+					else if (loc.type == ap_location_type_t::give)
+					{
+						location = &loc;
+						break;
 					}
 				}
 			}
@@ -1299,19 +1361,6 @@ void AP::patch_items()
 		m_info.cart->register_read_callback(read_callback, BANK_ADDR_LO(12, ap_text_addr));
 		m_info.cart->register_read_callback(read_callback, BANK_ADDR_LO(12, ap_prog_text_addr));
 
-		//DEVIL'S ADVOCADO
-		//Command Control (E1M4) - Yellow keycard
-
-		//DEVILS ADVOCADO
-		//Command Control E1M4 Yellow keycard
-
-		//DEVILS ADVOCA
-
-		//COMMAND CONTR
-		//DEVILS 
-
-		// Read hack on 
-
 		// Write new code in bank12 that allows to jump further to index the new text
 		auto addr = patcher->patch_new_code(12, {
 			OP_BCC(4),
@@ -1339,6 +1388,7 @@ void AP::patch_items()
 
 		for (int i = 0; i < EXTRA_ITEMS_COUNT; ++i)
 			patcher->patch_new_code(12, { 0x00, 0x01, (uint8_t)(0xC4 + i), 0x00 }); // 0x98
+		patcher->patch_new_code(12, { 0x00, 0x01, 0xE4, 0x00 }); // 0xB8, AP entity dialog
 
 		// We want to add dialogs for the new items. They are tightly packed into the
 		// bank 12. Modify the code to jump ahead further if message ID is too big
@@ -2322,6 +2372,27 @@ void AP::on_location_received(int64_t loc_id)
 }
 
 
+static std::string bake_dialog_text(const std::string& text)
+{
+	std::string ret;
+
+	for (int i = 0, len = (int)text.size(); i < len; ++i)
+	{
+		auto c = text[i];
+
+		if (c == ' ' || c == '.' || c == '?' || c == ',' || c == '\'' ||
+			(c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9'))
+		{
+			ret.push_back(c);
+		}
+	}
+
+	return ret;
+}
+
+
 void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 {
 	for (const auto& loc_info : loc_infos)
@@ -2349,22 +2420,44 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 		}
 
 		// Bake player name so it can be used in UI
-		for (int i = 0, len = (int)scout_loc.player_name.size(); i < len; ++i)
+		for (int i = 0, len = (int)scout_loc.player_name.size(); i < len && i < (int)scout_loc.item_player_name.size(); ++i)
 		{
 			auto c = scout_loc.player_name[i];
 			auto C = std::toupper(c);
-
 			if (C == ' ' || (C >= 'A' && C <= 'Z') || (C >= '0' && C <= '9'))
-			{
 				scout_loc.item_player_name.push_back(C);
-			}
+		}
 
-			if (c == ' ' || c == '.' || c == '?' || c == ',' ||
-				(c >= 'a' && c <= 'z') ||
-				(c >= 'A' && c <= 'Z') ||
-				(c >= '0' && c <= '9'))
+		// Bake dialog
+		scout_loc.dialog_player_name = bake_dialog_text(scout_loc.player_name);
+		scout_loc.dialog_item_name = bake_dialog_text(scout_loc.item_name);
+		auto dialog = "Sent " + scout_loc.dialog_item_name + " to " + scout_loc.dialog_player_name + ".";
+		auto words = onut::splitString(dialog, ' ');
+		std::vector<std::string> lines;
+		std::string current_line;
+		for (const auto& word : words)
+		{
+			if (current_line.size() + word.size() >= 16)
 			{
-				scout_loc.dialog_player_name.push_back(c);
+				lines.push_back(current_line);
+				current_line = word;
+			}
+			else
+			{
+				if (current_line.empty()) current_line = word;
+				else current_line += " " + word;
+			}
+		}
+		if (!current_line.empty()) lines.push_back(current_line);
+
+		for (int i = 0, len = (int)lines.size(); i < len; ++i)
+		{
+			const auto& line = lines[i];
+			scout_loc.dialog += line;
+			if (i < len - 1)
+			{
+				if (i % 4 == 3) scout_loc.dialog += "\xFC";
+				else scout_loc.dialog += "\xFE";
 			}
 		}
 

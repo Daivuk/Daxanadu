@@ -45,7 +45,9 @@ struct ap_location_scout_t
     std::string player_name;
     std::string item_name;
     std::string dialog_player_name;
+    std::string dialog_item_name;
     std::string item_player_name;
+    std::string dialog;
 };
 
 
