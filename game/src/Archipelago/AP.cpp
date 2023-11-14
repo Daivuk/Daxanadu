@@ -909,7 +909,7 @@ void AP::patch_items()
 				1, 1, 1, // Progressive items
 				2, 0, 2, 2, 0, 1, // Tools
 				1, 0, 0, 0, 0, 3, // Consumables
-				0, 0, // AP
+				3, 3, // AP
 				0, // NULL
 			};
 
@@ -1142,53 +1142,6 @@ void AP::patch_items()
 			patcher->advance_new_code(9, (16 + 13) * 4 * 16);
 		}
 
-		m_info.external_interface->register_callback(0x85, [patcher, this](uint8_t item, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
-		{
-			// Get current world / screen that will help us find the location
-			auto world_id = m_info.ram->get(0x24);
-			auto screen_id = m_info.ram->get(0x63);
-
-			// Find location
-			const ap_location_t* location = nullptr;
-			for (const auto& loc : AP_LOCATIONS)
-			{
-				if (loc.world == world_id &&
-					loc.screen == screen_id)
-				{
-					if (loc.type == ap_location_type_t::hidden ||
-						loc.type == ap_location_type_t::world ||
-						loc.type == ap_location_type_t::boss_reward)
-					{
-						location = &loc;
-					}
-				}
-			}
-			if (!location)
-			{
-				printf("Location not found");
-				return 0;
-			}
-
-			// Find associated scout
-			const ap_location_scout_t* scout = nullptr;
-			for (const auto& s : m_location_scouts)
-			{
-				if (s.loc == location)
-				{
-					scout = &s;
-					break;
-				}
-			}
-			if (!scout)
-			{
-				printf("Scout not found");
-				return 0;
-			}
-
-			patcher->patch_ap_message(scout->dialog);
-			return 0;
-		}, 0);
-
 		// Touching an item entity
 		{
 			auto touched_new_item_addr = patcher->patch_new_code(15, {
@@ -1199,7 +1152,7 @@ void AP::patch_items()
 				// Don't show dialog or play sound if it's poison. It will have it's own dialog later
 				OP_AND_IMM(0x1F),
 				OP_CMP_IMM(AP_ENTITY_POISON & 0x7F),
-				OP_BEQ(10 + 15 + 5),
+				OP_BEQ(38 + 9 + 5),
 
 				// Change item id for dialog if AP
 				OP_CMP_IMM(AP_ENTITY_AP & 0x7F),
@@ -1207,6 +1160,15 @@ void AP::patch_items()
 				OP_CMP_IMM(AP_ENTITY_AP_PROGRESSION & 0x7F),
 				OP_BNE(7),
 				OP_LDA_IMM(0x85),
+				OP_STA_ABS(0x6000),
+				OP_LDA_ZPG(0x24), // World id
+				OP_STA_ABS(0x6000),
+				OP_LDA_ZPG(0x63), // Screen id
+				OP_STA_ABS(0x6000),
+				OP_LDX_ABS(0x0378),
+				OP_LDA_ZPGX(0xBA), // X
+				OP_STA_ABS(0x6000),
+				OP_LDA_ZPGX(0xC2), // Y
 				OP_STA_ABS(0x6000),
 				OP_LDA_IMM(EXTRA_ITEMS_COUNT),
 
@@ -1248,6 +1210,20 @@ void AP::patch_items()
 			patcher->patch(15, 0xC768, 0, {
 				OP_JMP_ABS(touched_item_addr),
 			});
+
+			m_info.external_interface->register_callback(0x85, [patcher, this](uint8_t world, uint8_t screen, uint8_t x, uint8_t y) -> uint8_t
+			{
+				auto found_scout = get_scout_location((int)world, (int)screen, (int)x, (int)y);
+				if (!found_scout)
+				{
+					// Not found
+					printf("Cannot find location. World %i, Screen %i\n", (int)world, (int)screen);
+					return 0;
+				}
+
+				patcher->patch_ap_message(found_scout->dialog);
+				return 0;
+			}, 4);
 		}
 	}
 #endif
@@ -2075,8 +2051,11 @@ void AP::patch_cpp_hooks()
 			OP_STA_ABS(0x6000),
 			OP_LDA_ZPG(0x63), // Screen id
 			OP_STA_ABS(0x6000),
-			OP_PLA(), // Entity id
+			OP_LDA_ZPGX(0xBA), // X
 			OP_STA_ABS(0x6000),
+			OP_LDA_ZPGX(0xC2), // Y
+			OP_STA_ABS(0x6000),
+			OP_PLA(),
 			OP_CMP_IMM(0x50),
 			OP_BEQ(3),
 			OP_JMP_ABS(0xC768), // Go back
@@ -2085,51 +2064,26 @@ void AP::patch_cpp_hooks()
 
 		patcher->patch(14, 0xC764, 0, { OP_JMP_ABS(addr) });
 
-		external_interface->register_callback(0x80, [this](uint8_t world, uint8_t screen, uint8_t entity_id, uint8_t d)
+		external_interface->register_callback(0x80, [this](uint8_t world, uint8_t screen, uint8_t x, uint8_t y)
 		{
-			if (entity_id == 0x9F)
-			{
-				// This is our NULL entity, that means the location is not there anymore. Ignore it!
-				return 0;
-			}
-
-			if (entity_id & 0b10000000)
-			{
-				// This is one of our new entities
-				entity_id &= 0b10011111;
-			}
-
 			// Find the location
-			int64_t loc_id = 0;
-			for (const auto& scout : m_location_scouts)
-			{
-				if (scout.loc->world == (int)world &&
-					scout.loc->screen == (int)screen)
-				{
-					const auto ap_item = get_ap_item(scout.item);
-					if (!ap_item) continue;
-					if (ap_item->entity_id == entity_id)
-					{
-						loc_id = scout.loc->id;
-						break;
-					}
-				}
-			}
-
-			if (loc_id == 0)
+			auto found_scout = get_scout_location((int)world, (int)screen, (int)x, (int)y);
+			if (!found_scout)
 			{
 				// Not found
-				printf("Location not found. World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+				printf("Location not found. World %i, Screen %i\n", (int)world, (int)screen);
 				return 0;
 			}
+
+			int64_t loc_id = found_scout->loc->id;
 
 			if (m_locations_checked.count(loc_id))
 			{
-				printf("Location already checked. World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+				printf("Location already checked. World %i, Screen %i\n", (int)world, (int)screen);
 				return 0;
 			}
 
-			printf("Location checked! World %i, Screen %i, Item 0x%02X\n", (int)world, (int)screen, (int)entity_id);
+			printf("Location checked! World %i, Screen %i\n", (int)world, (int)screen);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
 			update_progressive_sword_sprites();
@@ -2139,7 +2093,7 @@ void AP::patch_cpp_hooks()
 			// Do location check!
 			AP_SendItem(loc_id);
 			return 1;
-		}, 3);
+		}, 4);
 	}
 
 	// Location check in store
@@ -2390,6 +2344,47 @@ static std::string bake_dialog_text(const std::string& text)
 	}
 
 	return ret;
+}
+
+
+const ap_location_scout_t* AP::get_scout_location(int world, int screen, int x, int y) const
+{
+	// Find the location
+	const ap_location_scout_t* found_scout = nullptr;
+
+	for (const auto& scout : m_location_scouts)
+	{
+		if (scout.loc->world == (int)world &&
+			scout.loc->screen == (int)screen)
+		{
+			// Special case for screens that have 2 items in them.
+			// Only 2 occurence in the entire game.
+			// We compare X and Y position to know which Entity it is.
+			if (world == 5 && screen == 30)
+			{
+				if (y < 7 && scout.loc->shop_index == 0)
+					found_scout = &scout;
+				else if (y > 7 && scout.loc->shop_index == 1)
+					found_scout = &scout;
+				break;
+			}
+			else if (world == 6 && screen == 19)
+			{
+				if (x < 9 && scout.loc->shop_index == 0)
+					found_scout = &scout;
+				else if (x > 9 && scout.loc->shop_index == 1)
+					found_scout = &scout;
+				break;
+			}
+			else
+			{
+				found_scout = &scout;
+				break;
+			}
+		}
+	}
+
+	return found_scout;
 }
 
 

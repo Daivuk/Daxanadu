@@ -182,9 +182,9 @@ static ap_location_t AP_LOCATIONS[] = {
 
     // Path to Daybreak
     { 400183, WORLD_BRANCHES, 28, "Path to Daybreak Hidden Wingboots 1", ap_location_type_t::hidden, 0x55, 0x0002C848 },
-    { 400184, WORLD_BRANCHES, 30, "Path to Daybreak Magical Rod", ap_location_type_t::world, 0x57, 0x0002C858 },
+    { 400184, WORLD_BRANCHES, 30, "Path to Daybreak Magical Rod", ap_location_type_t::world, 0x57, 0x0002C858, -1, 1 },
     { 400185, WORLD_BRANCHES, 34, "Path to Daybreak Hidden Wingboots 2", ap_location_type_t::hidden, 0x55, 0x0002C876 },
-    { 400186, WORLD_BRANCHES, 30, "Path to Daybreak Poison", ap_location_type_t::world, 0x4C, 0x0002C85A },
+    { 400186, WORLD_BRANCHES, 30, "Path to Daybreak Poison", ap_location_type_t::world, 0x4C, 0x0002C85A, -1, 0 },
     { 400187, WORLD_BRANCHES, 33, "Path to Daybreak Glove", ap_location_type_t::world, 0x48, 0x0002C86E },
     { 400188, WORLD_BRANCHES, 29, "Path to Daybreak Battle Suit", ap_location_type_t::boss_reward, 0x58, 0x0002C850 },
 
@@ -208,9 +208,9 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400199, WORLD_DARTMOOR, 26, "Fraternal Castle Hidden Ointment", ap_location_type_t::hidden, 0x60, 0x0002C996 },
     { 400200, WORLD_SHOPS, 67, "Fraternal Castle Shop Hidden Ointment", ap_location_type_t::hidden, 0x60, 0x0002CC7D },
     { 400201, WORLD_DARTMOOR, 29, "Fraternal Castle Poison 1", ap_location_type_t::world, 0x4C, 0x0002C9AC },
-    { 400202, WORLD_DARTMOOR, 19, "Fraternal Castle Poison 2", ap_location_type_t::world, 0x4C, 0x0002C96C },
+    { 400202, WORLD_DARTMOOR, 19, "Fraternal Castle Poison 2", ap_location_type_t::world, 0x4C, 0x0002C96C, -1, 0 },
     { 400203, WORLD_DARTMOOR, 20, "Fraternal Castle Poison 3", ap_location_type_t::world, 0x4C, 0x0002C974 },
-    { 400204, WORLD_DARTMOOR, 19, "Fraternal Castle Red Potion", ap_location_type_t::world, 0x4B, 0x0002C96E },
+    { 400204, WORLD_DARTMOOR, 19, "Fraternal Castle Red Potion", ap_location_type_t::world, 0x4B, 0x0002C96E, -1, 1 },
     { 400205, WORLD_DARTMOOR, 18, "Fraternal Castle Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C966 },
     { 400206, WORLD_DARTMOOR, 21, "Fraternal Castle Dragon Slayer", ap_location_type_t::boss_reward, 0x5A, 0x0002C978 },
     { 400207, WORLD_SHOPS, 66, "Fraternal Castle Guru", ap_location_type_t::give, 0x83, 0x0003234B, 0x00032345 },

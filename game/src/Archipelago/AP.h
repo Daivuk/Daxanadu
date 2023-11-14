@@ -100,6 +100,7 @@ private:
 
     static const ap_item_t* get_ap_item(int64_t id);
     static const ap_location_t* get_ap_location(int64_t id);
+    const ap_location_scout_t* get_scout_location(int world, int screen, int x, int y) const;
 
     ap_info_t m_info;
     state_t m_state = state_t::idle;
