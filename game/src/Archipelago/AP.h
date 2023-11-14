@@ -101,6 +101,7 @@ private:
     static const ap_item_t* get_ap_item(int64_t id);
     static const ap_location_t* get_ap_location(int64_t id);
     const ap_location_scout_t* get_scout_location(int world, int screen, int x, int y) const;
+    const ap_location_scout_t* get_scout_location(int64_t loc_id) const;
 
     ap_info_t m_info;
     state_t m_state = state_t::idle;
@@ -111,4 +112,5 @@ private:
     std::vector<uint8_t> m_queued_items;
     int32_t m_item_received_count = 0;
     int32_t m_item_received_current_count = 0;
+    std::vector<int64_t> m_remote_item_dialog_queue;
 };

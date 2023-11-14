@@ -1964,7 +1964,7 @@ void AP::patch_items()
 		m_info.rom[0x0000C413 + 7] = HI(new_offset);
 	}
 
-	// Queue / Dequeue items
+	// Queue / Dequeue items / location dialogs
 	{
 		m_info.external_interface->register_callback(0x83, [this](uint8_t item, uint8_t b, uint8_t c, uint8_t d)
 		{
@@ -1980,10 +1980,31 @@ void AP::patch_items()
 			return item_id;
 		}, 0);
 
+		m_info.external_interface->register_callback(0x86, [this, patcher](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
+		{
+			if (m_remote_item_dialog_queue.empty()) return 0;
+			const auto loc_id = m_remote_item_dialog_queue.front();
+			m_remote_item_dialog_queue.erase(m_remote_item_dialog_queue.begin());
+			const auto scout = get_scout_location(loc_id);
+			if (!scout) return 0;
+			patcher->patch_ap_message(scout->dialog);
+			return 1;
+		}, 0);
+
 		auto addr = patcher->patch_new_code(15, {
 			OP_JSR(0xE016), // Check if should show inventory
 			OP_LDA_ABS(0x0800), // Input context flag
 			OP_BEQ(1),
+			OP_RTS(),
+
+			// Dequeue location dialogs
+			OP_LDA_IMM(0x86),
+			OP_STA_ABS(0x6000),
+			OP_LDA_ABS(0x6000),
+			OP_BEQ(9),
+			OP_LDA_IMM(EXTRA_ITEMS_COUNT + 0x98),
+			OP_JSR(0xF859),
+			0x0C, 0x41, 0x82, // I have no idea why this is needed after a dialog
 			OP_RTS(),
 
 			// Dequeue item
@@ -2150,6 +2171,10 @@ void AP::patch_cpp_hooks()
 
 			// Do location check!
 			AP_SendItem(loc_id);
+			
+			// Queue the dialog message to pop when we close the store.
+			m_remote_item_dialog_queue.push_back(loc_id);
+
 			return 1;
 		}, 4);
 	}
@@ -2385,6 +2410,20 @@ const ap_location_scout_t* AP::get_scout_location(int world, int screen, int x, 
 	}
 
 	return found_scout;
+}
+
+
+const ap_location_scout_t* AP::get_scout_location(int64_t loc_id) const
+{
+	for (const auto& scout : m_location_scouts)
+	{
+		if (scout.loc->id == loc_id)
+		{
+			return &scout;
+		}
+	}
+
+	return nullptr;
 }
 
 
@@ -2683,12 +2722,20 @@ void AP::serialize(FILE* f, int version) const
 			fwrite(&loc_id, 1, sizeof(int64_t), f);
 		}
 	}
+
 	{
 		uint32_t count = (uint32_t)m_queued_items.size();
 		fwrite(&count, 1, 4, f);
 		fwrite(m_queued_items.data(), 1, m_queued_items.size(), f);
 	}
+
 	fwrite(&m_item_received_count, 1, 4, f);
+
+	{
+		uint32_t count = (uint32_t)m_remote_item_dialog_queue.size();
+		fwrite(&count, 1, 4, f);
+		fwrite(m_remote_item_dialog_queue.data(), sizeof(int64_t), m_remote_item_dialog_queue.size(), f);
+	}
 }
 
 
@@ -2723,5 +2770,13 @@ void AP::deserialize(FILE* f, int version)
 	if (version >= 7)
 	{
 		fread(&m_item_received_count, 1, 4, f);
+	}
+
+	if (version >= 8)
+	{
+		uint32_t count;
+		fread(&count, 1, 4, f);
+		m_remote_item_dialog_queue.resize(count);
+		fread(m_remote_item_dialog_queue.data(), sizeof(int64_t), count, f);
 	}
 }

@@ -29,7 +29,7 @@
 #include <vector>
 
 
-static const int32_t STATE_VERSION = 7;
+static const int32_t STATE_VERSION = 8;
 static const int32_t MIN_STATE_VERSION = 1;
 
 
