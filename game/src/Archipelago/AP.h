@@ -111,6 +111,13 @@ private:
     APTracker* m_tracker = nullptr;
     std::vector<uint8_t> m_queued_items;
     int32_t m_item_received_count = 0;
-    int32_t m_item_received_current_count = 0;
+    //int32_t m_item_received_current_count = 0;
     std::vector<int64_t> m_remote_item_dialog_queue;
+
+    struct recv_item_t
+    {
+        int64_t item_id = 0;
+        int player_id = 0;
+    };
+    std::vector<recv_item_t> m_recv_item_queue;
 };

@@ -1158,7 +1158,7 @@ void AP::patch_items()
 				OP_CMP_IMM(AP_ENTITY_AP & 0x7F),
 				OP_BEQ(4),
 				OP_CMP_IMM(AP_ENTITY_AP_PROGRESSION & 0x7F),
-				OP_BNE(7),
+				OP_BNE(30),
 				OP_LDA_IMM(0x85),
 				OP_STA_ABS(0x6000),
 				OP_LDA_ZPG(0x24), // World id
@@ -1974,6 +1974,30 @@ void AP::patch_items()
 
 		m_info.external_interface->register_callback(0x84, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
 		{
+			int poison_count = 0;
+			while ((int)m_recv_item_queue.size() > m_item_received_count)
+			{
+				const auto& recv_item = m_recv_item_queue[m_item_received_count++];
+
+				if (get_ap_item(recv_item.item_id)->name == "Poison")
+				{
+					++poison_count;
+					if (poison_count > 1) continue; // Ignore subsequent poison, we got them while offline
+				}
+
+				if (recv_item.player_id != AP_GetPlayerID())
+				{
+					for (const auto& ap_item : AP_ITEMS)
+					{
+						if (ap_item.id == recv_item.item_id)
+						{
+							m_queued_items.push_back(ap_item.item_id);
+							break;
+						}
+					}
+				}
+			}
+
 			if (m_queued_items.empty()) return 0xFF;
 			uint8_t item_id = m_queued_items.front();
 			m_queued_items.erase(m_queued_items.begin());
@@ -2127,7 +2151,7 @@ void AP::patch_cpp_hooks()
 			OP_LDA_ZPG(0x63), // Screen id
 			OP_STA_ABS(0x6000),
 			OP_STX_ABS(0x6000), // Shop index
-			OP_LDA_ABSX(0x0220), // Item Id (Do we care?)
+			OP_LDA_ABSX(0x0220), // Item Id
 			OP_STA_ABS(0x6000),
 			OP_RTS(),
 		});
@@ -2173,7 +2197,8 @@ void AP::patch_cpp_hooks()
 			AP_SendItem(loc_id);
 			
 			// Queue the dialog message to pop when we close the store.
-			m_remote_item_dialog_queue.push_back(loc_id);
+			if (item_id == AP_ITEM_AP || item_id == AP_ITEM_AP_PROGRESSION)
+				m_remote_item_dialog_queue.push_back(loc_id);
 
 			return 1;
 		}, 4);
@@ -2190,14 +2215,15 @@ void AP::patch_cpp_hooks()
 			OP_STA_ABS(0x6000),
 			OP_LDA_ZPG(0x63), // Screen id
 			OP_STA_ABS(0x6000),
+			OP_PLA(), // Item Id
+			OP_STA_ABS(0x6000),
 			
-			OP_PLA(),
 			OP_JMP_ABS(0x9AF7), // Give Item
 		});
 
 		patcher->patch(12, 0x83A4, 0, { OP_JSR(addr) });
 
-		external_interface->register_callback(0x82, [this](uint8_t world, uint8_t screen, uint8_t c, uint8_t d)
+		external_interface->register_callback(0x82, [this](uint8_t world, uint8_t screen, uint8_t item_id, uint8_t d)
 		{
 			// Find the location
 			int64_t loc_id = 0;
@@ -2233,8 +2259,13 @@ void AP::patch_cpp_hooks()
 
 			// Do location check!
 			AP_SendItem(loc_id);
+			
+			// Queue the dialog message to pop when we close the store.
+			if (item_id == AP_ITEM_AP || item_id == AP_ITEM_AP_PROGRESSION)
+				m_remote_item_dialog_queue.push_back(loc_id);
+
 			return 1;
-		}, 2);
+		}, 3);
 	}
 }
 
@@ -2321,28 +2352,30 @@ void AP::on_item_clear()
 
 void AP::on_item_received(int64_t item_id, int player_id, bool notify_player)
 {
-	if (m_item_received_current_count < m_item_received_count)
-	{
-		// Don't do anything, we already got this item
-		++m_item_received_current_count;
-	}
-	else
-	{
-		++m_item_received_current_count;
-		++m_item_received_count;
+	m_recv_item_queue.push_back({ item_id, player_id });
 
-		if (player_id != AP_GetPlayerID())
-		{
-			for (const auto& ap_item : AP_ITEMS)
-			{
-				if (ap_item.id == item_id)
-				{
-					m_queued_items.push_back(ap_item.item_id);
-					break;
-				}
-			}
-		}
-	}
+	//if (m_item_received_current_count < m_item_received_count)
+	//{
+	//	// Don't do anything, we already got this item
+	//	++m_item_received_current_count;
+	//}
+	//else
+	//{
+	//	++m_item_received_current_count;
+	//	++m_item_received_count;
+
+	//	if (player_id != AP_GetPlayerID())
+	//	{
+	//		for (const auto& ap_item : AP_ITEMS)
+	//		{
+	//			if (ap_item.id == item_id)
+	//			{
+	//				m_queued_items.push_back(ap_item.item_id);
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 
