@@ -35,6 +35,7 @@ static int get_user_setting(const std::string& setting_name, int default_value)
 MenuManager::MenuManager(const menu_manager_info_t& info)
     : m_info(info)
 {
+    m_last_inputs = m_info.menu_input_context->read_inputs(0);
     m_framebuffer = OTexture::createRenderTarget({ PPU::SCREEN_W, PPU::SCREEN_H });
     m_sfx_volume = (float)get_user_setting("sound_volume", 4) / 8.0f;
 

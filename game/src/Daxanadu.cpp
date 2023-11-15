@@ -458,6 +458,7 @@ void Daxanadu::update(float dt)
     {
         cleanup();
         init();
+        return;
     }
 
     if (m_ap)
