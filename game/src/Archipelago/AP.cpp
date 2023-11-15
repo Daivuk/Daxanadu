@@ -1978,8 +1978,8 @@ void AP::patch_items()
 			while ((int)m_recv_item_queue.size() > m_item_received_count)
 			{
 				const auto& recv_item = m_recv_item_queue[m_item_received_count++];
-
-				if (get_ap_item(recv_item.item_id)->name == "Poison")
+				auto ap_item = get_ap_item(recv_item.item_id);
+				if (ap_item && ap_item->name == "Poison")
 				{
 					++poison_count;
 					if (poison_count > 1) continue; // Ignore subsequent poison, we got them while offline
@@ -2267,6 +2267,35 @@ void AP::patch_cpp_hooks()
 			return 1;
 		}, 3);
 	}
+
+	// Location check final boss killed
+	{
+		// Just check if "EnemyDies" is called while in the last room.
+		// There is probably a specific event for this, but can't find it.
+		auto addr = patcher->patch_new_code(14, {
+			OP_PHA(),
+			OP_LDA_IMM(0x87), // C++ callback id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x24), // World id
+			OP_STA_ABS(0x6000),
+			OP_LDA_ZPG(0x63), // Screen id
+			OP_STA_ABS(0x6000),
+			OP_PLA(),
+
+			OP_JMP_ABS(0xA236), // Go to where we were meant to originally
+		});
+
+		patcher->patch(14, 0xAC21, 0, { OP_JSR(addr) });
+
+		external_interface->register_callback(0x87, [this](uint8_t world, uint8_t screen, uint8_t item_id, uint8_t d) -> uint8_t
+		{
+			if (world == 7 && screen == 0)
+			{
+				AP_StoryComplete();
+			}
+			return 0;
+		}, 2);
+	}
 }
 
 
@@ -2353,29 +2382,6 @@ void AP::on_item_clear()
 void AP::on_item_received(int64_t item_id, int player_id, bool notify_player)
 {
 	m_recv_item_queue.push_back({ item_id, player_id });
-
-	//if (m_item_received_current_count < m_item_received_count)
-	//{
-	//	// Don't do anything, we already got this item
-	//	++m_item_received_current_count;
-	//}
-	//else
-	//{
-	//	++m_item_received_current_count;
-	//	++m_item_received_count;
-
-	//	if (player_id != AP_GetPlayerID())
-	//	{
-	//		for (const auto& ap_item : AP_ITEMS)
-	//		{
-	//			if (ap_item.id == item_id)
-	//			{
-	//				m_queued_items.push_back(ap_item.item_id);
-	//				break;
-	//			}
-	//		}
-	//	}
-	//}
 }
 
 
