@@ -20,6 +20,7 @@ endif()
 # Define _DEBUG
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-D_DEBUG)
+    add_definitions(-DHAVE_UNISTD_H=0)
 endif()
 
 #justwindowsthings
@@ -49,8 +50,12 @@ option(ASSIMP_BUILD_TESTS "" OFF)
 list(APPEND libs PUBLIC libonut)
 list(APPEND includes PUBLIC ../thirdparty/onut/include/)
 
+# zlib - Use the one compiled with onut
+# set(ZLIB_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/thirdparty/onut/src/zlib)
+# set(ZLIB_LIBRARY ${BINARY_DIR}/lib/Debug/libonut.lib)
+
 # APCpp
-option(USE_ZLIB "" OFF)
+option(USE_ZLIB "" ON)
 option(ENABLE_PROGRAMS "" OFF)
 add_subdirectory(../thirdparty/APCpp APCpp)
 list(APPEND libs PUBLIC APCpp)

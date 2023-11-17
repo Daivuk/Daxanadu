@@ -118,6 +118,7 @@ MenuManager::MenuManager(const menu_manager_info_t& info)
         { "XP AFFECTS WINGBOOTS", { "YES", "NO" }, option_t::choice, BIND(load_xp_timeouts), BIND(on_xp_timeouts), 0 },
         { "XP AFFECTS SPEED", { "YES", "NO" }, option_t::choice, BIND(load_xp_speed), BIND(on_xp_speed), 0 },
         { "FAST CPU", { "NO", "YES" }, option_t::choice, BIND(load_fast_cpu), BIND(on_fast_cpu), 0 },
+        { "FIX PENDANT", { "NO", "YES" }, option_t::choice, BIND(load_pendant), BIND(on_pendant), 0 },
     };
     m_menus[(int)state_t::gameplay_menu].x = 1;
     m_menus[(int)state_t::gameplay_menu].y = 0;
