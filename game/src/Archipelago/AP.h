@@ -78,6 +78,7 @@ public:
     void on_item_received(int64_t item_id, int player_id, bool notify_player);
     void on_location_received(int64_t loc_id);
     void on_location_info(const std::vector<AP_NetworkItem>& loc_infos);
+    void check_ap_version(const std::string& version);
 
     void serialize(FILE* f, int version) const;
     void deserialize(FILE* f, int version);
@@ -116,6 +117,8 @@ private:
     int32_t m_item_received_count = 0;
     //int32_t m_item_received_current_count = 0;
     std::vector<int64_t> m_remote_item_dialog_queue;
+    std::string m_apworld_version; // Daxanadu version used by the apworld
+    bool m_connection_failed = false;
 
     struct recv_item_t
     {

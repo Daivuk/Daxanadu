@@ -37,6 +37,8 @@
 #define COMMON_ITEM_COUNT_ADDR 0x810
 #define WINGBOOTS_UNLOCK_ADDR 0x819
 
+#define MIN_SUPPORTED_VERSION "0.1.0"
+
 
 static const int HEADER_SIZE = 8;
 static const int FRAME_OFFSETS_TABLE_OFFSET = HEADER_SIZE;
@@ -87,6 +89,12 @@ static void f_locrecv(int64_t loc_id)
 static void f_locinfo(std::vector<AP_NetworkItem> loc_infos)
 {
 	if (g_ap) g_ap->on_location_info(loc_infos);
+}
+
+
+static void f_version(std::string version)
+{
+	if (g_ap) g_ap->check_ap_version(version);
 }
 
 
@@ -160,6 +168,7 @@ void AP::connect()
 	AP_SetDeathLinkSupported(true);
 	AP_SetItemClearCallback(f_itemclr);
 	AP_SetItemRecvCallback(f_itemrecv);
+	AP_RegisterSlotDataRawCallback("daxanadu_version", f_version);
 	AP_SetLocationCheckedCallback(f_locrecv);
 	AP_SetLocationInfoCallback(f_locinfo);
     AP_Start();
@@ -2530,6 +2539,14 @@ const ap_location_scout_t* AP::get_scout_location(int world, int screen, int x, 
 }
 
 
+void AP::check_ap_version(const std::string& version)
+{
+	m_apworld_version = version;
+	onut::replace(m_apworld_version, "\"", "");
+	onut::replace(m_apworld_version, "\\n", "");
+}
+
+
 const ap_location_scout_t* AP::get_scout_location(int64_t loc_id) const
 {
 	for (const auto& scout : m_location_scouts)
@@ -2668,6 +2685,16 @@ void AP::update(float dt)
 						onut::createFolder(m_save_dir_name);
 					}
 
+					// For now, naive. Make sure they always match.
+					// Later on, we'll check for min supported version
+					if (m_apworld_version != MIN_SUPPORTED_VERSION)
+					{
+						printf("ERROR: apworld version (%s) does not match minimum supported Daxanadu version (%s).\n", m_apworld_version.c_str(), MIN_SUPPORTED_VERSION);
+						m_state = state_t::idle;
+						m_connection_failed = true;
+						break;
+					}
+
 					load_state();
 
 					// Scout locations
@@ -2684,7 +2711,7 @@ void AP::update(float dt)
 				case AP_ConnectionStatus::ConnectionRefused:
 				{
 					m_state = state_t::idle;
-					if (connection_failed_delegate) connection_failed_delegate();
+					m_connection_failed = true;
 					break;
 				}
 			}
@@ -2710,7 +2737,7 @@ void AP::update(float dt)
 					if (m_state == state_t::connected)
 					{
 						m_state = state_t::idle;
-						if (connection_failed_delegate) connection_failed_delegate();
+						m_connection_failed = true;
 					}
 					break;
 				}
@@ -2755,6 +2782,13 @@ void AP::update(float dt)
 			}
 			break;
 		}
+	}
+
+	if (m_connection_failed)
+	{
+		m_connection_failed = false;
+		if (connection_failed_delegate) connection_failed_delegate();
+		return;
 	}
 
 	m_tracker->update(dt);
