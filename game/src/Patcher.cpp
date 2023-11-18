@@ -1000,7 +1000,7 @@ void Patcher::apply_reset_gold_xp_setting_patch()
             0xEA, // NOP
             0xEA, // NOP
         });
-        patch(12, 0x95D3, 0, {
+        patch(12, 0x95D5, 0, {
             0xEA, // NOP
             0xEA, // NOP
             0xEA, // NOP
