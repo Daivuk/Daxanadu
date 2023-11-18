@@ -2473,9 +2473,9 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 		ap_location_scout_t scout_loc;
 		scout_loc.flags = loc_info.flags;
 		scout_loc.item = loc_info.item;
-		scout_loc.item_name = loc_info.item_name;
+		scout_loc.item_name = loc_info.itemName;
 		scout_loc.player = loc_info.player;
-		scout_loc.player_name = loc_info.player_name;
+		scout_loc.player_name = loc_info.playerName;
 
 		for (auto& ap_location : AP_LOCATIONS)
 		{
@@ -2576,10 +2576,8 @@ void AP::update(float dt)
 						printf("    %s = %i:\n", permission.first.c_str(), permission.second);
 					printf("  Hint cost: %i\n", ap_room_info.hint_cost);
 					printf("  Location check points: %i\n", ap_room_info.location_check_points);
-					printf("  Data package version: %i\n", ap_room_info.datapackage_version);
-					printf("  Data package versions: %i\n", ap_room_info.datapackage_version);
-					for (const auto& datapackage_version : ap_room_info.datapackage_versions)
-						printf("    %s = %i:\n", datapackage_version.first.c_str(), datapackage_version.second);
+					for (const auto& kv : ap_room_info.datapackage_checksums)
+						printf("    %s = %s:\n", kv.first.c_str(), kv.second.c_str());
 					printf("  Seed name: %s\n", ap_room_info.seed_name.c_str());
 					printf("  Time: %f\n", ap_room_info.time);
 

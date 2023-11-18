@@ -14,6 +14,7 @@ imgui.ini
 # Saves
 game/save_states/*.sav
 AP_*/
+APCpp_datapkg.cache
 
 # Release staging folder
 release/
