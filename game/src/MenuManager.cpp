@@ -976,7 +976,7 @@ void MenuManager::on_cigarettes(menu_option_t* option)
 
 void MenuManager::load_cigarettes(menu_option_t* option)
 {
-    option->choice = get_user_setting("cigarettes", 0);
+    option->choice = std::min((int)option->choices.size() - 1, get_user_setting("cigarettes", 0));
 }
 
 

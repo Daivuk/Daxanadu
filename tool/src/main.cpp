@@ -20,6 +20,9 @@
 #include <set>
 
 
+#define SHOW_SMALL_TILES 1
+
+
 enum class state_t
 {
     idle,
@@ -1173,12 +1176,24 @@ void renderUI()
                 {
                     if (col != 0 && col < columns) ImGui::SameLine();
                     auto pos_before = ImGui::GetCursorScreenPos();
-                    ImGui::Image((ImTextureID)&tile_data.texture, {32, 32});
+                    ImGui::Image((ImTextureID)&tile_data.texture, {
+#if SHOW_SMALL_TILES
+                        8, 8
+#else
+                        32, 32
+#endif
+                    });
                     auto pos_after = ImGui::GetCursorScreenPos();
                     ImGui::SetCursorScreenPos(pos_before);
+#if !SHOW_SMALL_TILES
                     ImGui::Text("%02X", id++);
+#endif
                     ImGui::SetCursorScreenPos(pos_before);
+#if SHOW_SMALL_TILES
+                    ImGui::Dummy({8, 8});
+#else
                     ImGui::Dummy({32, 32});
+#endif
                     ++col;
                     if (col == columns) col = 0;
                 }
@@ -1201,7 +1216,13 @@ void renderUI()
                 for (const auto& tile_data : tileset.tiles_data)
                 {
                     if (col != 0 && col < columns) ImGui::SameLine();
-                    ImGui::Image((ImTextureID)&tile_data.texture, {32, 32});
+                    ImGui::Image((ImTextureID)&tile_data.texture, {
+#if SHOW_SMALL_TILES
+                        8, 8
+#else
+                        32, 32
+#endif
+                    });
                     ++col;
                     if (col == columns) col = 0;
                 }
@@ -1310,12 +1331,26 @@ void renderUI()
                 {
                     if (col != 0 && col < columns) ImGui::SameLine();
                     auto pos_before = ImGui::GetCursorScreenPos();
-                    ImGui::Image((ImTextureID)&tile_data.texture, {32, 32});
+                    ImGui::Image((ImTextureID)&tile_data.texture, {
+#if SHOW_SMALL_TILES
+                        8, 8
+#else
+                        32, 32
+#endif
+                    });
                     auto pos_after = ImGui::GetCursorScreenPos();
                     ImGui::SetCursorScreenPos(pos_before);
+#if !SHOW_SMALL_TILES
                     ImGui::Text("%02X", id++);
+#endif
                     ImGui::SetCursorScreenPos(pos_before);
-                    ImGui::Dummy({32, 32});
+                    ImGui::Dummy({
+#if SHOW_SMALL_TILES
+                        8, 8
+#else
+                        32, 32
+#endif
+                    });
                     ++col;
                     if (col == columns) col = 0;
                 }

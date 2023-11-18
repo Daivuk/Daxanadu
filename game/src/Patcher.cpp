@@ -541,7 +541,31 @@ void Patcher::apply_cigarettes_setting_patch()
 {
     const auto& setting = oSettings->getUserSetting("cigarettes");
 
-    if (setting == "1")
+    int cig_setting = 0;
+    try
+    {
+        cig_setting = std::stoi(setting);
+    }
+    catch (...)
+    {
+        cig_setting = 0;
+    }
+
+    // 0 = normal
+    // 1 = no cigs
+    // 2 = more cigs
+
+    // Reset original data
+    memcpy(&m_rom[0x0001C446 + 0x00 * 16], &m_cigarette_original_data[0 * 16], 16);
+    memcpy(&m_rom[0x0001C446 + 0x07 * 16], &m_cigarette_original_data[1 * 16], 16);
+    memcpy(&m_rom[0x0001C4C6 + 0x00 * 16], &m_cigarette_original_data[2 * 16], 16);
+    memcpy(&m_rom[0x0001C4C6 + 0x08 * 16], &m_cigarette_original_data[3 * 16], 16);
+    memcpy(&m_rom[0x0002136B + 0xD0 * 16], &m_cigarette_original_data[4 * 16], 16);
+    memcpy(&m_rom[0x0002136B + 0xD1 * 16], &m_cigarette_original_data[5 * 16], 16);
+    memcpy(&m_rom[0x0002136B + 0xD4 * 16], &m_cigarette_original_data[6 * 16], 16);
+    memcpy(&m_rom[0x0002136B + 0xD5 * 16], &m_cigarette_original_data[7 * 16], 16);
+
+    if (cig_setting == 1)
     {
         memcpy(&m_rom[0x0001C446 + 0x00 * 16], &m_cigarette_new_data[0 * 16], 16);
         memcpy(&m_rom[0x0001C446 + 0x07 * 16], &m_cigarette_new_data[1 * 16], 16);
@@ -552,16 +576,8 @@ void Patcher::apply_cigarettes_setting_patch()
         memcpy(&m_rom[0x0002136B + 0xD4 * 16], &m_cigarette_new_data[6 * 16], 16);
         memcpy(&m_rom[0x0002136B + 0xD5 * 16], &m_cigarette_new_data[7 * 16], 16);
     }
-    else
+    else if (cig_setting == 2)
     {
-        memcpy(&m_rom[0x0001C446 + 0x00 * 16], &m_cigarette_original_data[0 * 16], 16);
-        memcpy(&m_rom[0x0001C446 + 0x07 * 16], &m_cigarette_original_data[1 * 16], 16);
-        memcpy(&m_rom[0x0001C4C6 + 0x00 * 16], &m_cigarette_original_data[2 * 16], 16);
-        memcpy(&m_rom[0x0001C4C6 + 0x08 * 16], &m_cigarette_original_data[3 * 16], 16);
-        memcpy(&m_rom[0x0002136B + 0xD0 * 16], &m_cigarette_original_data[4 * 16], 16);
-        memcpy(&m_rom[0x0002136B + 0xD1 * 16], &m_cigarette_original_data[5 * 16], 16);
-        memcpy(&m_rom[0x0002136B + 0xD4 * 16], &m_cigarette_original_data[6 * 16], 16);
-        memcpy(&m_rom[0x0002136B + 0xD5 * 16], &m_cigarette_original_data[7 * 16], 16);
     }
 }
 
