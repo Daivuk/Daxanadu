@@ -48,7 +48,11 @@ struct ap_location_t
         int giver_cond_addr = -1;
         int store_item_list_addr;
     };
-    int shop_index = -1;
+    union
+    {
+        int shop_index = -1;
+        int in_screen_index;
+    };
 };
 
 
@@ -126,7 +130,7 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400145, WORLD_SHOPS, 32, "Misty Shop Hourglass", ap_location_type_t::shop, 0x8D, 0x0003246F, 0x000323E0, 1 },
     { 400146, WORLD_SHOPS, 32, "Misty Shop Elixir", ap_location_type_t::shop, 0x92, 0x00032472, 0x000323E0, 2 },
     { 400147, WORLD_SHOPS, 32, "Misty Shop Red Potion", ap_location_type_t::shop, 0x90, 0x00032475, 0x000323E0, 3 },
-    { 400148, WORLD_MIST, 31, "Misty Doctor Office", ap_location_type_t::hidden, 0x55, 0x0002CBB4 },
+    { 400148, WORLD_SHOPS, 31, "Misty Doctor Office", ap_location_type_t::hidden, 0x55, 0x0002CBB4 },
 
     // Tower of Suffer
     { 400149, WORLD_MIST, 50, "Tower of Suffer Hidden Wingboots", ap_location_type_t::hidden, 0x55, 0x0002C670 },

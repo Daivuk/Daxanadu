@@ -781,7 +781,8 @@ void MenuManager::on_ap_connect(menu_option_t* option)
 
 void MenuManager::on_ap_connect_failed()
 {
-    m_menu_stack.pop_back();
+    if (!m_menu_stack.empty())
+        m_menu_stack.pop_back();
     m_error_sfx->stop(); m_error_sfx->play();
     push_menu(state_t::ap_failed_menu);
 }

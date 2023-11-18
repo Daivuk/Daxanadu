@@ -2413,6 +2413,9 @@ static std::string bake_dialog_text(const std::string& text)
 
 const ap_location_scout_t* AP::get_scout_location(int world, int screen, int x, int y) const
 {
+	x /= 16;
+	y /= 16;
+
 	// Find the location
 	const ap_location_scout_t* found_scout = nullptr;
 
@@ -2426,19 +2429,29 @@ const ap_location_scout_t* AP::get_scout_location(int world, int screen, int x, 
 			// We compare X and Y position to know which Entity it is.
 			if (world == 5 && screen == 30)
 			{
-				if (y < 7 && scout.loc->shop_index == 0)
+				if (y < 7 && scout.loc->in_screen_index == 0)
+				{
 					found_scout = &scout;
-				else if (y > 7 && scout.loc->shop_index == 1)
+					break;
+				}
+				else if (y > 7 && scout.loc->in_screen_index == 1)
+				{
 					found_scout = &scout;
-				break;
+					break;
+				}
 			}
 			else if (world == 6 && screen == 19)
 			{
-				if (x < 9 && scout.loc->shop_index == 0)
+				if (x < 9 && scout.loc->in_screen_index == 0)
+				{
 					found_scout = &scout;
-				else if (x > 9 && scout.loc->shop_index == 1)
+					break;
+				}
+				else if (x > 9 && scout.loc->in_screen_index == 1)
+				{
 					found_scout = &scout;
-				break;
+					break;
+				}
 			}
 			else
 			{
@@ -2630,7 +2643,8 @@ void AP::update(float dt)
 				{
 					if (m_state == state_t::connected)
 					{
-						__debugbreak();
+						m_state = state_t::idle;
+						if (connection_failed_delegate) connection_failed_delegate();
 					}
 					break;
 				}

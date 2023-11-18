@@ -175,6 +175,8 @@ void Daxanadu::init()
         m_ap->connection_failed_delegate = [this]()
         {
             m_menu_manager->on_ap_connect_failed();
+            m_emulator->get_ram()->cpu_write(0x800, 1); // Input context flag
+            m_emulator->get_controller()->set_input_context(m_menu_input_context);
         };
         m_ap->connect();
     };
