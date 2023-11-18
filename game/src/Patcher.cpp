@@ -247,7 +247,7 @@ void Patcher::apply_new_strings()
 
         "I've got the""\xFE""Spring Elixir.", // D5
         "I've got the""\xFE""Mattock.", // D6
-        "I've got the""\xFE""Wing Boots.", // D7
+        "I've unlocked""\xFE""Wing Boots""\xFE""in shops.", // D7
         "I've got the""\xFE""Black Onyx.", // D8
         "I've got the""\xFE""Magical Rod.", // D9
         "I've got the""\xFE""Pendant.", // DA

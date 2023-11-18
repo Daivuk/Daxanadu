@@ -9,6 +9,7 @@
 #define PATCH_CALL_CPP(id) 0xA9, id, 0x8D, PATCH_ADDR(0x6000)
 
 
+#define OP_BIT_ABS(addr) 0x2C, PATCH_ADDR(addr)
 #define OP_PHA() 0x48
 #define OP_PLA() 0x68
 #define OP_LDA_ABS(addr) 0xAD, PATCH_ADDR(addr)

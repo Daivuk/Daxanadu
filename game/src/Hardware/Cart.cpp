@@ -226,7 +226,7 @@ bool Cart::cpu_read(uint16_t addr, uint8_t* out_data)
     uint32_t mapped_addr;
     if (m_mapper->map_cpu_read(addr, &mapped_addr))
     {
-        //if (mapped_addr == 15 * 0x4000 + 0xE7C5 - 0xC000)
+        //if (mapped_addr == 12 * 0x4000 + 0x84F3 - 0x8000)
         //{
         //    //auto ram = daxanadu->get_emulator()->get_ram();
 

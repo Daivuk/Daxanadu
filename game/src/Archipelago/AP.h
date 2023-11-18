@@ -90,9 +90,12 @@ private:
     void patch_cpp_hooks();
     void patch_remove_checks();
     void patch_remove_check(int64_t loc_id);
+
+    void patch_dynamics();
     void update_progressive_sword_sprites();
     void update_progressive_armor_sprites();
     void update_progressive_shield_sprites();
+    void patch_wingboots_shop_text();
 
     int get_progressive_sword_level();
     int get_progressive_armor_level();

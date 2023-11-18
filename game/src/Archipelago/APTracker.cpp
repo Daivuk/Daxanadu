@@ -251,7 +251,6 @@ void APTracker::set_item_tracked(uint8_t item_id)
         case 0x84: m_states[(int)item_t::key_ace] = true; break;
         case 0x88: m_states[(int)item_t::key_joker] = true; break;
         case 0x89: m_states[(int)item_t::mattock] = true; break;
-        case 0x8F: m_states[(int)item_t::wingboots] = true; break;
         case AP_ITEM_SPRING_ELIXIR: m_states[(int)item_t::spring_elixir] = true; break;
     }
 }
@@ -308,6 +307,9 @@ void APTracker::update(float dt)
     m_states[(int)item_t::ring_of_dworf] = ram[0x042C] & 0x20;
     m_states[(int)item_t::ring_of_ruby] = ram[0x042C] & 0x40;
     m_states[(int)item_t::ring_of_elf] = ram[0x042C] & 0x80;
+
+    // Wingboots shop unlock
+    m_states[(int)item_t::wingboots] = ram[0x819];
 }
 
 

@@ -20,7 +20,7 @@
 #include <set>
 
 
-#define SHOW_SMALL_TILES 1
+#define SHOW_SMALL_TILES 0
 
 
 enum class state_t

@@ -34,6 +34,10 @@
 #define DST_TILE_ID(id) ROM_OFFSET_LO(9, TILES_OFFSET + (id) * 16)
 
 
+#define COMMON_ITEM_COUNT_ADDR 0x810
+#define WINGBOOTS_UNLOCK_ADDR 0x819
+
+
 static const int HEADER_SIZE = 8;
 static const int FRAME_OFFSETS_TABLE_OFFSET = HEADER_SIZE;
 static const int FRAMES_OFFSET = FRAME_OFFSETS_TABLE_OFFSET + EXTRA_ITEMS_COUNT * 2;
@@ -416,7 +420,7 @@ void AP::patch_items()
 		// Tools
 		AP_ITEM_SPRING_ELIXIR,
 		0x89, // Mattock
-		0x8F, // Wing boots
+		AP_ITEM_AP_WINGBOOTS, // Wing boots
 		0x94, // Black Onyx
 		0x8A, // Magical Rod
 		0x93, // Pendant
@@ -1272,11 +1276,18 @@ void AP::patch_items()
 		ADD_ITEM("OINTMENT", AP_ITEM_OINTMENT, 0x40, 0x41, 0x42, 0x43);
 		ADD_ITEM("GLOVE", AP_ITEM_GLOVE, 0x16, 0x17, 0x18, 0x19);
 		ADD_ITEM("SPRING ELIXIR", AP_ITEM_SPRING_ELIXIR, 0x12, 0x13, 0x14, 0x15);
+		ADD_ITEM("UNLOCK BOOTS", AP_ITEM_AP_WINGBOOTS, 0x22, 0x23, 0x24, 0x25);
 		auto ap_text_addr = patcher->get_new_code_addr(12);
 		ADD_ITEM("AP", AP_ITEM_AP, 0x1E, 0x1F, 0x20, 0x21);
 		auto ap_prog_text_addr = patcher->get_new_code_addr(12);
 		ADD_ITEM("AP PROG", AP_ITEM_AP_PROGRESSION, 0x8B, 0x8C, 0x8D, 0x8E);
-		ADD_ITEM("SOLD OUT", AP_ITEM_NULL, 0x8F, 0x8F, 0x8F, 0x8F);
+
+		// Null item replaces fire crystal
+		memcpy(ROM_LO(12, text_addr + 5 * 16 + 1), "SOLD OUT       ", 15);
+		m_info.rom[0x0002B53C - 6 * 4 + (AP_ITEM_NULL - 0x90) * 4 + 0] = 0x8F;
+		m_info.rom[0x0002B53C - 6 * 4 + (AP_ITEM_NULL - 0x90) * 4 + 1] = 0x8F;
+		m_info.rom[0x0002B53C - 6 * 4 + (AP_ITEM_NULL - 0x90) * 4 + 2] = 0x8F;
+		m_info.rom[0x0002B53C - 6 * 4 + (AP_ITEM_NULL - 0x90) * 4 + 3] = 0x8F;
 
 		auto read_callback = [this](int addr)
 		{
@@ -1351,6 +1362,38 @@ void AP::patch_items()
 		patcher->patch(12, 0x8C50, 0, {
 			OP_JMP_ABS(addr),
 		});
+	}
+	
+
+	// Trying to buy boots shouldn't work until we have unlocked them
+	{
+		auto addr = patcher->patch_new_code(12, {
+			OP_LDA_ZPG(0x19),
+			OP_BMI(3), // Is A pressed?
+			OP_JMP_ABS(0x84F7), // Go back after the bmi check in the original code
+
+			// Check if null item
+			OP_LDX_ABS(0x021E),
+			OP_LDA_ABSX(0x0220), // Selected item
+			OP_CMP_IMM(AP_ITEM_NULL),
+			OP_BEQ(15),
+
+			// Check if wingboots
+			OP_CMP_IMM(0x8F),
+			OP_BEQ(3),
+			OP_JMP_ABS(0x84FD), // not wing boots, proceed with buy
+
+			// Check if we have unlocked wingboots
+			OP_LDA_ABS(0x819),
+			OP_BEQ(3),
+			OP_JMP_ABS(0x84FD), // We can buy
+
+			// Play denied sound, loop back
+			OP_LDA_IMM(0x0D),
+			OP_JSR(0xD0E4),
+			OP_JMP_ABS(0x84ED),
+		});
+		patcher->patch(12, 0x84F3, 0, { OP_JMP_ABS(addr) });
 	}
 
 	
@@ -1441,20 +1484,20 @@ void AP::patch_items()
 			OP_LDY_ABSX(0x03B5),
 			OP_BNE(0xFA),
 			OP_STA_ABSX(0x03B5),
-			OP_INC_ABSX(0x03B9),
+			OP_INC_ABSX(COMMON_ITEM_COUNT_ADDR),
 			OP_RTS(),
 		});
 
 		auto add_common = patcher->patch_new_code(12, {
 			OP_AND_IMM(0x1F),
-			OP_LDX_IMM(3),
+			OP_LDX_IMM(7), // We can hold 8 common inventory items
 			OP_CMP_ABSX(0x03B5),
 			OP_BEQ(6),
 			OP_DEX(),
 			OP_BPL(0xF8), // -8
 			OP_JMP_ABS(add_new_common),
 			OP_STA_ABSX(0x03B5),
-			OP_INC_ABSX(0x03B9),
+			OP_INC_ABSX(COMMON_ITEM_COUNT_ADDR),
 			OP_RTS(),
 		});
 
@@ -1480,6 +1523,13 @@ void AP::patch_items()
 			OP_RTS(), // AP item do nothing, the check is already done separately
 		});
 
+		auto add_wingboots_unlock = patcher->patch_new_code(12, {
+			// Write it into ram
+			OP_LDA_IMM(1),
+			OP_STA_ABS(WINGBOOTS_UNLOCK_ADDR),
+			OP_RTS(),
+		});
+
 		auto give_item = patcher->patch_new_code(12, {
 			// Check if it's poison. We hurt player, we don't add to inventory
 			OP_CMP_IMM(AP_ITEM_POISON),
@@ -1491,6 +1541,11 @@ void AP::patch_items()
 			OP_BNE(3),
 			OP_JMP_ABS(add_null),
 
+			// Check if it's the Wingboots unlock
+			OP_CMP_IMM(AP_ITEM_AP_WINGBOOTS),
+			OP_BNE(3),
+			OP_JMP_ABS(add_wingboots_unlock),
+
 			// Touched ap item
 			OP_CMP_IMM(AP_ITEM_AP),
 			OP_BNE(3),
@@ -1501,10 +1556,12 @@ void AP::patch_items()
 
 			// Check if our item is common
 			OP_CMP_IMM(0x90), // Red Potion
-			OP_BEQ(12),
+			OP_BEQ(16),
 			OP_CMP_IMM(AP_ITEM_OINTMENT),
-			OP_BEQ(8),
+			OP_BEQ(12),
 			OP_CMP_IMM(AP_ITEM_GLOVE),
+			OP_BEQ(8),
+			OP_CMP_IMM(0x8F), // Wingboots
 			OP_BEQ(4),
 			OP_CMP_IMM(0x8D), // Hour Glass
 			OP_BNE(3),
@@ -1540,8 +1597,6 @@ void AP::patch_items()
 		patcher->patch(12, 0xA1B3, 0, { AP_ITEM_SPRING_ELIXIR }); // Check if has
 		patcher->patch(12, 0xA1BC, 0, { AP_ITEM_SPRING_ELIXIR }); // Give
 
-#if 1	// I think it's better we keep it, for tracker purpose (Ok, tracker can check if we have this spring!)
-		// Remove item, but checks first if it's not selected, and remove it from selected
 		auto remove_item = patcher->patch_new_code(12, {
 			// Check if the item we remove is selected item
 			OP_PHA(),
@@ -1558,7 +1613,6 @@ void AP::patch_items()
 			OP_JMP_ABS(0xC4BF), // Removes equip item
 		});
 		patcher->patch(12, 0x865A, 1, { PATCH_ADDR(remove_item) });
-#endif
 	}
 
 	// Don't remove keys when used
@@ -1574,6 +1628,7 @@ void AP::patch_items()
 	});
 
 	// Wingboots
+#if 0 // We do now
 	{
 		// Don't remove wing boots when used,
 		// but remove them from selected item and put them back into inventory.
@@ -1583,6 +1638,7 @@ void AP::patch_items()
 
 		// Trigger a reuse timeout of 2mins
 	}
+#endif
 
 	// New inventory category
 	{
@@ -1594,17 +1650,13 @@ void AP::patch_items()
 		//   Key Joker
 		//   Spring Elixir
 		//   Mattock
-		//   Wingboots
 
 		// Goes into COMMON (Consumables)
 		//   Red Potion
-		//     count
 		//   Ointment
-		//     count
 		//   Glove
-		//     count
 		//   Hour Glass
-		//     count
+		//   Wingboots
 
 		// Add a row to the menu screen
 		patcher->patch(12, 0x8AAC, 1, { 0x10 });
@@ -1665,7 +1717,7 @@ void AP::patch_items()
 			OP_LDA_ABSY(0x03B5),
 			OP_BEQ(5),
 			OP_INY(),
-			OP_CPY_IMM(4),
+			OP_CPY_IMM(8),
 			OP_BNE(0xF6),
 
 			OP_TYA(),
@@ -1685,7 +1737,7 @@ void AP::patch_items()
 			OP_LDA_ABSY(0x03B5),
 			OP_BEQ(5),
 			OP_INY(),
-			OP_CPY_IMM(4),
+			OP_CPY_IMM(8),
 			OP_BNE(0xF6),
 
 			OP_PLA(),
@@ -1705,7 +1757,7 @@ void AP::patch_items()
 			OP_LDA_ABSX(0x03B5),
 			OP_BEQ(5),
 			OP_INX(),
-			OP_CPX_IMM(4),
+			OP_CPX_IMM(8),
 			OP_BNE(0xF6),
 			
 			OP_PLA(),
@@ -1771,31 +1823,31 @@ void AP::patch_items()
 			OP_CMP_ABSX(0x03B5),
 			OP_BEQ(5),
 			OP_INX(),
-			OP_CPX_IMM(4), // Shouldn't reach this
+			OP_CPX_IMM(8), // Shouldn't reach this
 			OP_BNE(0xF6), // -10
 
-			OP_DEC_ABSX(0x03B9),
+			OP_DEC_ABSX(COMMON_ITEM_COUNT_ADDR),
 			OP_BNE(9 + 27),
 			OP_LDA_IMM(0),
 			OP_STA_ABSX(0x03B5),
 
 			// Shift following items into place
-			OP_CPX_IMM(3),
+			OP_CPX_IMM(7),
 			OP_BEQ(27),
 
 			OP_LDA_ABSX(0x03B5 + 1),
 			OP_STA_ABSX(0x03B5),
-			OP_LDA_ABSX(0x03B9 + 1),
-			OP_STA_ABSX(0x03B9),
+			OP_LDA_ABSX(COMMON_ITEM_COUNT_ADDR + 1),
+			OP_STA_ABSX(COMMON_ITEM_COUNT_ADDR),
 			OP_INX(),
-			OP_CPX_IMM(3),
+			OP_CPX_IMM(7),
 			OP_BNE(0xEF), // -17
 
 			// Put 0 in last item
 			OP_LDA_IMM(0x00),
-			OP_STA_ABS(0x03B5 + 3),
+			OP_STA_ABS(0x03B5 + 7),
 			OP_LDA_IMM(0),
-			OP_STA_ABS(0x03B9 + 3),
+			OP_STA_ABS(COMMON_ITEM_COUNT_ADDR + 7),
 
 			OP_PLA(),
 			OP_RTS(), // Equip item
@@ -1846,7 +1898,7 @@ void AP::patch_items()
 			// Common inventory, draw the count
 			OP_JSR(0x8C36), // Draw item name
 			OP_LDX_ABS(0x020A), // List index
-			OP_LDY_ABSX(0x03B9), // Count
+			OP_LDY_ABSX(COMMON_ITEM_COUNT_ADDR), // Count
 			OP_CPY_IMM(1),
 			OP_BNE(1),
 			OP_RTS(), // Don't display count if 1
@@ -2131,9 +2183,7 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i\n", (int)world, (int)screen);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
-			update_progressive_sword_sprites();
-			update_progressive_armor_sprites();
-			update_progressive_shield_sprites();
+			patch_dynamics();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -2189,9 +2239,7 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i, Shop Index %i, Item 0x%02X\n", (int)world, (int)screen, (int)shop_index, (int)item_id);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
-			update_progressive_sword_sprites();
-			update_progressive_armor_sprites();
-			update_progressive_shield_sprites();
+			patch_dynamics();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -2253,9 +2301,7 @@ void AP::patch_cpp_hooks()
 			printf("Location checked! World %i, Screen %i\n", (int)world, (int)screen);
 			m_locations_checked.insert(loc_id);
 			patch_remove_check(loc_id);
-			update_progressive_sword_sprites();
-			update_progressive_armor_sprites();
-			update_progressive_shield_sprites();
+			patch_dynamics();
 
 			// Do location check!
 			AP_SendItem(loc_id);
@@ -2336,8 +2382,8 @@ void AP::patch_remove_check(int64_t loc_id)
 	{
 		case ap_location_type_t::shop:
 		{
-			// Don't remove if it's RED POTION. We let the player buy more.
-			if (m_info.rom[ap_loc->addr] != 0x90)
+			// Don't remove if it's RED POTION or WINGBOOTS. We let the player buy more.
+			if (m_info.rom[ap_loc->addr] != 0x90 && m_info.rom[ap_loc->addr] != 0x8F)
 			{
 				m_info.rom[ap_loc->addr] = AP_ITEM_NULL;
 				m_info.rom[ap_loc->addr + 1] = 0xFF; // Price
@@ -2361,16 +2407,35 @@ void AP::patch_remove_check(int64_t loc_id)
 }
 
 
+void AP::patch_wingboots_shop_text()
+{
+	if ((*m_info.ram)[WINGBOOTS_UNLOCK_ADDR])
+	{
+		memcpy(ROM_LO(12, 0x9D3E), "WING BOOTS     ", 15);
+	}
+	else
+	{
+		memcpy(ROM_LO(12, 0x9D3E), "LOCKED         ", 15);
+	}
+}
+
+
+void AP::patch_dynamics()
+{
+	update_progressive_sword_sprites();
+	update_progressive_armor_sprites();
+	update_progressive_shield_sprites();
+	patch_wingboots_shop_text();
+}
+
+
 void AP::patch_remove_checks()
 {
 	for (auto loc_id : m_locations_checked)
 	{
 		patch_remove_check(loc_id);
 	}
-
-	update_progressive_sword_sprites();
-	update_progressive_armor_sprites();
-	update_progressive_shield_sprites();
+	patch_dynamics();
 }
 
 
@@ -2631,6 +2696,7 @@ void AP::update(float dt)
 			{
 				m_state = state_t::connected;
 				patch_locations();
+				patch_dynamics();
 				if (connection_success_delegate) connection_success_delegate();
 			}
 			break;
