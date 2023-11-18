@@ -61,5 +61,4 @@ private:
 
     // Extra Daxanadu ram "registers"
     uint8_t m_king_gave_money = 0;
-    uint8_t m_saved_while_medidating = 0;
 };

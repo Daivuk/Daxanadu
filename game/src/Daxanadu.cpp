@@ -186,15 +186,19 @@ void Daxanadu::init()
     // Save game (Meditate)
     m_emulator->get_external_interface()->register_callback(0x01, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
-        if (m_loading_continue_state)
+        uint8_t save_flag = 0;
+        m_emulator->get_ram()->cpu_read(0x801, &save_flag);
+        if (save_flag)
         {
-            m_loading_continue_state = false;
+            m_emulator->get_ram()->cpu_write(0x801, 0); // How was this save state saved
+            m_patcher->apply_welcome_back(); // To show "welcome back"
             return 0;
         }
 
-        m_saved_while_medidating = 1;
+        m_emulator->get_ram()->cpu_write(0x801, 1); // So when we load back, we should "welcome back"
         save_state(0);
-        m_patcher->apply_progress_saved();
+        m_emulator->get_ram()->cpu_write(0x801, 0); // Revert back the save flag so we can proceed
+        m_patcher->apply_progress_saved(); // To show progress saved dialog
         return 0;
     }, 0);
 
@@ -358,7 +362,10 @@ void Daxanadu::update_volumes()
 void Daxanadu::serialize(FILE* f, int version) const
 {
     fwrite(&m_king_gave_money, 1, 1, f);
-    fwrite(&m_saved_while_medidating, 1, 1, f);
+
+    // Useless, legacy
+    uint8_t saved_while_medidating = 0;
+    fwrite(&saved_while_medidating, 1, 1, f);
 
     if (m_ap) m_ap->serialize(f, version);
 }
@@ -370,8 +377,9 @@ void Daxanadu::deserialize(FILE* f, int version)
     fread(&m_king_gave_money, 1, 1, f);
     if (version >= 6)
     {
-        fread(&m_saved_while_medidating, 1, 1, f);
-        m_loading_continue_state = m_saved_while_medidating ? true : false;
+        // Useless, legacy
+        uint8_t saved_while_medidating = 0;
+        fread(&saved_while_medidating, 1, 1, f);
     }
 
     if (m_ap) m_ap->deserialize(f, version);
@@ -441,10 +449,10 @@ void Daxanadu::load_state(int slot, const std::string& filename)
     deserialize(f, version);
     fclose(f);
 
-    if (m_loading_continue_state)
-    {
-        m_patcher->apply_welcome_back();
-    }
+    //if (m_loading_continue_state)
+    //{
+    //    m_patcher->apply_welcome_back();
+    //}
 
     OLog("State " + std::to_string(slot) + " loaded");
     m_menu_manager->hide();
