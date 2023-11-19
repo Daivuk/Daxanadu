@@ -49,7 +49,7 @@ Note that for now, only the XBOX controller through XInput is supported. Mouse a
 I have plans to support more controllers through SDL2 in the future.
 
 ## Archipelago
-For details about Archipelago, please visit: [archipelago.gg](archipelago.gg)
+For details about Archipelago, please visit: [archipelago.gg](https://archipelago.gg/)
 
 ### Recommented settings
 While playing Archipelago, it is recommended to enable `DOUBLE GOLD` from the game options. It will help reduce the grind.
