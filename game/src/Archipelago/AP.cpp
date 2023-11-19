@@ -3029,7 +3029,7 @@ void AP::patch_random_musics()
 	//evil fortress = 10
 
 	std::vector<uint8_t> musics = {
-		2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xD, 0xF, 0x10
+		2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xD, 0xE, 0xF, 0x10
 	};
 
 	for (int i = 0; i <= 0x10; ++i)
@@ -3052,7 +3052,6 @@ void AP::patch_random_musics()
 		auto byte = *out_byte;
 		auto bit = byte & 0x80;
 		if (bit) return false; // Already altered
-		if (byte == 0 || byte == 1 || byte == 0xC) return false;
 		byte = m_music_map[byte];
 		*out_byte = byte;
 		return true;
