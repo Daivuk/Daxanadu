@@ -115,6 +115,8 @@ private:
     int get_progressive_armor_level();
     int get_progressive_shield_level();
 
+    void replace_monster(int addr, uint8_t type);
+
     static const ap_item_t* get_ap_item(int64_t id);
     static const ap_location_t* get_ap_location(int64_t id);
     const ap_location_scout_t* get_scout_location(int world, int screen, int x, int y) const;

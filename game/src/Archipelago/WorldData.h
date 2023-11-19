@@ -7,6 +7,12 @@
 class WorldData final
 {
 public:
+    struct entity_type_t
+    {
+        int width = -1;
+        int height = -1;
+    };
+
     struct entity_t
     {
         int type = -1;
@@ -40,11 +46,13 @@ public:
 
     std::vector<level_t> levels;
     std::vector<dialog_t> dialogs;
+    std::vector<entity_type_t> entity_types;
 
 private:
     void load_levels(int bank);
     void load_entities();
     void load_dialogs();
+    void load_entity_types();
 
     uint8_t* m_rom = nullptr;
 };

@@ -33,6 +33,7 @@ WorldData::WorldData(uint8_t* rom)
     load_levels(2);
     load_entities();
     load_dialogs();
+    load_entity_types();
 }
 
 
@@ -174,5 +175,36 @@ void WorldData::load_dialogs()
         dialog.portrait_addr = pointer;
         dialog.portrait = (int)m_rom[pointer];
         dialogs.push_back(dialog);
+    }
+}
+
+
+void WorldData::load_entity_types()
+{
+    static const int ENTITY_TYPE_COUNT = 101;
+
+    entity_types.resize(ENTITY_TYPE_COUNT);
+
+    std::vector<uint8_t> sprite_sizes_h;
+    sprite_sizes_h.resize(7);
+    auto rom = m_rom + 0x3B4E1 - 0x10;
+    memcpy(sprite_sizes_h.data(), rom, sprite_sizes_h.size());
+
+    std::vector<uint8_t> sprite_sizes_v;
+    sprite_sizes_v.resize(7);
+    rom = m_rom + 0x3B4E8 - 0x10;
+    memcpy(sprite_sizes_v.data(), rom, sprite_sizes_v.size());
+
+    std::vector<uint8_t> sprites_sizes;
+    sprites_sizes.resize(ENTITY_TYPE_COUNT);
+    rom = m_rom + 0x3B4EF - 0x10;
+    memcpy(sprites_sizes.data(), rom, sprites_sizes.size());
+
+    for (int i = 0; i < ENTITY_TYPE_COUNT; ++i)
+    {
+        auto& entity_type = entity_types[i];
+
+        entity_type.width = (int)(sprite_sizes_h[sprites_sizes[i]] + 1) / 8;
+        entity_type.height = (int)(sprite_sizes_v[sprites_sizes[i]] + 1) / 8;
     }
 }

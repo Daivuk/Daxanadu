@@ -3155,8 +3155,372 @@ void AP::patch_random_npcs()
 }
 
 
+static const uint8_t MINI_BOSSES[] = {
+	0x11, 0x2D, 0x2E, 0x2F, 0x30,
+	0x31 // Rock falling guy
+};
+
+static const uint8_t MONSTERS[] = {
+	0x04,
+	0x05,
+	0x06,
+	0x07,
+	0x08,
+	0x0B,
+	0x0C,
+	0x0D,
+	0x0E,
+	0x0F,
+	0x10,
+	0x11,
+	0x15,
+	0x17,
+	0x18,
+	0x19,
+	0x1A,
+	0x1B,
+	0x1C,
+	0x1E,
+	0x1F,
+	0x20,
+	0x21,
+	0x22,
+	0x23,
+	0x26,
+	0x28,
+	0x2A,
+	0x2C,
+	0x2D,
+	0x2E,
+	0x2F,
+	0x30,
+	//0x31, // Rock falling guy
+	//0x32, // King Grieve
+	//0x33, // Evil One
+	0x47, // Spiky little guy
+};
+
+
+static bool is_mini_boss(uint8_t type)
+{
+	auto end = MINI_BOSSES + sizeof(MINI_BOSSES);
+	return std::find(MINI_BOSSES, end, type) != end;
+}
+
+
+static bool is_monster(uint8_t type)
+{
+	auto end = MONSTERS + sizeof(MONSTERS);
+	return std::find(MONSTERS, end, type) != end;
+}
+
+
+static uint8_t random_monster(bool mini_boss)
+{
+	if (mini_boss)
+	{
+		int rnd = rand() % (int)sizeof(MINI_BOSSES);
+		return MINI_BOSSES[rnd];
+	}
+	else
+	{
+		int rnd = rand() % (int)sizeof(MONSTERS);
+		return MONSTERS[rnd];
+	}
+}
+
+
+void AP::replace_monster(int addr, uint8_t type)
+{
+	uint8_t previous_type = m_info.rom[addr];
+	if (previous_type == type) return; // No need to update
+
+	const auto& previous_entity_type = m_world_data->entity_types[previous_type];
+	const auto& entity_type = m_world_data->entity_types[type];
+
+	m_info.rom[addr + 1] += ((previous_entity_type.height / 2) << 4);
+	m_info.rom[addr + 1] -= ((entity_type.height / 2) << 4);
+	m_info.rom[addr] = type;
+}
+
+
 void AP::patch_random_monsters()
 {
+	if (m_option_random_monsters == 0) return; // No Random
+
+	switch (m_option_random_monsters)
+	{
+		case 1: // Level shuffle
+		{
+			for (const auto& level : m_world_data->levels)
+			{
+				// Collect monsters
+				std::vector<uint8_t> monsters;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							monsters.push_back(entity.type);
+						}
+					}
+				}
+
+				// Randomly swap them
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							if (screen.id == 21 && level.id == 3)
+							{
+								int tmp;
+								tmp = 5;
+							}
+							int rnd = rand() % (int)monsters.size();
+							uint8_t type = monsters[rnd];
+							monsters.erase(monsters.begin() + rnd);
+							replace_monster(entity.type_addr, type);
+						}
+					}
+				}
+			}
+			break;
+		}
+		case 2: // Level random
+		{
+			for (const auto& level : m_world_data->levels)
+			{
+				// Collect monster frequencies
+				std::map<uint8_t, int> frequencies;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							frequencies[entity.type]++;
+						}
+					}
+				}
+				int total_ratio = 0;
+				for (const auto& kv : frequencies)
+					total_ratio += kv.second;
+
+				// Randomly swap them
+				bool has_monodron = false;
+				std::vector<const WorldData::entity_t*> level_monsters;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							level_monsters.push_back(&entity);
+							int rnd = rand() % total_ratio;
+							for (const auto& kv : frequencies)
+							{
+								if (rnd < kv.second)
+								{
+									replace_monster(entity.type_addr, kv.first);
+									if (kv.first == 0x2A)
+										has_monodron = true;
+									break;
+								}
+								rnd -= kv.second;
+							}
+						}
+					}
+				}
+
+				// If it's the first level (Eolis), we need
+				// to include at least an easily grindable monster: 0x2A.
+				if (level.id == 0 && !has_monodron)
+				{
+					int rnd = rand() % (int)level_monsters.size();
+					const auto entity = level_monsters[rnd];
+					replace_monster(entity->type_addr, 0x2A);
+				}
+			}
+			break;
+		}
+		case 3: // world shuffle
+		{
+			// Collect monsters
+			std::vector<uint8_t> monsters;
+			for (const auto& level : m_world_data->levels)
+			{
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							monsters.push_back(entity.type);
+						}
+					}
+				}
+			}
+
+			// Randomly swap them
+			for (const auto& level : m_world_data->levels)
+			{
+				bool has_monodron = false;
+				std::vector<const WorldData::entity_t*> level_monsters;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							level_monsters.push_back(&entity);
+							int rnd = rand() % (int)monsters.size();
+							uint8_t type = monsters[rnd];
+							monsters.erase(monsters.begin() + rnd);
+							replace_monster(entity.type_addr, type);
+							if (type == 0x2A)
+								has_monodron = true;
+						}
+					}
+				}
+
+				// If it's the first level (Eolis), we need
+				// to include at least an easily grindable monster: 0x2A.
+				if (level.id == 0 && !has_monodron)
+				{
+					int rnd = rand() % (int)level_monsters.size();
+					const auto entity = level_monsters[rnd];
+					replace_monster(entity->type_addr, 0x2A);
+				}
+			}
+			break;
+		}
+		case 4: // World random
+		{
+			// Collect monster frequencies
+			std::map<uint8_t, int> frequencies;
+			for (const auto& level : m_world_data->levels)
+			{
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							frequencies[entity.type]++;
+						}
+					}
+				}
+			}
+
+			int total_ratio = 0;
+			for (const auto& kv : frequencies)
+				total_ratio += kv.second;
+
+			// Randomly swap them
+			for (const auto& level : m_world_data->levels)
+			{
+				bool has_monodron = false;
+				std::vector<const WorldData::entity_t*> level_monsters;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							level_monsters.push_back(&entity);
+							int rnd = rand() % total_ratio;
+							for (const auto& kv : frequencies)
+							{
+								if (rnd < kv.second)
+								{
+									replace_monster(entity.type_addr, kv.first);
+									if (kv.first == 0x2A)
+										has_monodron = true;
+									break;
+								}
+								rnd -= kv.second;
+							}
+						}
+					}
+				}
+
+				// If it's the first level (Eolis), we need
+				// to include at least an easily grindable monster: 0x2A.
+				if (level.id == 0 && !has_monodron)
+				{
+					int rnd = rand() % (int)level_monsters.size();
+					const auto entity = level_monsters[rnd];
+					replace_monster(entity->type_addr, 0x2A);
+				}
+			}
+			break;
+		}
+		case 5: // Chaotic
+		{
+			// Collect small/big monsters frequencies
+			std::map<bool, int> frequencies;
+			for (const auto& level : m_world_data->levels)
+			{
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							frequencies[is_mini_boss(entity.type)]++;
+						}
+					}
+				}
+			}
+
+			int total_ratio = 0;
+			for (const auto& kv : frequencies)
+				total_ratio += kv.second;
+
+			// Randomly swap them
+			for (const auto& level : m_world_data->levels)
+			{
+				bool has_monodron = false;
+				std::vector<const WorldData::entity_t*> level_monsters;
+				for (const auto& screen : level.screens)
+				{
+					for (const auto& entity : screen.entities)
+					{
+						if (is_monster(entity.type))
+						{
+							level_monsters.push_back(&entity);
+							int rnd = rand() % total_ratio;
+							for (const auto& kv : frequencies)
+							{
+								if (rnd < kv.second)
+								{
+									uint8_t type = random_monster(kv.first);
+									replace_monster(entity.type_addr, type);
+									if (type)
+										has_monodron = true;
+									break;
+								}
+								rnd -= kv.second;
+							}
+						}
+					}
+				}
+
+				// If it's the first level (Eolis), we need
+				// to include at least an easily grindable monster: 0x2A.
+				if (level.id == 0 && !has_monodron)
+				{
+					int rnd = rand() % (int)level_monsters.size();
+					const auto entity = level_monsters[rnd];
+					replace_monster(entity->type_addr, 0x2A);
+				}
+			}
+			break;
+		}
+	}
 }
 
 
