@@ -9,6 +9,7 @@
 #include "Patcher.h"
 #include "RAM.h"
 #include "version.h"
+#include "WorldData.h"
 
 #include "Archipelago.h"
 
@@ -172,6 +173,7 @@ AP::AP(const ap_info_t& info)
 {
 	g_ap = this;
 	m_tracker = new APTracker(m_info.rom, m_info.ram, m_info.tile_drawer);
+	m_world_data = new WorldData(m_info.rom);
 }
 
 
@@ -182,6 +184,7 @@ AP::~AP()
 	AP_Shutdown();
 	delete m_tracker;
 	g_ap = nullptr;
+	delete m_world_data;
 }
 
 
@@ -3056,12 +3059,6 @@ void AP::patch_random_musics()
 		*out_byte = byte;
 		return true;
 	}, 0x00FA);
-
-	//m_info.ram->register_write_callback([](uint8_t byte, int addr) -> uint8_t
-	//{
-	//	printf("Music: 0x%02X\n", (int)byte);
-	//	return byte;
-	//}, 0x00FA);
 }
 
 
@@ -3097,6 +3094,64 @@ uint8_t AP::remap_sound(uint8_t sound_id) const
 
 void AP::patch_random_npcs()
 {
+	if (!m_option_random_npcs) return;
+
+	std::vector<int> npc_types = {
+		0x34, 0x38, 0x39, 0x3B, 0x3D, 0x40, 0x41, 0x42, 0x44, 0x45, 
+		//0x37, // Forgeron
+	};
+
+	std::vector<int> sitting_npcs = {
+		0x3E, 0x3F, 0x43,
+		0x3C, // Key guy
+		0x3A, // King
+	};
+
+	std::set<int> npc_dialogs;
+
+	for (const auto& level : m_world_data->levels)
+	{
+		for (const auto& screen : level.screens)
+		{
+			for (const auto& entity : screen.entities)
+			{
+				if (std::find(npc_types.begin(), npc_types.end(), entity.type) != npc_types.end())
+				{
+					// It's a standing NPC
+					int rnd = rand() % (int)npc_types.size();
+					m_info.rom[entity.type_addr] = (uint8_t)npc_types[rnd];
+				}
+				else if (std::find(sitting_npcs.begin(), sitting_npcs.end(), entity.type) != sitting_npcs.end())
+				{
+					// It's a sitting NPC
+					int rnd = rand() % (int)sitting_npcs.size();
+					m_info.rom[entity.type_addr] = (uint8_t)sitting_npcs[rnd];
+				}
+				if (entity.dialog_id != -1)
+				{
+					npc_dialogs.insert(entity.dialog_id);
+				}
+			}
+		}
+	}
+
+	// Collect portraits
+	std::set<uint8_t> portraits;
+	for (const auto& dialog : m_world_data->dialogs)
+	{
+		if (dialog.portrait != 0)
+			portraits.insert(dialog.portrait);
+	}
+
+	// Randomize portraits
+	for (int dialog_id : npc_dialogs)
+	{
+		const auto& dialog = m_world_data->dialogs[dialog_id];
+		int rnd = rand() % (int)portraits.size();
+		auto it = portraits.begin();
+		std::advance(it, rnd);
+		m_info.rom[dialog.portrait_addr] = *it;
+	}
 }
 
 

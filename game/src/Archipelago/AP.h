@@ -17,6 +17,7 @@ class ExternalInterface;
 class Patcher;
 class RAM;
 class TileDrawer;
+class WorldData;
 
 
 struct ap_info_t
@@ -138,6 +139,7 @@ private:
     int m_option_random_rewards = 0;
     std::vector<uint8_t> m_music_map;
     std::vector<uint8_t> m_sound_map;
+    WorldData* m_world_data = nullptr;
 
     struct recv_item_t
     {
