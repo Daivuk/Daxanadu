@@ -2,7 +2,7 @@
 
 
 #define DAX_MAJOR 0
-#define DAX_MINOR 1
+#define DAX_MINOR 2
 #define DAX_PATCH 0
 #define DAX_STR(x) DAX_STR2(x)
 #define DAX_STR2(x) #x
