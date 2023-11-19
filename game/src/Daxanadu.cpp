@@ -308,6 +308,7 @@ void Daxanadu::init()
     // Play sound
     m_emulator->get_external_interface()->register_callback(0x0A, [this](uint8_t a, uint8_t b, uint8_t c, uint8_t d) -> uint8_t
     {
+        if (m_ap) a = m_ap->remap_sound(a);
         a--;
         if (a < 28)
         {

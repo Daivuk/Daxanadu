@@ -3067,6 +3067,31 @@ void AP::patch_random_musics()
 
 void AP::patch_random_sounds()
 {
+	std::vector<uint8_t> sounds;
+	for (int i = 1; i <= 0x1C; ++i)
+	{
+		sounds.push_back(i);
+	}
+
+	for (int i = 1; i <= 0x1C; ++i)
+	{
+		if (!m_option_random_sounds)
+		{
+			m_sound_map.push_back((uint8_t)i);
+			continue;
+		}
+
+		int rnd = rand() % (int)sounds.size();
+		uint8_t sound_id = sounds[rnd];
+		sounds.erase(sounds.begin() + rnd);
+		m_sound_map.push_back(sound_id);
+	}
+}
+
+
+uint8_t AP::remap_sound(uint8_t sound_id) const
+{
+	return m_sound_map[sound_id - 1];
 }
 
 

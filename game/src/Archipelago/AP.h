@@ -88,6 +88,8 @@ public:
     void serialize(FILE* f, int version) const;
     void deserialize(FILE* f, int version);
 
+    uint8_t remap_sound(uint8_t sound_id) const;
+
 private:
     void load_state();
     void save_state();
@@ -135,6 +137,7 @@ private:
     int m_option_random_monsters = 0;
     int m_option_random_rewards = 0;
     std::vector<uint8_t> m_music_map;
+    std::vector<uint8_t> m_sound_map;
 
     struct recv_item_t
     {
