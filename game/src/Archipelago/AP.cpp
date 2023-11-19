@@ -98,6 +98,36 @@ static void f_version(std::string version)
 }
 
 
+static void f_option_random_musics(int value)
+{
+	if (g_ap) g_ap->option_random_musics(value);
+}
+
+
+static void f_option_random_sounds(int value)
+{
+	if (g_ap) g_ap->option_random_sounds(value);
+}
+
+
+static void f_option_random_npcs(int value)
+{
+	if (g_ap) g_ap->option_random_npcs(value);
+}
+
+
+static void f_option_random_monsters(int value)
+{
+	if (g_ap) g_ap->option_random_monsters(value);
+}
+
+
+static void f_option_random_rewards(int value)
+{
+	if (g_ap) g_ap->option_random_rewards(value);
+}
+
+
 // Found in Patcher.cpp
 static void load_tiles_from_png(const char* filename, uint8_t* out_data)
 {
@@ -169,6 +199,11 @@ void AP::connect()
 	AP_SetItemClearCallback(f_itemclr);
 	AP_SetItemRecvCallback(f_itemrecv);
 	AP_RegisterSlotDataRawCallback("daxanadu_version", f_version);
+	AP_RegisterSlotDataIntCallback("random_musics", f_option_random_musics);
+	AP_RegisterSlotDataIntCallback("random_sounds", f_option_random_sounds);
+	AP_RegisterSlotDataIntCallback("random_npcs", f_option_random_npcs);
+	AP_RegisterSlotDataIntCallback("random_monsters", f_option_random_monsters);
+	AP_RegisterSlotDataIntCallback("random_rewards", f_option_random_rewards);
 	AP_SetLocationCheckedCallback(f_locrecv);
 	AP_SetLocationInfoCallback(f_locinfo);
     AP_Start();
@@ -2724,6 +2759,7 @@ void AP::update(float dt)
 				m_state = state_t::connected;
 				patch_locations();
 				patch_dynamics();
+				patch_randoms();
 				if (connection_success_delegate) connection_success_delegate();
 			}
 			break;
@@ -2930,4 +2966,151 @@ void AP::deserialize(FILE* f, int version)
 		m_remote_item_dialog_queue.resize(count);
 		fread(m_remote_item_dialog_queue.data(), sizeof(int64_t), count, f);
 	}
+}
+
+
+static unsigned long long hash_seed(unsigned char *str)
+{
+    unsigned long long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+
+
+void AP::patch_randoms()
+{
+	// Seed our random using the seed + player name. Which happens to be our save dir name :)
+	unsigned int seed = (unsigned int)hash_seed((unsigned char*)m_save_dir_name.c_str());
+	
+	srand(seed);
+	patch_random_musics();
+	seed++;
+	
+	srand(seed);
+	patch_random_sounds();
+	seed++;
+	
+	srand(seed);
+	patch_random_npcs();
+	seed++;
+	
+	srand(seed);
+	patch_random_monsters();
+	seed++;
+	
+	srand(seed);
+	patch_random_rewards();
+	seed++;
+}
+
+
+void AP::patch_random_musics()
+{
+	//mute = 0
+	//intro = 1
+	//dartmoor = 2
+	//trunk = 3
+	//branches = 4
+	//mist = 5
+	//tower = 6
+	//eolis = 7
+	//death = 8
+	//towns = 9
+	//boss = A
+	//hour glass = B
+	//finale = C
+	//king = D
+	//guru = E
+	//shop = F
+	//evil fortress = 10
+
+	std::vector<uint8_t> musics = {
+		2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xD, 0xF, 0x10
+	};
+
+	for (int i = 0; i <= 0x10; ++i)
+	{
+		// Those 3 don't shuffle
+		if (i == 0 || i == 1 || i == 0xC || !m_option_random_musics)
+		{
+			m_music_map.push_back((uint8_t)i);
+			continue;
+		}
+
+		int rnd = rand() % (int)musics.size();
+		uint8_t music_id = musics[rnd];
+		musics.erase(musics.begin() + rnd);
+		m_music_map.push_back(music_id);
+	}
+
+	m_info.ram->register_read_callback([this](uint8_t* out_byte, int addr) -> bool
+	{
+		auto byte = *out_byte;
+		auto bit = byte & 0x80;
+		if (bit) return false; // Already altered
+		if (byte == 0 || byte == 1 || byte == 0xC) return false;
+		byte = m_music_map[byte];
+		*out_byte = byte;
+		return true;
+	}, 0x00FA);
+
+	//m_info.ram->register_write_callback([](uint8_t byte, int addr) -> uint8_t
+	//{
+	//	printf("Music: 0x%02X\n", (int)byte);
+	//	return byte;
+	//}, 0x00FA);
+}
+
+
+void AP::patch_random_sounds()
+{
+}
+
+
+void AP::patch_random_npcs()
+{
+}
+
+
+void AP::patch_random_monsters()
+{
+}
+
+
+void AP::patch_random_rewards()
+{
+}
+
+
+void AP::option_random_musics(int value)
+{
+	m_option_random_musics = value;
+}
+
+
+void AP::option_random_sounds(int value)
+{
+	m_option_random_sounds = value;
+}
+
+
+void AP::option_random_npcs(int value)
+{
+	m_option_random_npcs = value;
+}
+
+
+void AP::option_random_monsters(int value)
+{
+	m_option_random_monsters = value;
+}
+
+
+void AP::option_random_rewards(int value)
+{
+	m_option_random_rewards = value;
 }

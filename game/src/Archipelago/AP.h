@@ -79,6 +79,11 @@ public:
     void on_location_received(int64_t loc_id);
     void on_location_info(const std::vector<AP_NetworkItem>& loc_infos);
     void check_ap_version(const std::string& version);
+    void option_random_musics(int value);
+    void option_random_sounds(int value);
+    void option_random_npcs(int value);
+    void option_random_monsters(int value);
+    void option_random_rewards(int value);
 
     void serialize(FILE* f, int version) const;
     void deserialize(FILE* f, int version);
@@ -91,7 +96,12 @@ private:
     void patch_cpp_hooks();
     void patch_remove_checks();
     void patch_remove_check(int64_t loc_id);
-
+    void patch_randoms();
+    void patch_random_musics();
+    void patch_random_sounds();
+    void patch_random_npcs();
+    void patch_random_monsters();
+    void patch_random_rewards();
     void patch_dynamics();
     void update_progressive_sword_sprites();
     void update_progressive_armor_sprites();
@@ -119,6 +129,12 @@ private:
     std::vector<int64_t> m_remote_item_dialog_queue;
     std::string m_apworld_version; // Daxanadu version used by the apworld
     bool m_connection_failed = false;
+    int m_option_random_musics = 0;
+    int m_option_random_sounds = 0;
+    int m_option_random_npcs = 0;
+    int m_option_random_monsters = 0;
+    int m_option_random_rewards = 0;
+    std::vector<uint8_t> m_music_map;
 
     struct recv_item_t
     {

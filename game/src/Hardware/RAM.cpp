@@ -18,6 +18,18 @@ RAM::RAM()
 }
 
 
+void RAM::register_write_callback(const std::function<uint8_t(uint8_t,int)>& callback, int addr)
+{
+    m_write_callbacks.push_back({ addr, callback });
+}
+
+
+void RAM::register_read_callback(const std::function<bool(uint8_t*,int)>& callback, int addr)
+{
+    m_read_callbacks.push_back({ addr, callback });
+}
+
+
 void RAM::serialize(FILE* f, int version) const
 {
     fwrite(m_data, 1, 0x2000, f);
@@ -37,6 +49,10 @@ bool RAM::cpu_write(uint16_t addr, uint8_t data)
 {
     if (addr < 0x2000)
     {
+        for (const auto& write_callback : m_write_callbacks)
+            if (write_callback.first == (int)addr)
+                data = write_callback.second(data, (int)addr);
+
         //if (addr == 0x0220)
         //{
         //    __debugbreak();
@@ -67,6 +83,7 @@ bool RAM::cpu_read(uint16_t addr, uint8_t* out_data)
 {
     if (addr < 0x2000)
     {
+
         //if (addr == 0x0220)
         //{
         //    __debugbreak();
@@ -75,6 +92,12 @@ bool RAM::cpu_read(uint16_t addr, uint8_t* out_data)
         // We don't need to mirror, Faxanadu never writes out of range.
         // So we can expand our ram for other usage
         *out_data = m_data[addr/* % 0x800*/];
+
+        for (const auto& read_callback : m_read_callbacks)
+            if (read_callback.first == (int)addr)
+                if (read_callback.second(out_data, (int)addr))
+                    return true;
+
         return true;
     }
 
