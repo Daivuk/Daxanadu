@@ -122,7 +122,11 @@ public:
 
     void print_usage();
 
+    void set_enable_collision_warnings(bool enable);
+
 private:
+    void add_patch(int bank, int addr, int size);
+
     uint8_t* m_rom = nullptr;
     int m_next_banks_empty_space[16] = { 0 };
     int m_mist_scroll_addr = 0;
@@ -137,4 +141,14 @@ private:
     std::vector<uint8_t> m_xp_wingboots_values;
     std::vector<uint8_t> m_xp_speed_values;
     int m_ap_message_addr = 0;
+    bool m_collision_warnings_enabled = false;
+
+    struct patched_t
+    {
+        int bank = -1;
+        int addr = -1;
+        int size = -1;
+    };
+
+    std::vector<patched_t> m_patches;
 };

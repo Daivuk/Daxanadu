@@ -30,6 +30,8 @@ Emulator::Emulator()
     m_apu = new APU();
     m_controller = new Controller();
     m_cart = new Cart("Faxanadu (U).nes");
+    //m_cart = new Cart("Faxanadu (USA).nes");
+    //m_cart = new Cart("Faxanadu (USA) (Rev A).nes");
     m_external_interface = new ExternalInterface();
 
     m_cpu_bus->add_peripheral(m_ram);

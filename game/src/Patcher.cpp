@@ -133,6 +133,37 @@ static void load_tile_from_png(const char* filename, uint8_t* out_data)
 }
 
 
+void Patcher::set_enable_collision_warnings(bool enable)
+{
+    m_collision_warnings_enabled = enable;
+}
+
+
+void Patcher::add_patch(int bank, int addr, int size)
+{
+    for (const auto& patch : m_patches)
+    {
+        if (patch.bank != bank) continue;
+        if (m_collision_warnings_enabled)
+        {
+            if (addr < patch.addr + patch.size && addr + size >= patch.addr)
+            {
+                printf("[WARNING] Patch collision in bank %i. [0x%04X, %i] <-> [0x%04X, %i]\n",
+                       bank,
+                       patch.addr, patch.size,
+                       addr, size);
+            }
+        }
+        if (addr == patch.addr && size == patch.size)
+        {
+            return; // Already exist (That's because we repatch dynamically)
+        }
+    }
+
+    m_patches.push_back({bank, addr, size});
+}
+
+
 void Patcher::patch(int addr, const std::vector<uint8_t>& code)
 {
     memcpy(m_rom + addr, code.data(), code.size());
@@ -141,6 +172,7 @@ void Patcher::patch(int addr, const std::vector<uint8_t>& code)
 
 void Patcher::patch(int bank, int addr, int offset, const std::vector<uint8_t>& code)
 {
+    add_patch(bank, addr + offset, (int)code.size());
     if (bank < 15)
     {
         patch(bank * 0x4000 + addr - 0x8000 + offset, code);
@@ -190,6 +222,8 @@ void Patcher::advance_new_code(int bank, int size)
     }
 
     m_next_banks_empty_space[bank] += size;
+    
+    add_patch(bank, addr, size);
 }
 
 
@@ -328,7 +362,7 @@ void Patcher::apply_dialog_sound_patch()
 void Patcher::apply_meditate_patch()
 {
     // Write new dialog script
-    patch(12, 0xADA0, 0, {
+    auto addr = patch_new_code(12, {
         0x03, // Show dialog
         0x22, // "You need peace of mind, I'll meditate with you."
         0x14, // Meditate - This calls a C++ function to save state, see bellow
@@ -340,7 +374,7 @@ void Patcher::apply_meditate_patch()
     // Point the old guru dialog to this new one
     patch(12, 0xA5FC, 0, {
         0x17, // Jump SCRIPT
-        PATCH_ADDR(0xADA0),
+        PATCH_ADDR(addr),
     });
 
     // Erase existing meditate function with NOPes

@@ -191,8 +191,10 @@ AP::~AP()
 void AP::connect()
 {
 	m_state = state_t::connecting;
+	m_info.patcher->set_enable_collision_warnings(true);
 	patch_items();
 	patch_cpp_hooks();
+	m_info.patcher->set_enable_collision_warnings(false);
 	m_info.patcher->print_usage();
 
 	AP_NetworkVersion version = {0, 4, 3};
@@ -2030,10 +2032,6 @@ void AP::patch_items()
 	//{
 	//	patcher->patch(12, 0x8437, 0, { OP_NOP(), OP_NOP() });
 	//}
-
-	// King should give money even if not at zero, once.
-	oSettings->setUserSetting("king_golds", "1");
-	patcher->apply_king_golds_setting_patch();
 
 	// Add door to Eolis.
 	{

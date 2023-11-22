@@ -9,7 +9,8 @@
 
 
 static const size_t ROM_HEADER_SIZE = 0x10;
-static const uint32_t ROM_CHECKSUM = 0x00D7A9F9; // Faxanadu (U).nes
+static const uint32_t ROM_CHECKSUM = 0xE674649B;
+static const uint32_t ROM_CHECKSUM_REV1 = 0xFA221F28;
 static const uint8_t ROM_SIGNATURE[4] = { 'N', 'E', 'S', 0x1A };
 
 
@@ -48,13 +49,14 @@ struct ines_header_t
 Cart::Cart(const char* filename)
 {
     uint8_t* file_data = nullptr;
+    size_t trainer_size = 0;
 
     // Load the rom from the file. We do lot of validation to make sure it's the right file
     FILE* f = fopen(filename, "rb");
     if (!f)
     {
         onut::showMessageBox("ERROR", "Missing rom file: " + std::string(filename));
-        OQuit();
+        exit(0);
         return;
     }
 
@@ -63,9 +65,9 @@ Cart::Cart(const char* filename)
     size_t rom_size = ftell(f);
     if (rom_size <= ROM_HEADER_SIZE)
     {
-        onut::showMessageBox("ERROR", "(0x80000001) Corrupted rom file: " + std::string(filename));
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000001) ROM too small: " + std::string(filename));
+        exit(0);
         return;
     }
     file_data = new uint8_t[rom_size];
@@ -74,10 +76,10 @@ Cart::Cart(const char* filename)
     fseek(f, 0, SEEK_SET);
     if (fread(file_data, 1, rom_size, f) != rom_size)
     {
-        onut::showMessageBox("ERROR", "(0x80000002) Corrupted rom file: " + std::string(filename));
         delete[] file_data;
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000002) Failed to read ROM file: " + std::string(filename));
+        exit(0);
         return;
     }
     fclose(f);
@@ -87,64 +89,84 @@ Cart::Cart(const char* filename)
     auto header_size = sizeof(header); // Just to make sure the padding on this system is correct
     if (header_size != ROM_HEADER_SIZE)
     {
-        onut::showMessageBox("ERROR", "(0x80000003) Corrupted executable");
         delete[] file_data;
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000003) Header padding error");
+        exit(0);
         return;
     }
-    memcpy(&header, file_data, ROM_HEADER_SIZE);
+    memcpy(&header, file_data, header_size);
 
     // Validate signature
     if (memcmp(header.signature, ROM_SIGNATURE, 4))
     {
-        onut::showMessageBox("ERROR", "(0x80000004) Corrupted rom file: " + std::string(filename));
         delete[] file_data;
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000004) Invalid ROM signature: " + std::string(filename));
+        exit(0);
         return;
+    }
+
+    // Taken from FCEUX source. Looks like some ines formats are wrongly formated.
+    if(!memcmp((char*)&header + 0x7, "Dis", 3))
+        memset((char*)&header + 0x7, 0, 0x9);
+    else
+        memset((char*)&header + 0xA, 0, 0x6);
+
+    // Check ines version. For now, we only support ines1
+    //if (header.ines_format == 2)
+    //{
+    //    onut::showMessageBox("ERROR", "(0x80000008) Only iNes 1.0 is supported: " + std::string(filename));
+    //    delete[] file_data;
+    //    fclose(f);
+    //    OQuit();
+    //    return;
+    //}
+
+    if (header.trainer)
+    {
+        header_size += 512;
     }
 
     // Validate rom filesize
     size_t expected_rom_size = header.PRG_ROM_size * (16 * 1024) + header.CHR_ROM_size * (8 * 1024);
-    if (expected_rom_size != rom_size - ROM_HEADER_SIZE)
+    if (expected_rom_size != rom_size - header_size)
     {
-        onut::showMessageBox("ERROR", "(0x80000005) Corrupted rom file: " + std::string(filename));
         delete[] file_data;
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000005) Wrong ROM size: " + std::string(filename));
+        exit(0);
         return;
     }
 
     // Checksum the file to make sure we're loading the correct one
-#if 1 // Only for Faxanadu
     uint32_t checksum = 0;
     uint32_t word = 0;
-    for (size_t i = 0; i < rom_size; i += 4)
+    for (size_t i = header_size; i < rom_size; i += 4) // Skip header
     {
         memcpy(&word, file_data + i, 4);
         checksum += word;
     }
-    if (checksum != ROM_CHECKSUM)
+    if (checksum != ROM_CHECKSUM/* && // Rev0
+        checksum != ROM_CHECKSUM_REV1*/) // Rev1 (It doesnt work, bad dialog code?)
     {
-        onut::showMessageBox("ERROR", "(0x80000006) Corrupted rom file: " + std::string(filename));
         fclose(f);
-        OQuit();
+        onut::showMessageBox("ERROR", "(0x80000006) Wrong ROM checksum: " + std::string(filename));
+        exit(0);
         return;
     }
     fclose(f);
-#endif
 
     // Copy the part without the header into our rom
     m_prg_rom_size = header.PRG_ROM_size * (16 * 1024);
     m_prg_rom = new uint8_t[m_prg_rom_size];
-    memcpy(m_prg_rom, file_data + ROM_HEADER_SIZE, m_prg_rom_size);
+    memcpy(m_prg_rom, file_data + header_size, m_prg_rom_size);
 
     if (header.CHR_ROM_size)
     {
         m_chr_rom_size = header.CHR_ROM_size * (8 * 1024);
         m_chr_rom = new uint8_t[m_chr_rom_size];
-        memcpy(m_chr_rom, file_data + ROM_HEADER_SIZE + m_prg_rom_size, m_chr_rom_size);
+        memcpy(m_chr_rom, file_data + header_size + m_prg_rom_size, m_chr_rom_size);
     }
     else
     {
@@ -161,8 +183,7 @@ Cart::Cart(const char* filename)
         case 1: m_mapper = new Mapper001(header.PRG_ROM_size, header.CHR_ROM_size); break;
         default:
             onut::showMessageBox("ERROR", "(0x80000007) Unsupported mapper " + std::to_string(mapper_id) + " for rom file: " + std::string(filename));
-            fclose(f);
-            OQuit();
+            exit(0);
             return;
     }
 }
@@ -289,5 +310,6 @@ bool Cart::ppu_read(uint16_t addr, uint8_t* out_data)
 
 void Cart::reset()
 {
-    m_mapper->reset();
+    if (m_mapper)
+        m_mapper->reset();
 }
