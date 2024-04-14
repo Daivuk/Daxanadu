@@ -211,7 +211,8 @@ static ap_location_t AP_LOCATIONS[] = {
     { 400198, WORLD_DARTMOOR, 29, "Fraternal Castle Poison 1", ap_location_type_t::world, 0x4C, 0x0002C9AC },
     { 400199, WORLD_DARTMOOR, 19, "Fraternal Castle Poison 2", ap_location_type_t::world, 0x4C, 0x0002C96C, -1, 0 },
     { 400200, WORLD_DARTMOOR, 20, "Fraternal Castle Poison 3", ap_location_type_t::world, 0x4C, 0x0002C974 },
-    { 400201, WORLD_DARTMOOR, 19, "Fraternal Castle Red Potion", ap_location_type_t::world, 0x4B, 0x0002C96E, -1, 1 },
+    // This location is impossible to access. Keep it commented for context. A normal red potion will appear here.
+    //{ 400201, WORLD_DARTMOOR, 19, "Fraternal Castle Red Potion", ap_location_type_t::world, 0x4B, 0x0002C96E, -1, 1 },
     { 400202, WORLD_DARTMOOR, 18, "Fraternal Castle Hidden Hourglass", ap_location_type_t::hidden, 0x56, 0x0002C966 },
     { 400203, WORLD_DARTMOOR, 21, "Fraternal Castle Dragon Slayer", ap_location_type_t::boss_reward, 0x5A, 0x0002C978 },
     { 400204, WORLD_SHOPS, 66, "Fraternal Castle Guru", ap_location_type_t::give, 0x83, 0x0003234B, 0x00032345 },

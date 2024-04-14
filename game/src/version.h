@@ -2,8 +2,8 @@
 
 
 #define DAX_MAJOR 0
-#define DAX_MINOR 2
-#define DAX_PATCH 2
+#define DAX_MINOR 3
+#define DAX_PATCH 0
 #define DAX_STR(x) DAX_STR2(x)
 #define DAX_STR2(x) #x
 #define DAX_VERSION DAX_STR(DAX_MAJOR) "." DAX_STR(DAX_MINOR) "." DAX_STR(DAX_PATCH)
