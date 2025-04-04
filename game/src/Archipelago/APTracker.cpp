@@ -6,9 +6,50 @@
 
 #include <onut/Dialogs.h>
 #include <onut/onut.h>
+#include <onut/Input.h>
 #include <onut/Texture.h>
 #include <onut/Renderer.h>
 #include <onut/SpriteBatch.h>
+
+
+static const char* ITEM_NAMES[] = {
+    "HAND DAGGER",
+    "SMALL SHIELD",
+    "KEY JACK",
+    "DELUGE",
+    "LONG SWORD",
+    "LARGE SHIELD",
+    "KEY QUEEN",
+    "THUNDER",
+    "GIANT BLADE",
+    "MAGIC SHIELD",
+    "KEY KING",
+    "FIRE",
+    "DRAGON SLAYER",
+    "BATTLE HELMET",
+    "KEY ACE",
+    "DEATH",
+    "LEATHER ARMOR",
+    "RING OF ELF",
+    "KEY JOKER",
+    "TILTE",
+    "STUDDED MAIL",
+    "RING OF RUBY",
+    "MATTOCK",
+    "BLACK ONYX",
+    "FULL PLATE",
+    "RING OF DWORF",
+    "WINGBOOTS",
+    "MAGICAL ROD",
+    "BATTLE SUIT",
+    "DEMONS RING",
+    "SPRING ELIXIR",
+    "PENDANT",
+
+    "SKY SPRING",
+    "TOWER OF FORTRESS SPRING",
+    "JOKER SPRING"
+};
 
 
 APTracker::APTracker(uint8_t* rom, RAM* ram, TileDrawer* tile_drawer)
@@ -320,10 +361,14 @@ void APTracker::render()
     float scale2 = std::ceilf(scale * 0.5f);
 
 #if !SHOW_RAM
+    int item_mouse_hovered = -1;
+    Vector2 tooltip_item_pos;
+
     oSpriteBatch->begin();
     {
         float tracker_x = res.x * 0.5f + (float)PPU::SCREEN_W * 0.5f * scale + scale * 16.0f;
         float tracker_y = res.y * 0.5f - (float)(PPU::SCREEN_H - 16) * 0.5f * scale;
+        const auto& screen_mouse_pos = OGetMousePos();
 
         // Background, grayed out
         oSpriteBatch->drawRect(m_sprite_sheet,
@@ -336,10 +381,18 @@ void APTracker::render()
         // Light up owned items
         for (int i = 0; i < (int)item_t::COUNT; ++i)
         {
-            if (!m_states[i]) continue;
-
             int x = i % 4;
             int y = i / 4;
+            float screen_x = tracker_x + (float)x * 16.0f * scale;
+            float screen_y = tracker_y + (float)y * 16.0f * scale;
+            if (Rect(screen_x, screen_y, 16.0f * scale, 16.0f * scale).Contains(screen_mouse_pos))
+            {
+                item_mouse_hovered = i;
+                tooltip_item_pos.x = screen_x;
+                tooltip_item_pos.y = screen_y;
+            }
+
+            if (!m_states[i]) continue;
 
             oSpriteBatch->drawRectWithUVs(m_sprite_sheet, 
                 Rect(tracker_x + (float)x * 16.0f * scale, tracker_y + (float)y * 16.0f * scale,
@@ -353,12 +406,32 @@ void APTracker::render()
         float spring_spacing = std::floorf(((4.0f * 16.0f * scale) - (3.0f * 4.0f * 8.0f * scale2)) / 3.0f);
         for (int i = 0; i < 3; ++i)
         {
+            float screen_x = tracker_x + (float)i * (4 * 8 * scale2 + spring_spacing);
+            float screen_y = tracker_y + 8 * 16 * scale;
+            if (Rect(screen_x, screen_y, 4 * 8 * scale2, 3 * 8 * scale2).Contains(screen_mouse_pos))
+            {
+                item_mouse_hovered = (int)item_t::COUNT + i;
+                tooltip_item_pos.x = screen_x;
+                tooltip_item_pos.y = screen_y;
+            }
             oSpriteBatch->drawRect(m_spring_texture,
                                    Rect(tracker_x + (float)i * (4 * 8 * scale2 + spring_spacing), tracker_y + 8 * 16 * scale, 4 * 8 * scale2, 3 * 8 * scale2),
                                    (bits & (1 << i)) ? Color::White : Color(0.25f));
         }
     }
     oSpriteBatch->end();
+
+    // Tool tip
+    if (item_mouse_hovered != -1)
+    {
+        int len = (int)strlen(ITEM_NAMES[item_mouse_hovered]);
+        int x = (int)(tooltip_item_pos.x / scale / 8) - (len + 5);
+        int y = (int)(tooltip_item_pos.y / scale / 8);
+        oSpriteBatch->begin(Matrix::CreateScale(scale));
+        m_tile_drawer->draw_ui_frame(x, y, len + 4, 3);
+        m_tile_drawer->draw_text(x + 2, y + 1, ITEM_NAMES[item_mouse_hovered]);
+        oSpriteBatch->end();
+    }
 #endif
 
     // Titles and springs
