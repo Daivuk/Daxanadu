@@ -21,6 +21,7 @@
 
 
 #define SHOW_SMALL_TILES 0
+#define SHOW_GIZMOS 1
 
 
 enum class state_t
@@ -648,6 +649,7 @@ static void draw_rooms()
 
 static void draw_arrow(const Vector2& from, const Vector2& to, const Color& color)
 {
+#if SHOW_GIZMOS
     auto pb = oPrimitiveBatch.get();
 
     pb->draw(from, color);
@@ -660,6 +662,7 @@ static void draw_arrow(const Vector2& from, const Vector2& to, const Color& colo
     const float head_size = 8.0f / ZOOM_LEVELS[cam_zoom];
     pb->draw(to, color); pb->draw(to - dir * head_size - right * head_size, color);
     pb->draw(to, color); pb->draw(to - dir * head_size + right * head_size, color);
+#endif
 }
 
 
@@ -710,6 +713,7 @@ static bool can_draw_tooltips()
 
 static void draw_doors()
 {
+#if SHOW_GIZMOS
     auto pb = oPrimitiveBatch.get();
 
     // Doors
@@ -832,6 +836,7 @@ static void draw_doors()
         }
     }
     pb->end();
+#endif
 }
 
 
@@ -864,6 +869,7 @@ static void draw_entities()
     sb->end();
 
     // Frame
+#if SHOW_GIZMOS
     Color entity_color = get_pal_color(3, 11);
     pb->begin(OPrimitiveLineList, nullptr, get_view_transform());
     for (const auto& chunk : cart.chunks)
@@ -901,6 +907,7 @@ static void draw_entities()
         }
     }
     pb->end();
+#endif
 }
 
 
