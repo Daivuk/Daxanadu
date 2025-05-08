@@ -2095,6 +2095,55 @@ void AP::patch_items()
 				}
 			}
 
+			if (m_just_loaded)
+			{
+				m_just_loaded = false;
+
+				// Go through received items and make sure we have them in the inventory, otherwise, queue them.
+				// Sometimes there are bugs where we can lose an item after reloading a save, but the save still think we have it.
+				int sword_count = 0;
+				int armor_count = 1;
+				int shield_count = 0;
+				for (const auto& recv_item : m_recv_item_queue)
+				{
+					const auto ap_item = get_ap_item(recv_item.item_id);
+					if (ap_item->id == recv_item.item_id)
+					{
+						if (ap_item->item_id == AP_ITEM_PROGRESSIVE_SWORD)
+						{
+							sword_count++;
+							continue;
+						}
+						if (ap_item->item_id == AP_ITEM_PROGRESSIVE_ARMOR)
+						{
+							armor_count++;
+							continue;
+						}
+						if (ap_item->item_id == AP_ITEM_PROGRESSIVE_SHIELD)
+						{
+							shield_count++;
+							continue;
+						}
+						if (!m_tracker->owns(ap_item->item_id))
+						{
+							m_queued_items.push_back(ap_item->item_id);
+						}
+					}
+				}
+				for (int i = sword_count, len = m_tracker->owns(AP_ITEM_PROGRESSIVE_SWORD); i < len; ++i)
+				{
+					m_queued_items.push_back(AP_ITEM_PROGRESSIVE_SWORD);
+				}
+				for (int i = armor_count, len = m_tracker->owns(AP_ITEM_PROGRESSIVE_ARMOR); i < len; ++i)
+				{
+					m_queued_items.push_back(AP_ITEM_PROGRESSIVE_ARMOR);
+				}
+				for (int i = shield_count, len = m_tracker->owns(AP_ITEM_PROGRESSIVE_SHIELD); i < len; ++i)
+				{
+					m_queued_items.push_back(AP_ITEM_PROGRESSIVE_SHIELD);
+				}
+			}
+
 			if (m_queued_items.empty()) return 0xFF;
 			uint8_t item_id = m_queued_items.front();
 			m_queued_items.erase(m_queued_items.begin());
@@ -2967,6 +3016,8 @@ void AP::deserialize(FILE* f, int version)
 		m_remote_item_dialog_queue.resize(count);
 		fread(m_remote_item_dialog_queue.data(), sizeof(int64_t), count, f);
 	}
+
+	m_just_loaded = true;
 }
 
 
