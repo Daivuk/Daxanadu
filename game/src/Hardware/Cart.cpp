@@ -90,7 +90,6 @@ Cart::Cart(const char* filename)
     if (header_size != ROM_HEADER_SIZE)
     {
         delete[] file_data;
-        fclose(f);
         onut::showMessageBox("ERROR", "(0x80000003) Header padding error");
         exit(0);
         return;
@@ -101,7 +100,6 @@ Cart::Cart(const char* filename)
     if (memcmp(header.signature, ROM_SIGNATURE, 4))
     {
         delete[] file_data;
-        fclose(f);
         onut::showMessageBox("ERROR", "(0x80000004) Invalid ROM signature: " + std::string(filename));
         exit(0);
         return;
@@ -133,7 +131,6 @@ Cart::Cart(const char* filename)
     if (expected_rom_size != rom_size - header_size)
     {
         delete[] file_data;
-        fclose(f);
         onut::showMessageBox("ERROR", "(0x80000005) Wrong ROM size: " + std::string(filename));
         exit(0);
         return;
@@ -150,12 +147,10 @@ Cart::Cart(const char* filename)
     if (checksum != ROM_CHECKSUM/* && // Rev0
         checksum != ROM_CHECKSUM_REV1*/) // Rev1 (It doesnt work, bad dialog code?)
     {
-        fclose(f);
         onut::showMessageBox("ERROR", "(0x80000006) Wrong ROM checksum: " + std::string(filename));
         exit(0);
         return;
     }
-    fclose(f);
 
     // Copy the part without the header into our rom
     m_prg_rom_size = header.PRG_ROM_size * (16 * 1024);
@@ -216,7 +211,9 @@ bool Cart::cpu_write(uint16_t addr, uint8_t data)
     if (m_mapper->map_cpu_write(addr, &mapped_addr, data))
     {
         // PRG_RAM
+#if defined(MSVC)
         __debugbreak();
+#endif
     }
 
     return false;

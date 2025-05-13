@@ -328,7 +328,7 @@ void MenuManager::update(float dt)
     if (menu.columns > 1)
     {
         const int rest = (int)menu.options.size() % menu.columns;
-        const int row_count = (int)std::ceilf((float)menu.options.size() / (float)menu.columns);
+        const int row_count = (int)std::ceil((float)menu.options.size() / (float)menu.columns);
         int col = menu.selection % menu.columns;
         int row = menu.selection / menu.columns;
         int col_in_row = (row == row_count - 1) ? rest : menu.columns;
@@ -493,7 +493,7 @@ void MenuManager::draw_menu(int x, int y, state_t state, bool draw_cursor)
     if (menu.columns > 1)
     {
         int w = menu.w;
-        int h = onut::max(menu.h, ((int)std::ceilf((float)menu.options.size() / (float)menu.columns)) * spacing + 2);
+        int h = onut::max(menu.h, ((int)std::ceil((float)menu.options.size() / (float)menu.columns)) * spacing + 2);
 
         m_info.tile_drawer->draw_ui_frame(x, y, w, h, !menu.framed);
 
@@ -641,7 +641,7 @@ void MenuManager::render()
     oRenderer->renderStates.renderTargets[0].pop();
 
     auto res = OScreenf;
-    float scale = std::floorf(res.y / (float)PPU::SCREEN_H);
+    float scale = std::floor(res.y / (float)PPU::SCREEN_H);
     oSpriteBatch->begin();
     oSpriteBatch->drawSprite(m_framebuffer, OScreenCenterf, Color::White, 0.0f, scale);
     oSpriteBatch->end();

@@ -708,7 +708,7 @@ OSoundRef SoundRenderer::render_sound(int sound_id)
         float sample = render_frame(48000);
 
         samples.push_back(sample);
-        if (std::fabsf(sample) < 0.01f)
+        if (std::fabs(sample) < 0.01f)
             silence_time++;
         else
             silence_time = 0;

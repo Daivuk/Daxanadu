@@ -154,7 +154,7 @@ void RoomWatcher::render()
     oRenderer->renderStates.renderTargets[0].pop();
 
     auto res = OScreenf;
-    float scale = std::floorf(res.y / (float)PPU::SCREEN_H);
+    float scale = std::floor(res.y / (float)PPU::SCREEN_H);
     oSpriteBatch->begin();
     oSpriteBatch->drawSprite(m_framebuffer, OScreenCenterf, Color::White, 0.0f, scale);
     oSpriteBatch->end();

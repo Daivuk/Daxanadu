@@ -431,8 +431,8 @@ int APTracker::owns(int in_item_id) const
 void APTracker::render()
 {
     auto res = OScreenf;
-    float scale = std::floorf(res.y / (float)PPU::SCREEN_H);
-    float scale2 = std::ceilf(scale * 0.5f);
+    float scale = std::floor(res.y / (float)PPU::SCREEN_H);
+    float scale2 = std::ceil(scale * 0.5f);
 
 #if !SHOW_RAM
     int item_mouse_hovered = -1;
@@ -477,7 +477,7 @@ void APTracker::render()
 
         // Springs
         uint8_t bits = m_ram->get(0x042D);
-        float spring_spacing = std::floorf(((4.0f * 16.0f * scale) - (3.0f * 4.0f * 8.0f * scale2)) / 3.0f);
+        float spring_spacing = std::floor(((4.0f * 16.0f * scale) - (3.0f * 4.0f * 8.0f * scale2)) / 3.0f);
         for (int i = 0; i < 3; ++i)
         {
             float screen_x = tracker_x + (float)i * (4 * 8 * scale2 + spring_spacing);
@@ -512,7 +512,7 @@ void APTracker::render()
     {
         float tracker_x = res.x * 0.5f - (float)PPU::SCREEN_W * 0.5f * scale;
         float tracker_y = res.y * 0.5f - (float)(PPU::SCREEN_H - 16) * 0.5f * scale;
-        scale = std::ceilf(scale * 0.5f);
+        scale = std::ceil(scale * 0.5f);
 
         oSpriteBatch->begin(Matrix::CreateScale(scale) *
                             Matrix::CreateTranslation(tracker_x, tracker_y, 0.0f));

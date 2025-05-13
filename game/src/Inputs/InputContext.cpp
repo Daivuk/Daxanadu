@@ -186,7 +186,9 @@ std::string Input::get_name() const
             case OInput::State::KeyNumPadEnter: return "NUM ENTER"; /* Enter on numeric keypad */
             case OInput::State::KeyRightControl: return "RIGHT CONTROL";
             case OInput::State::KeyMute: return "MUTE"; /* Mute */
+#if defined(MSVC)
             case OInput::State::KeyCalculator: return "CALCULATOR"; /* Calculator */
+#endif
             case OInput::State::KeyPlayPause: return "PLAY"; /* Play / Pause */
             case OInput::State::KeyMediaStop: return "MEDIA STOP"; /* Media Stop */
             case OInput::State::KeyVolumeDown: return "VOL DOWN"; /* Volume - */

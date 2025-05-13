@@ -1916,7 +1916,9 @@ static std::vector<cart_dialog_command_t> disassemble_dialog_script(int pc)
             }
             default:
             {
+#if defined(MSVC)
                 __debugbreak();
+#endif
                 break;
             }
         }

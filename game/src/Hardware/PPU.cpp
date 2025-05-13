@@ -4,7 +4,7 @@
 #include "PPUBUS.h"
 
 #include <onut/Dialogs.h>
-#include <onut/Onut.h>
+#include <onut/onut.h>
 #include <onut/Random.h>
 #include <onut/Renderer.h>
 #include <onut/SpriteBatch.h>
@@ -613,7 +613,7 @@ void PPU::tick()
 void PPU::render()
 {
     auto res = OScreenf;
-    float scale = std::floorf(res.y / (float)SCREEN_H);
+    float scale = std::floor(res.y / (float)SCREEN_H);
 
     oRenderer->renderStates.renderTargets[0].push(m_screen_texture);
     oRenderer->clear(OColorRGB(m_colors[m_palettes[0] * 3 + 0], m_colors[m_palettes[0] * 3 + 1], m_colors[m_palettes[0] * 3 + 2]));

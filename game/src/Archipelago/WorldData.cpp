@@ -1,5 +1,7 @@
 #include "WorldData.h"
 
+#include <memory.h>
+
 
 static const int CHUNK_TO_ALL_LEVELS_MAP[] = { 0, 2, 3, 1, 5, 6, 4, 7 };
 

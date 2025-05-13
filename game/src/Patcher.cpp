@@ -5,6 +5,8 @@
 #include <onut/onut.h>
 #include <onut/Settings.h>
 
+#include "memory.h"
+
 
 static const int BANKS_EMPTY_SPACE[16] = {
     0x0000,

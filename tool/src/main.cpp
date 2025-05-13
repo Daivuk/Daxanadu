@@ -133,7 +133,9 @@ const char* get_item_name(item_t item)
         case ITEM_FIRE_CRYSTAL: return cart.item_names[0x26].c_str();
 
         default:
+#if defined(MSVC)
             __debugbreak();
+#endif
             return "UNKONWN ITEM";
     }
 }

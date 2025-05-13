@@ -2669,7 +2669,9 @@ void AP::on_location_info(const std::vector<AP_NetworkItem>& loc_infos)
 		if (!scout_loc.loc)
 		{
 			// Show some error or something
+#if defined(MSVC)
 			__debugbreak();
+#endif
 		}
 
 		// Bake player name so it can be used in UI
