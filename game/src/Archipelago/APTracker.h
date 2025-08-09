@@ -53,7 +53,6 @@ public:
 
     void update(float dt);
     void render();
-    int owns(int item_id) const; // Returns how many we own
 
 private:
     void load_colors(uint8_t* colors);
