@@ -6,6 +6,7 @@
 #include <onut/Renderer.h>
 #include <onut/SpriteBatch.h>
 #include <onut/Texture.h>
+#include <onut/Images.h>
 
 
 static const int TILESET_W = 128;

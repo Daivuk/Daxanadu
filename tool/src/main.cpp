@@ -2,6 +2,7 @@
 #include "data.h"
 #include "history.h"
 #include "apu.h"
+#include "..\..\game\src\Archipelago\APLocations.h"
 
 #include <onut/onut.h>
 #include <onut/Files.h>
@@ -356,6 +357,7 @@ static bool operator!=(const std::vector<cart_room_t*>& a, const std::vector<car
     return true;
 }
 
+bool show_gizmos = true;
 
 void update()
 {
@@ -365,6 +367,8 @@ void update()
     mouse_pos = Vector2::Transform(OGetMousePos(), inv_cam_matrix);
 
     mouse_over_room = nullptr;
+
+    if (OInputJustPressed(OKeyTab)) show_gizmos = !show_gizmos;
     
     switch (state)
     {
@@ -538,7 +542,7 @@ static void draw_screen(const cart_screen_t* screen, float offset_x, float offse
 
     sb->drawSprite(screen->texture, pos, Color::White, 0.0f, 1.0f, OTopLeft);
 
-    if (ZOOM_LEVELS[cam_zoom] >= 1.0f)
+    if (ZOOM_LEVELS[cam_zoom] >= 1.0f && show_gizmos)
     {
         sb->drawRect(nullptr, Rect(pos, 14, 12), Color::Black);
         sb->drawText(font, std::to_string(screen->id), {pos.x + 1, pos.y + 1});
@@ -548,7 +552,7 @@ static void draw_screen(const cart_screen_t* screen, float offset_x, float offse
 
 static void draw_room(const cart_room_t* room)
 {
-    if (room == mouse_over_room) return; // Will be drawn on top later
+    if (room == mouse_over_room && show_gizmos) return; // Will be drawn on top later
 
     auto sb = oSpriteBatch.get();
     float room_x = (float)(data.room_positions[room->id].pos.x * 16);
@@ -896,6 +900,21 @@ static void draw_entities()
                     ImGui::Text("%s", name ? name : "UNKNOWN");
                     ImGui::Text("Addr: 0x%08X", entity.addr);
                     ImGui::Text("Type: 0x%02X", entity.type);
+
+                    int ap_location_count = (int)(sizeof(AP_LOCATIONS) / sizeof(ap_location_t));
+                    static const int CHUNK_TO_ALL_LEVELS_MAP[] = { 0, 2, 3, 1, 5, 6, 4, 7 };
+                    for (int i = 0; i < ap_location_count; ++i)
+                    {
+                        const auto& ap_location = AP_LOCATIONS[i];
+                        if (ap_location.world == CHUNK_TO_ALL_LEVELS_MAP[chunk.id] &&
+                            ap_location.screen == screen.id &&
+                            ap_location.addr == entity.addr)
+                        {
+                            ImGui::Text("AP ID: %" PRId64, ap_location.id);
+                            break;
+                        }
+                    }
+                    
                     ImGui::TextColored(entity.dialog_id == -1 ? ImVec4(1, 1, 1, .35f) : ImVec4(1, 1, 1, 1), "Dialog Id: 0x%02X", entity.dialog_id);
                     if (entity.dialog_id != -1)
                     {
@@ -972,11 +991,14 @@ void render()
     oRenderer->renderStates.sampleFiltering = OFilterNearest;
 
     draw_rooms();
-    draw_hover_room(mouse_over_room);
-    draw_doors();
-    draw_entities();
-    draw_connections();
-    draw_selection_box();
+    if (show_gizmos)
+    {
+        draw_hover_room(mouse_over_room);
+        draw_doors();
+        draw_entities();
+        draw_connections();
+        draw_selection_box();
+    }
 }
 
 
@@ -1072,6 +1094,8 @@ static void draw_dialog(const std::vector<cart_dialog_command_t>& commands)
 
 void renderUI()
 {
+    if (!show_gizmos) return;
+
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File"))
     {
