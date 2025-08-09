@@ -197,7 +197,7 @@ void AP::connect()
 	m_info.patcher->set_enable_collision_warnings(false);
 	m_info.patcher->print_usage();
 
-	AP_NetworkVersion version = {0, 4, 3};
+	AP_NetworkVersion version = {0, 5, 0};
 	AP_SetClientVersion(&version);
     AP_Init(m_info.address.c_str(), "Faxanadu", m_info.slot_name.c_str(), m_info.password.c_str());
 	AP_SetDeathLinkSupported(true);
